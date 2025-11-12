@@ -1,108 +1,101 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRoute, useLocation } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Trophy, Users, LayoutGrid } from "lucide-react";
+import { ArrowLeft, Trophy, Users, LayoutGrid, Loader2 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import BracketView from "@/components/BracketView";
 import StandingsTable from "@/components/StandingsTable";
 import MatchCard from "@/components/MatchCard";
 import SubmitScoreDialog from "@/components/SubmitScoreDialog";
 import MatchChatPanel from "@/components/MatchChatPanel";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Tournament, Team, Match, ChatMessage } from "@shared/schema";
 
 export default function TournamentDetail() {
+  const [, params] = useRoute("/tournament/:id");
+  const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
   const [showScoreDialog, setShowScoreDialog] = useState(false);
   const [showChatPanel, setShowChatPanel] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
 
-  const tournament: Tournament = {
-    id: "1",
-    name: "Summer Championship 2024",
-    format: "single_elimination",
-    status: "in_progress",
-    totalTeams: 4,
-    currentRound: 1,
-    swissRounds: null,
-    createdAt: new Date(),
-  };
+  const { data: tournament, isLoading: tournamentLoading } = useQuery<Tournament>({
+    queryKey: ["/api/tournaments", params?.id],
+    enabled: !!params?.id,
+  });
 
-  const teams: Team[] = [
-    { id: "1", name: "Alpha Squad", tournamentId: "1", wins: 2, losses: 0, points: 6 },
-    { id: "2", name: "Beta Force", tournamentId: "1", wins: 2, losses: 0, points: 6 },
-    { id: "3", name: "Charlie Warriors", tournamentId: "1", wins: 1, losses: 1, points: 3 },
-    { id: "4", name: "Delta Legends", tournamentId: "1", wins: 0, losses: 2, points: 0 },
-  ];
+  const { data: teams = [], isLoading: teamsLoading } = useQuery<Team[]>({
+    queryKey: ["/api/tournaments", params?.id, "teams"],
+    enabled: !!params?.id,
+  });
 
-  const matches: Match[] = [
-    {
-      id: "sf1",
-      tournamentId: "1",
-      team1Id: "1",
-      team2Id: "4",
-      winnerId: "1",
-      round: 2,
-      status: "completed",
-      team1Score: 21,
-      team2Score: 15,
-      isBye: 0,
-    },
-    {
-      id: "sf2",
-      tournamentId: "1",
-      team1Id: "2",
-      team2Id: "3",
-      winnerId: "2",
-      round: 2,
-      status: "completed",
-      team1Score: 19,
-      team2Score: 17,
-      isBye: 0,
-    },
-    {
-      id: "final",
-      tournamentId: "1",
-      team1Id: "1",
-      team2Id: "2",
-      winnerId: null,
-      round: 1,
-      status: "in_progress",
-      team1Score: null,
-      team2Score: null,
-      isBye: 0,
-    },
-  ];
+  const { data: matches = [], isLoading: matchesLoading } = useQuery<Match[]>({
+    queryKey: ["/api/tournaments", params?.id, "matches"],
+    enabled: !!params?.id,
+  });
 
-  const chatMessages: (ChatMessage & { imageUrl?: string })[] = [
-    {
-      id: "1",
-      matchId: "final",
-      teamId: null,
-      message: "Match started",
-      isSystem: 1,
-      createdAt: new Date(),
+  const { data: chatMessages = [] } = useQuery<(ChatMessage & { imageUrl?: string })[]>({
+    queryKey: ["/api/matches", selectedMatch?.id, "messages"],
+    enabled: !!selectedMatch?.id,
+  });
+
+  const updateMatchMutation = useMutation({
+    mutationFn: async ({ matchId, data }: { matchId: string; data: any }) => {
+      const res = await apiRequest("PATCH", `/api/matches/${matchId}`, data);
+      return res.json();
     },
-    {
-      id: "2",
-      matchId: "final",
-      teamId: "1",
-      message: "GL HF everyone!",
-      isSystem: 0,
-      createdAt: new Date(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tournaments", params?.id, "matches"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tournaments", params?.id, "teams"] });
     },
-    {
-      id: "3",
-      matchId: "final",
-      teamId: "2",
-      message: "Good luck!",
-      isSystem: 0,
-      createdAt: new Date(),
+  });
+
+  const sendMessageMutation = useMutation({
+    mutationFn: async ({ matchId, message, imageUrl }: { matchId: string; message: string; imageUrl?: string }) => {
+      const res = await apiRequest("POST", `/api/matches/${matchId}/messages`, { 
+        message, 
+        teamId: "1", 
+        imageUrl, 
+        isSystem: 0 
+      });
+      return res.json();
     },
-  ];
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/matches", selectedMatch?.id, "messages"] });
+    },
+  });
+
+  const isLoading = tournamentLoading || teamsLoading || matchesLoading;
 
   const getTeamById = (id: string | null) => teams.find(t => t.id === id);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!tournament) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card>
+          <CardContent className="p-6">
+            <h2 className="text-xl font-semibold mb-2">Tournament not found</h2>
+            <Button onClick={() => navigate("/")} data-testid="button-back-home">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const handleSubmitScore = (matchId: string) => {
     const match = matches.find(m => m.id === matchId);
@@ -120,6 +113,35 @@ export default function TournamentDetail() {
     }
   };
 
+  const handleScoreSubmit = (winnerId: string, team1Score: number, team2Score: number) => {
+    if (selectedMatch) {
+      updateMatchMutation.mutate({
+        matchId: selectedMatch.id,
+        data: {
+          winnerId,
+          team1Score,
+          team2Score,
+          status: "completed",
+        },
+      });
+    }
+    setShowScoreDialog(false);
+  };
+
+  const handleSendMessage = (message: string, image?: File) => {
+    if (selectedMatch) {
+      let imageUrl: string | undefined;
+      if (image) {
+        imageUrl = URL.createObjectURL(image);
+      }
+      sendMessageMutation.mutate({
+        matchId: selectedMatch.id,
+        message,
+        imageUrl,
+      });
+    }
+  };
+
   const formatLabels = {
     round_robin: "Round Robin",
     single_elimination: "Single Elimination",
@@ -134,7 +156,7 @@ export default function TournamentDetail() {
             <Button 
               variant="ghost" 
               size="icon"
-              onClick={() => console.log('Go back')}
+              onClick={() => navigate("/")}
               data-testid="button-back"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -275,7 +297,7 @@ export default function TournamentDetail() {
               messages={chatMessages}
               teams={teams}
               currentTeamId="1"
-              onSendMessage={(message, image) => console.log('Send message:', message, 'Image:', image)}
+              onSendMessage={handleSendMessage}
             />
           </div>
         </div>

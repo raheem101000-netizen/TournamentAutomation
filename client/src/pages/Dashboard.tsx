@@ -1,82 +1,45 @@
 import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trophy, TrendingUp, Users } from "lucide-react";
+import { Plus, Trophy, TrendingUp, Users, Loader2 } from "lucide-react";
 import TournamentCard from "@/components/TournamentCard";
 import CreateTournamentDialog from "@/components/CreateTournamentDialog";
 import ThemeToggle from "@/components/ThemeToggle";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Tournament } from "@shared/schema";
 
 export default function Dashboard() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [tournaments, setTournaments] = useState<(Tournament & { totalMatches?: number; completedMatches?: number })[]>([
-    {
-      id: "1",
-      name: "Summer Championship 2024",
-      format: "single_elimination",
-      status: "in_progress",
-      totalTeams: 8,
-      currentRound: 2,
-      swissRounds: null,
-      createdAt: new Date(),
-      totalMatches: 7,
-      completedMatches: 3,
+  const [, navigate] = useLocation();
+
+  const { data: tournaments = [], isLoading } = useQuery<Tournament[]>({
+    queryKey: ["/api/tournaments"],
+  });
+
+  const createTournamentMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("POST", "/api/tournaments", data);
+      return res.json();
     },
-    {
-      id: "2",
-      name: "League Season 5",
-      format: "round_robin",
-      status: "upcoming",
-      totalTeams: 6,
-      currentRound: 1,
-      swissRounds: null,
-      createdAt: new Date(),
-      totalMatches: 15,
-      completedMatches: 0,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
+      setShowCreateDialog(false);
     },
-    {
-      id: "3",
-      name: "Winter Open",
-      format: "swiss",
-      status: "completed",
-      totalTeams: 12,
-      currentRound: 4,
-      swissRounds: 4,
-      createdAt: new Date(),
-      totalMatches: 24,
-      completedMatches: 24,
-    },
-  ]);
+  });
 
   const activeTournaments = tournaments.filter(t => t.status === "in_progress").length;
   const totalTeams = tournaments.reduce((sum, t) => sum + t.totalTeams, 0);
   const completedTournaments = tournaments.filter(t => t.status === "completed").length;
 
   const handleCreateTournament = (data: any) => {
-    console.log("Creating tournament:", data);
-    
-    // Create new tournament object
-    const newTournament: Tournament & { totalMatches?: number; completedMatches?: number } = {
-      id: `tournament-${Date.now()}`,
-      name: data.name,
-      format: data.format,
-      status: "upcoming",
-      totalTeams: data.totalTeams,
-      currentRound: 1,
-      swissRounds: data.swissRounds,
-      createdAt: new Date(),
-      totalMatches: 0,
-      completedMatches: 0,
-    };
-    
-    // Add to tournaments list
-    setTournaments([newTournament, ...tournaments]);
-    setShowCreateDialog(false);
+    createTournamentMutation.mutate(data);
   };
 
   const handleViewTournament = (id: string) => {
-    console.log("View tournament:", id);
+    navigate(`/tournament/${id}`);
   };
 
   return (
@@ -209,6 +172,23 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : tournaments.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Trophy className="w-12 h-12 text-muted-foreground mb-4" />
+              <h3 className="font-semibold text-lg mb-2">No tournaments yet</h3>
+              <p className="text-sm text-muted-foreground mb-4">Create your first tournament to get started</p>
+              <Button onClick={() => setShowCreateDialog(true)} data-testid="button-create-first-tournament">
+                <Plus className="w-4 h-4 mr-2" />
+                Create Tournament
+              </Button>
+            </CardContent>
+          </Card>
+        ) : null}
       </main>
 
       <CreateTournamentDialog

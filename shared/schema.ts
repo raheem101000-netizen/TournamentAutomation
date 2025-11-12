@@ -41,6 +41,7 @@ export const chatMessages = pgTable("chat_messages", {
   matchId: varchar("match_id").notNull(),
   teamId: varchar("team_id"),
   message: text("message").notNull(),
+  imageUrl: text("image_url"),
   isSystem: integer("is_system").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
