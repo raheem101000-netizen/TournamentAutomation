@@ -16,9 +16,21 @@ import {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
-  const wss = new WebSocketServer({ server: httpServer });
+  const wss = new WebSocketServer({ 
+    noServer: true
+  });
 
   const matchConnections = new Map<string, Set<WebSocket>>();
+
+  httpServer.on('upgrade', (request, socket, head) => {
+    const pathname = new URL(request.url || "", `http://${request.headers.host}`).pathname;
+    
+    if (pathname === '/ws/chat') {
+      wss.handleUpgrade(request, socket, head, (ws) => {
+        wss.emit('connection', ws, request);
+      });
+    }
+  });
 
   wss.on("connection", (ws, req) => {
     const matchId = new URL(req.url || "", `http://${req.headers.host}`).searchParams.get("matchId");
