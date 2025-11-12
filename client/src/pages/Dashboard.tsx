@@ -55,6 +55,23 @@ export default function Dashboard() {
 
   const handleCreateTournament = (data: any) => {
     console.log("Creating tournament:", data);
+    
+    // Create new tournament object
+    const newTournament: Tournament & { totalMatches?: number; completedMatches?: number } = {
+      id: `tournament-${Date.now()}`,
+      name: data.name,
+      format: data.format,
+      status: "upcoming",
+      totalTeams: data.totalTeams,
+      currentRound: 1,
+      swissRounds: data.swissRounds,
+      createdAt: new Date(),
+      totalMatches: 0,
+      completedMatches: 0,
+    };
+    
+    // Add to tournaments list
+    setTournaments([newTournament, ...tournaments]);
     setShowCreateDialog(false);
   };
 
