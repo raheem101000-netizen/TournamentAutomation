@@ -14,8 +14,8 @@ export default function DiscoveryPage() {
     loadTournaments();
   }, []);
 
-  const loadTournaments = () => {
-    const all = DiscoveryStore.getAllTournaments();
+  const loadTournaments = async () => {
+    const all = await DiscoveryStore.getAllTournaments();
     setTournaments(all);
   };
 

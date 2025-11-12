@@ -2,27 +2,27 @@ import { LocalStorage, StorageKeys } from '../storage';
 import type { TournamentPoster } from '@shared/types';
 
 export class DiscoveryStore {
-  static getAllTournaments(): TournamentPoster[] {
-    return LocalStorage.getArray<TournamentPoster>(StorageKeys.TOURNAMENTS);
+  static async getAllTournaments(): Promise<TournamentPoster[]> {
+    return await LocalStorage.getArray<TournamentPoster>(StorageKeys.TOURNAMENTS);
   }
 
-  static getTournamentById(id: string): TournamentPoster | null {
-    const tournaments = this.getAllTournaments();
+  static async getTournamentById(id: string): Promise<TournamentPoster | null> {
+    const tournaments = await this.getAllTournaments();
     return tournaments.find(t => t.id === id) || null;
   }
 
-  static getTournamentsByStatus(status: TournamentPoster['status']): TournamentPoster[] {
-    const all = this.getAllTournaments();
+  static async getTournamentsByStatus(status: TournamentPoster['status']): Promise<TournamentPoster[]> {
+    const all = await this.getAllTournaments();
     return all.filter(t => t.status === status);
   }
 
-  static getTournamentsByGame(game: string): TournamentPoster[] {
-    const all = this.getAllTournaments();
+  static async getTournamentsByGame(game: string): Promise<TournamentPoster[]> {
+    const all = await this.getAllTournaments();
     return all.filter(t => t.game.toLowerCase().includes(game.toLowerCase()));
   }
 
-  static searchTournaments(query: string): TournamentPoster[] {
-    const all = this.getAllTournaments();
+  static async searchTournaments(query: string): Promise<TournamentPoster[]> {
+    const all = await this.getAllTournaments();
     const lowerQuery = query.toLowerCase();
     return all.filter(
       t =>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { MessagingStore } from '../../../lib/stores/messagingStore';
 import { ProfileStore } from '../../../lib/stores/profileStore';
 import type { ChatThread, Message, UserProfile } from '@shared/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,73 +12,89 @@ import { Separator } from '@/components/ui/separator';
 import { MessageCircle, Users, Send } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
+interface ThreadMetadata {
+  thread: ChatThread;
+  name: string;
+  avatarUri?: string;
+}
+
 export default function MessagingPage() {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
-  const [threads, setThreads] = useState<ChatThread[]>([]);
-  const [selectedThread, setSelectedThread] = useState<ChatThread | null>(null);
+  const [threadMetadata, setThreadMetadata] = useState<ThreadMetadata[]>([]);
+  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
+  const [senderProfiles, setSenderProfiles] = useState<Map<string, UserProfile>>(new Map());
 
   useEffect(() => {
     loadData();
   }, []);
 
   useEffect(() => {
-    if (selectedThread) {
-      loadMessages(selectedThread.id);
+    if (selectedThreadId) {
+      loadMessages(selectedThreadId);
     }
-  }, [selectedThread]);
+  }, [selectedThreadId]);
 
-  const loadData = () => {
-    const user = ProfileStore.getCurrentUser();
+  const loadData = async () => {
+    const user = await ProfileStore.getCurrentUser();
     if (user) {
       setCurrentUser(user);
-      const userThreads = MessagingStore.getAllThreads(user.id);
-      setThreads(userThreads);
+      const userThreads = await MessagingStore.getAllThreads(user.id);
+      
+      const metadata: ThreadMetadata[] = await Promise.all(
+        userThreads.map(async (thread) => {
+          let name = 'Direct Message';
+          let avatarUri: string | undefined;
+
+          if (thread.type === 'group') {
+            name = thread.name || 'Group Chat';
+            avatarUri = thread.avatarUri;
+          } else {
+            const otherUserId = thread.participantIds.find(id => id !== user.id);
+            if (otherUserId) {
+              const otherUser = await ProfileStore.getProfileById(otherUserId);
+              if (otherUser) {
+                name = otherUser.displayName;
+                avatarUri = otherUser.avatarUri;
+              }
+            }
+          }
+
+          return { thread, name, avatarUri };
+        })
+      );
+
+      setThreadMetadata(metadata);
     }
   };
 
-  const loadMessages = (threadId: string) => {
-    const threadMessages = MessagingStore.getMessages(threadId);
+  const loadMessages = async (threadId: string) => {
+    const threadMessages = await MessagingStore.getMessages(threadId);
     setMessages(threadMessages);
+
+    const profiles = new Map<string, UserProfile>();
+    for (const msg of threadMessages) {
+      if (!profiles.has(msg.senderId)) {
+        const profile = await ProfileStore.getProfileById(msg.senderId);
+        if (profile) {
+          profiles.set(msg.senderId, profile);
+        }
+      }
+    }
+    setSenderProfiles(profiles);
   };
 
-  const handleSendMessage = () => {
-    if (!currentUser || !selectedThread || !newMessage.trim()) return;
+  const handleSendMessage = async () => {
+    if (!currentUser || !selectedThreadId || !newMessage.trim()) return;
 
-    MessagingStore.sendMessage(selectedThread.id, currentUser.id, newMessage.trim());
+    await MessagingStore.sendMessage(selectedThreadId, currentUser.id, newMessage.trim());
     setNewMessage('');
-    loadMessages(selectedThread.id);
-    loadData();
+    await loadMessages(selectedThreadId);
+    await loadData();
   };
 
-  const getThreadName = (thread: ChatThread): string => {
-    if (thread.type === 'group') {
-      return thread.name || 'Group Chat';
-    }
-    if (currentUser) {
-      const otherUserId = thread.participantIds.find(id => id !== currentUser.id);
-      if (otherUserId) {
-        const otherUser = ProfileStore.getProfileById(otherUserId);
-        return otherUser?.displayName || 'Direct Message';
-      }
-    }
-    return 'Direct Message';
-  };
-
-  const getThreadAvatar = (thread: ChatThread): string | undefined => {
-    if (thread.type === 'group') {
-      return thread.avatarUri;
-    }
-    if (currentUser) {
-      const otherUserId = thread.participantIds.find(id => id !== currentUser.id);
-      if (otherUserId) {
-        const otherUser = ProfileStore.getProfileById(otherUserId);
-        return otherUser?.avatarUri;
-      }
-    }
-    return undefined;
-  };
+  const selectedMeta = threadMetadata.find(m => m.thread.id === selectedThreadId);
 
   if (!currentUser) {
     return (
@@ -99,33 +115,33 @@ export default function MessagingPage() {
         </div>
         <ScrollArea className="flex-1">
           <div className="p-2">
-            {threads.length === 0 ? (
+            {threadMetadata.length === 0 ? (
               <p className="text-muted-foreground text-sm text-center p-4" data-testid="text-no-threads">
                 No conversations yet
               </p>
             ) : (
               <div className="space-y-2">
-                {threads.map((thread) => (
+                {threadMetadata.map(({ thread, name, avatarUri }) => (
                   <Card
                     key={thread.id}
                     className={`hover-elevate cursor-pointer ${
-                      selectedThread?.id === thread.id ? 'bg-accent' : ''
+                      selectedThreadId === thread.id ? 'bg-accent' : ''
                     }`}
-                    onClick={() => setSelectedThread(thread)}
+                    onClick={() => setSelectedThreadId(thread.id)}
                     data-testid={`card-thread-${thread.id}`}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3">
                         <Avatar>
-                          <AvatarImage src={getThreadAvatar(thread)} />
+                          <AvatarImage src={avatarUri} />
                           <AvatarFallback>
-                            {thread.type === 'group' ? <Users className="h-4 w-4" /> : getThreadName(thread)[0]}
+                            {thread.type === 'group' ? <Users className="h-4 w-4" /> : name[0]}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
                             <p className="font-medium truncate" data-testid={`text-thread-name-${thread.id}`}>
-                              {getThreadName(thread)}
+                              {name}
                             </p>
                             {thread.type === 'group' && (
                               <Badge variant="secondary" className="text-xs">
@@ -153,23 +169,23 @@ export default function MessagingPage() {
       </div>
 
       <div className="flex-1 flex flex-col">
-        {selectedThread ? (
+        {selectedMeta ? (
           <>
             <div className="p-4 border-b">
               <div className="flex items-center gap-3">
                 <Avatar>
-                  <AvatarImage src={getThreadAvatar(selectedThread)} />
+                  <AvatarImage src={selectedMeta.avatarUri} />
                   <AvatarFallback>
-                    {selectedThread.type === 'group' ? <Users className="h-4 w-4" /> : getThreadName(selectedThread)[0]}
+                    {selectedMeta.thread.type === 'group' ? <Users className="h-4 w-4" /> : selectedMeta.name[0]}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <h3 className="font-semibold" data-testid="text-selected-thread-name">
-                    {getThreadName(selectedThread)}
+                    {selectedMeta.name}
                   </h3>
-                  {selectedThread.type === 'group' && (
+                  {selectedMeta.thread.type === 'group' && (
                     <p className="text-sm text-muted-foreground">
-                      {selectedThread.participantIds.length} members
+                      {selectedMeta.thread.participantIds.length} members
                     </p>
                   )}
                 </div>
@@ -179,7 +195,7 @@ export default function MessagingPage() {
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-4">
                 {messages.map((message) => {
-                  const sender = ProfileStore.getProfileById(message.senderId);
+                  const sender = senderProfiles.get(message.senderId);
                   const isCurrentUser = message.senderId === currentUser.id;
 
                   return (
@@ -190,12 +206,12 @@ export default function MessagingPage() {
                     >
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={sender?.avatarUri} />
-                        <AvatarFallback>{sender?.displayName[0]}</AvatarFallback>
+                        <AvatarFallback>{sender?.displayName[0] || '?'}</AvatarFallback>
                       </Avatar>
                       <div className={`flex-1 ${isCurrentUser ? 'text-right' : ''}`}>
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-sm font-medium">
-                            {isCurrentUser ? 'You' : sender?.displayName}
+                            {isCurrentUser ? 'You' : sender?.displayName || 'Unknown'}
                           </span>
                           <span className="text-xs text-muted-foreground">
                             {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}

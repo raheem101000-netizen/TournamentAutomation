@@ -1,5 +1,5 @@
 export class LocalStorage {
-  static getItem<T>(key: string): T | null {
+  static async getItem<T>(key: string): Promise<T | null> {
     try {
       const value = localStorage.getItem(key);
       return value ? JSON.parse(value) : null;
@@ -9,7 +9,7 @@ export class LocalStorage {
     }
   }
 
-  static setItem<T>(key: string, value: T): void {
+  static async setItem<T>(key: string, value: T): Promise<void> {
     try {
       localStorage.setItem(key, JSON.stringify(value));
     } catch (error) {
@@ -17,7 +17,7 @@ export class LocalStorage {
     }
   }
 
-  static removeItem(key: string): void {
+  static async removeItem(key: string): Promise<void> {
     try {
       localStorage.removeItem(key);
     } catch (error) {
@@ -25,44 +25,44 @@ export class LocalStorage {
     }
   }
 
-  static getArray<T>(key: string): T[] {
-    const data = this.getItem<T[]>(key);
+  static async getArray<T>(key: string): Promise<T[]> {
+    const data = await this.getItem<T[]>(key);
     return data || [];
   }
 
-  static setArray<T>(key: string, value: T[]): void {
-    this.setItem(key, value);
+  static async setArray<T>(key: string, value: T[]): Promise<void> {
+    await this.setItem(key, value);
   }
 
-  static addToArray<T extends { id: string }>(key: string, item: T): T[] {
-    const array = this.getArray<T>(key);
+  static async addToArray<T extends { id: string }>(key: string, item: T): Promise<T[]> {
+    const array = await this.getArray<T>(key);
     array.push(item);
-    this.setArray(key, array);
+    await this.setArray(key, array);
     return array;
   }
 
-  static updateInArray<T extends { id: string }>(
+  static async updateInArray<T extends { id: string }>(
     key: string,
     id: string,
     updates: Partial<T>
-  ): T[] {
-    const array = this.getArray<T>(key);
+  ): Promise<T[]> {
+    const array = await this.getArray<T>(key);
     const index = array.findIndex(item => item.id === id);
     if (index !== -1) {
       array[index] = { ...array[index], ...updates };
-      this.setArray(key, array);
+      await this.setArray(key, array);
     }
     return array;
   }
 
-  static removeFromArray<T extends { id: string }>(key: string, id: string): T[] {
-    const array = this.getArray<T>(key);
+  static async removeFromArray<T extends { id: string }>(key: string, id: string): Promise<T[]> {
+    const array = await this.getArray<T>(key);
     const filtered = array.filter(item => item.id !== id);
-    this.setArray(key, filtered);
+    await this.setArray(key, filtered);
     return filtered;
   }
 
-  static clear(): void {
+  static async clear(): Promise<void> {
     try {
       localStorage.clear();
     } catch (error) {

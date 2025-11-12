@@ -16,23 +16,23 @@ export default function NotificationsPage() {
     loadNotifications();
   }, []);
 
-  const loadNotifications = () => {
-    const user = ProfileStore.getCurrentUser();
+  const loadNotifications = async () => {
+    const user = await ProfileStore.getCurrentUser();
     if (user) {
       setCurrentUserId(user.id);
-      const userNotifications = NotificationStore.getAll(user.id);
+      const userNotifications = await NotificationStore.getAll(user.id);
       setNotifications(userNotifications);
     }
   };
 
-  const handleMarkAsRead = (notificationId: string) => {
-    NotificationStore.markAsRead(notificationId);
-    loadNotifications();
+  const handleMarkAsRead = async (notificationId: string) => {
+    await NotificationStore.markAsRead(notificationId);
+    await loadNotifications();
   };
 
-  const handleMarkAllAsRead = () => {
-    NotificationStore.markAllAsRead(currentUserId);
-    loadNotifications();
+  const handleMarkAllAsRead = async () => {
+    await NotificationStore.markAllAsRead(currentUserId);
+    await loadNotifications();
   };
 
   const getNotificationIcon = (type: Notification['type']) => {

@@ -4,23 +4,23 @@ import type { ChatThread, Message, DMRequest } from '@shared/types';
 import { ProfileStore } from './profileStore';
 
 export class MessagingStore {
-  static getAllThreads(userId: string): ChatThread[] {
-    const threads = LocalStorage.getArray<ChatThread>(StorageKeys.CHAT_THREADS);
+  static async getAllThreads(userId: string): Promise<ChatThread[]> {
+    const threads = await LocalStorage.getArray<ChatThread>(StorageKeys.CHAT_THREADS);
     return threads
       .filter(t => t.participantIds.includes(userId))
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
   }
 
-  static getThread(threadId: string): ChatThread | null {
-    const threads = LocalStorage.getArray<ChatThread>(StorageKeys.CHAT_THREADS);
+  static async getThread(threadId: string): Promise<ChatThread | null> {
+    const threads = await LocalStorage.getArray<ChatThread>(StorageKeys.CHAT_THREADS);
     return threads.find(t => t.id === threadId) || null;
   }
 
-  static createGroupThread(
+  static async createGroupThread(
     creatorId: string,
     name: string,
     participantIds: string[]
-  ): ChatThread {
+  ): Promise<ChatThread> {
     const thread: ChatThread = {
       id: nanoid(),
       type: 'group',
@@ -30,15 +30,15 @@ export class MessagingStore {
       updatedAt: new Date().toISOString(),
     };
 
-    LocalStorage.addToArray(StorageKeys.CHAT_THREADS, thread);
+    await LocalStorage.addToArray(StorageKeys.CHAT_THREADS, thread);
     return thread;
   }
 
-  static createDirectThread(user1Id: string, user2Id: string): ChatThread {
-    const areFriends = ProfileStore.areFriends(user1Id, user2Id);
+  static async createDirectThread(user1Id: string, user2Id: string): Promise<ChatThread> {
+    const areFriends = await ProfileStore.areFriends(user1Id, user2Id);
 
     if (!areFriends) {
-      const existingRequest = this.getDMRequest(user1Id, user2Id);
+      const existingRequest = await this.getDMRequest(user1Id, user2Id);
       if (existingRequest) {
         throw new Error('DM request already sent');
       }
@@ -51,7 +51,7 @@ export class MessagingStore {
         updatedAt: new Date().toISOString(),
       };
 
-      LocalStorage.addToArray(StorageKeys.CHAT_THREADS, thread);
+      await LocalStorage.addToArray(StorageKeys.CHAT_THREADS, thread);
 
       const dmRequest: DMRequest = {
         id: nanoid(),
@@ -62,7 +62,7 @@ export class MessagingStore {
         createdAt: new Date().toISOString(),
       };
 
-      LocalStorage.addToArray(StorageKeys.DM_REQUESTS, dmRequest);
+      await LocalStorage.addToArray(StorageKeys.DM_REQUESTS, dmRequest);
       return thread;
     }
 
@@ -74,40 +74,40 @@ export class MessagingStore {
       updatedAt: new Date().toISOString(),
     };
 
-    LocalStorage.addToArray(StorageKeys.CHAT_THREADS, thread);
+    await LocalStorage.addToArray(StorageKeys.CHAT_THREADS, thread);
     return thread;
   }
 
-  static getDMRequests(userId: string): DMRequest[] {
-    const requests = LocalStorage.getArray<DMRequest>(StorageKeys.DM_REQUESTS);
+  static async getDMRequests(userId: string): Promise<DMRequest[]> {
+    const requests = await LocalStorage.getArray<DMRequest>(StorageKeys.DM_REQUESTS);
     return requests.filter(r => r.toUserId === userId && r.status === 'pending');
   }
 
-  static getDMRequest(fromUserId: string, toUserId: string): DMRequest | null {
-    const requests = LocalStorage.getArray<DMRequest>(StorageKeys.DM_REQUESTS);
+  static async getDMRequest(fromUserId: string, toUserId: string): Promise<DMRequest | null> {
+    const requests = await LocalStorage.getArray<DMRequest>(StorageKeys.DM_REQUESTS);
     return requests.find(
       r => r.fromUserId === fromUserId && r.toUserId === toUserId && r.status === 'pending'
     ) || null;
   }
 
-  static respondToDMRequest(requestId: string, accept: boolean): void {
+  static async respondToDMRequest(requestId: string, accept: boolean): Promise<void> {
     const status = accept ? 'accepted' : 'rejected';
-    LocalStorage.updateInArray<DMRequest>(StorageKeys.DM_REQUESTS, requestId, { status });
+    await LocalStorage.updateInArray<DMRequest>(StorageKeys.DM_REQUESTS, requestId, { status });
   }
 
-  static getMessages(threadId: string): Message[] {
-    const messages = LocalStorage.getArray<Message>(StorageKeys.MESSAGES);
+  static async getMessages(threadId: string): Promise<Message[]> {
+    const messages = await LocalStorage.getArray<Message>(StorageKeys.MESSAGES);
     return messages
       .filter(m => m.threadId === threadId)
       .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }
 
-  static sendMessage(
+  static async sendMessage(
     threadId: string,
     senderId: string,
     content: string,
     imageUri?: string
-  ): Message {
+  ): Promise<Message> {
     const message: Message = {
       id: nanoid(),
       threadId,
@@ -118,9 +118,9 @@ export class MessagingStore {
       readBy: [senderId],
     };
 
-    LocalStorage.addToArray(StorageKeys.MESSAGES, message);
+    await LocalStorage.addToArray(StorageKeys.MESSAGES, message);
     
-    LocalStorage.updateInArray<ChatThread>(StorageKeys.CHAT_THREADS, threadId, {
+    await LocalStorage.updateInArray<ChatThread>(StorageKeys.CHAT_THREADS, threadId, {
       lastMessage: message,
       updatedAt: new Date().toISOString(),
     });
@@ -128,13 +128,13 @@ export class MessagingStore {
     return message;
   }
 
-  static markMessageAsRead(messageId: string, userId: string): void {
-    const messages = LocalStorage.getArray<Message>(StorageKeys.MESSAGES);
+  static async markMessageAsRead(messageId: string, userId: string): Promise<void> {
+    const messages = await LocalStorage.getArray<Message>(StorageKeys.MESSAGES);
     const message = messages.find(m => m.id === messageId);
     
     if (message && !message.readBy.includes(userId)) {
       message.readBy.push(userId);
-      LocalStorage.setArray(StorageKeys.MESSAGES, messages);
+      await LocalStorage.setArray(StorageKeys.MESSAGES, messages);
     }
   }
 }

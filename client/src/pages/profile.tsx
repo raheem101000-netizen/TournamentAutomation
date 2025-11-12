@@ -16,12 +16,12 @@ export default function ProfilePage() {
     loadProfile();
   }, []);
 
-  const loadProfile = () => {
-    const user = ProfileStore.getCurrentUser();
+  const loadProfile = async () => {
+    const user = await ProfileStore.getCurrentUser();
     if (user) {
       setCurrentUser(user);
-      setFriends(ProfileStore.getFriends(user.id));
-      setTrophies(ProfileStore.getTrophies(user.id));
+      setFriends(await ProfileStore.getFriends(user.id));
+      setTrophies(await ProfileStore.getTrophies(user.id));
     }
   };
 

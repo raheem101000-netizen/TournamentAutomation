@@ -10,25 +10,25 @@ import {
   currentUserId,
 } from './seedData';
 
-export function initializeApp() {
-  const isInitialized = LocalStorage.getItem(StorageKeys.INITIALIZED);
+export async function initializeApp() {
+  const isInitialized = await LocalStorage.getItem(StorageKeys.INITIALIZED);
   
   if (isInitialized) {
     return;
   }
 
-  LocalStorage.setArray(StorageKeys.PROFILES, seedProfiles);
-  LocalStorage.setItem(StorageKeys.CURRENT_USER, seedProfiles[0]);
-  LocalStorage.setArray(StorageKeys.FRIENDSHIPS, seedFriendships);
-  LocalStorage.setArray(StorageKeys.TROPHIES, seedTrophies);
-  LocalStorage.setArray(StorageKeys.CHAT_THREADS, seedChatThreads);
-  LocalStorage.setArray(StorageKeys.MESSAGES, seedMessages);
-  LocalStorage.setArray(StorageKeys.TOURNAMENTS, seedTournaments);
-  LocalStorage.setArray(StorageKeys.NOTIFICATIONS, seedNotifications);
-  LocalStorage.setArray(StorageKeys.FRIEND_REQUESTS, []);
-  LocalStorage.setArray(StorageKeys.DM_REQUESTS, []);
+  await LocalStorage.setArray(StorageKeys.PROFILES, seedProfiles);
+  await LocalStorage.setItem(StorageKeys.CURRENT_USER, seedProfiles[0]);
+  await LocalStorage.setArray(StorageKeys.FRIENDSHIPS, seedFriendships);
+  await LocalStorage.setArray(StorageKeys.TROPHIES, seedTrophies);
+  await LocalStorage.setArray(StorageKeys.CHAT_THREADS, seedChatThreads);
+  await LocalStorage.setArray(StorageKeys.MESSAGES, seedMessages);
+  await LocalStorage.setArray(StorageKeys.TOURNAMENTS, seedTournaments);
+  await LocalStorage.setArray(StorageKeys.NOTIFICATIONS, seedNotifications);
+  await LocalStorage.setArray(StorageKeys.FRIEND_REQUESTS, []);
+  await LocalStorage.setArray(StorageKeys.DM_REQUESTS, []);
 
-  LocalStorage.setItem(StorageKeys.INITIALIZED, true);
+  await LocalStorage.setItem(StorageKeys.INITIALIZED, true);
   
   console.log('App initialized with seed data for user:', currentUserId);
 }
