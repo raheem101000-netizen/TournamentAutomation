@@ -1,18 +1,18 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Send, AlertCircle } from "lucide-react";
+import { Send, AlertCircle, Image as ImageIcon, X } from "lucide-react";
 import type { ChatMessage, Team } from "@shared/schema";
 
 interface MatchChatPanelProps {
-  messages: ChatMessage[];
+  messages: (ChatMessage & { imageUrl?: string })[];
   teams: Team[];
   currentTeamId?: string;
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string, image?: File) => void;
 }
 
 export default function MatchChatPanel({ 
@@ -22,16 +22,40 @@ export default function MatchChatPanel({
   onSendMessage 
 }: MatchChatPanelProps) {
   const [input, setInput] = useState("");
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const getTeamById = (id: string | null) => teams.find(t => t.id === id);
   const getTeamInitials = (name: string) => {
     return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSend = () => {
-    if (input.trim()) {
-      onSendMessage(input.trim());
+    if (input.trim() || selectedImage) {
+      onSendMessage(input.trim(), selectedImage || undefined);
       setInput("");
+      handleRemoveImage();
     }
   };
 
@@ -80,13 +104,22 @@ export default function MatchChatPanel({
                       {team?.name || "Unknown"}
                     </span>
                     <div 
-                      className={`rounded-md px-3 py-2 ${
+                      className={`rounded-md overflow-hidden ${
                         isCurrentTeam 
                           ? 'bg-primary text-primary-foreground' 
                           : 'bg-muted'
                       }`}
                     >
-                      <p className="text-sm">{msg.message}</p>
+                      {msg.imageUrl && (
+                        <img 
+                          src={msg.imageUrl} 
+                          alt="Shared image" 
+                          className="max-w-full h-auto max-h-60 object-contain"
+                        />
+                      )}
+                      {msg.message && (
+                        <p className="text-sm px-3 py-2">{msg.message}</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -95,21 +128,58 @@ export default function MatchChatPanel({
           </div>
         </ScrollArea>
 
-        <div className="flex gap-2">
-          <Input
-            placeholder="Type a message..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            data-testid="input-chat-message"
-          />
-          <Button 
-            size="icon" 
-            onClick={handleSend}
-            data-testid="button-send-message"
-          >
-            <Send className="w-4 h-4" />
-          </Button>
+        <div className="space-y-2">
+          {imagePreview && (
+            <div className="relative inline-block">
+              <img 
+                src={imagePreview} 
+                alt="Preview" 
+                className="max-h-32 rounded-md border"
+              />
+              <Button
+                size="icon"
+                variant="destructive"
+                className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                onClick={handleRemoveImage}
+                data-testid="button-remove-image"
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            </div>
+          )}
+          <div className="flex gap-2">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              ref={fileInputRef}
+              onChange={handleImageSelect}
+              data-testid="input-file-upload"
+            />
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              data-testid="button-upload-image"
+            >
+              <ImageIcon className="w-4 h-4" />
+            </Button>
+            <Input
+              placeholder="Type a message or attach an image..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
+              data-testid="input-chat-message"
+            />
+            <Button 
+              size="icon" 
+              onClick={handleSend}
+              disabled={!input.trim() && !selectedImage}
+              data-testid="button-send-message"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

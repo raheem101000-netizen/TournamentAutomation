@@ -75,7 +75,7 @@ export default function TournamentDetail() {
     },
   ];
 
-  const chatMessages: ChatMessage[] = [
+  const chatMessages: (ChatMessage & { imageUrl?: string })[] = [
     {
       id: "1",
       matchId: "final",
@@ -275,7 +275,7 @@ export default function TournamentDetail() {
               messages={chatMessages}
               teams={teams}
               currentTeamId="1"
-              onSendMessage={(message) => console.log('Send message:', message)}
+              onSendMessage={(message, image) => console.log('Send message:', message, 'Image:', image)}
             />
           </div>
         </div>

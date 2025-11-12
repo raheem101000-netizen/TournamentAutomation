@@ -32,15 +32,25 @@ export default function MatchChatPanelExample() {
       isSystem: 0,
       createdAt: new Date(),
     },
+    {
+      id: "4",
+      matchId: "m1",
+      teamId: "1",
+      message: "Here's the final score screenshot",
+      isSystem: 0,
+      imageUrl: "https://placehold.co/400x300/0ea5e9/ffffff?text=Score+Screenshot",
+      createdAt: new Date(),
+    },
   ]);
 
-  const handleSendMessage = (message: string) => {
+  const handleSendMessage = (message: string, image?: File) => {
     const newMessage = {
       id: `${messages.length + 1}`,
       matchId: "m1",
       teamId: "1",
       message,
       isSystem: 0,
+      imageUrl: image ? URL.createObjectURL(image) : undefined,
       createdAt: new Date(),
     };
     setMessages([...messages, newMessage]);
