@@ -6,11 +6,18 @@ import { z } from "zod";
 export const tournaments = pgTable("tournaments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
+  game: text("game"),
   format: text("format", { enum: ["round_robin", "single_elimination", "swiss"] }).notNull(),
   status: text("status", { enum: ["upcoming", "in_progress", "completed"] }).notNull().default("upcoming"),
   totalTeams: integer("total_teams").notNull(),
   currentRound: integer("current_round").default(1),
   swissRounds: integer("swiss_rounds"),
+  imageUrl: text("image_url"),
+  prizeReward: text("prize_reward"),
+  entryFee: integer("entry_fee"),
+  organizerId: varchar("organizer_id"),
+  organizerName: text("organizer_name"),
+  startDate: timestamp("start_date"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

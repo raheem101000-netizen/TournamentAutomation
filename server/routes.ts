@@ -438,17 +438,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registration submission routes
   app.post("/api/tournaments/:tournamentId/registrations", async (req, res) => {
     try {
-      const { responses, ...registrationData } = req.body;
+      const tournamentId = req.params.tournamentId;
+      
+      const tournament = await storage.getTournament(tournamentId);
+      if (!tournament) {
+        return res.status(404).json({ error: "Tournament not found" });
+      }
+
+      const { responses, paymentProofUrl, paymentTransactionId, ...registrationData} = req.body;
+
+      const existingTeams = await storage.getTeamsByTournament(tournamentId);
+      const existingRegistrations = await storage.getRegistrationsByTournament(tournamentId);
+      
+      const pendingRegistrations = existingRegistrations.filter(
+        r => r.status === "submitted"
+      );
+      
+      const totalCapacityUsed = existingTeams.length + pendingRegistrations.length;
+      if (totalCapacityUsed >= tournament.totalTeams) {
+        return res.status(409).json({ error: "Tournament is full" });
+      }
+
+      const teamNameLower = registrationData.teamName?.toLowerCase();
+      const teamNameExistsInTeams = existingTeams.some(
+        team => team.name.toLowerCase() === teamNameLower
+      );
+      const teamNameExistsInRegistrations = existingRegistrations.some(
+        reg => (reg.status === "submitted" || reg.status === "approved") && 
+               reg.teamName?.toLowerCase() === teamNameLower
+      );
+      
+      if (teamNameExistsInTeams || teamNameExistsInRegistrations) {
+        return res.status(409).json({ error: "Team name already exists in this tournament" });
+      }
+
+      const config = await storage.getRegistrationConfigByTournament(tournamentId);
+      
+      let paymentStatus = "pending";
+      let registrationStatus = "submitted";
+      
+      if (config && config.requiresPayment) {
+        if (paymentProofUrl || paymentTransactionId) {
+          paymentStatus = "submitted";
+        }
+      } else {
+        paymentStatus = "verified";
+        registrationStatus = "approved";
+      }
       
       const registration = await storage.createRegistration({
         ...registrationData,
-        tournamentId: req.params.tournamentId,
-        status: "submitted",
+        tournamentId,
+        status: registrationStatus,
+        paymentStatus,
+        paymentProofUrl: paymentProofUrl || null,
+        paymentTransactionId: paymentTransactionId || null,
       });
 
-      if (responses) {
+      let parsedResponses = responses;
+      if (typeof responses === 'string') {
+        try {
+          parsedResponses = JSON.parse(responses);
+        } catch (e) {
+          console.error("Failed to parse responses JSON:", e);
+        }
+      }
+
+      if (parsedResponses && typeof parsedResponses === 'object') {
         await Promise.all(
-          Object.entries(responses).map(([fieldId, value]) =>
+          Object.entries(parsedResponses).map(([fieldId, value]) =>
             storage.createRegistrationResponse({
               registrationId: registration.id,
               fieldId,
@@ -456,6 +514,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             })
           )
         );
+      }
+
+      if (registrationStatus === "approved") {
+        await storage.createTeam({
+          name: registrationData.teamName,
+          tournamentId: tournament.id,
+        });
       }
 
       res.status(201).json(registration);

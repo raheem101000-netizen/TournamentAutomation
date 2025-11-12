@@ -167,11 +167,22 @@ export default function TournamentDetail() {
                 <Badge variant="outline" className="text-xs">
                   {formatLabels[tournament.format]}
                 </Badge>
-                <span className="text-xs text-muted-foreground">{tournament.totalTeams} teams</span>
+                <span className="text-xs text-muted-foreground">{teams.length}/{tournament.totalTeams} teams</span>
               </div>
             </div>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            {tournament.status === "upcoming" && teams.length < tournament.totalTeams && (
+              <Button 
+                onClick={() => navigate(`/register/${params?.id}`)}
+                data-testid="button-register"
+              >
+                <Trophy className="w-4 h-4 mr-2" />
+                Register
+              </Button>
+            )}
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 

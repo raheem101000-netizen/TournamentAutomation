@@ -1,25 +1,28 @@
-import { useEffect, useState } from 'react';
-import { DiscoveryStore } from '../../../lib/stores/discoveryStore';
-import type { TournamentPoster } from '@shared/types';
+import { useLocation } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
+import type { Tournament } from '@shared/schema';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, Calendar, Users, DollarSign, Trophy } from 'lucide-react';
+import { Search, Calendar, Users, DollarSign, Trophy, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 export default function DiscoveryPage() {
-  const [tournaments, setTournaments] = useState<TournamentPoster[]>([]);
+  const [, navigate] = useLocation();
 
-  useEffect(() => {
-    loadTournaments();
-  }, []);
+  const { data: tournaments = [], isLoading } = useQuery<Tournament[]>({
+    queryKey: ['/api/tournaments'],
+  });
 
-  const loadTournaments = async () => {
-    const all = await DiscoveryStore.getAllTournaments();
-    setTournaments(all);
+  const handleViewDetails = (tournamentId: string) => {
+    navigate(`/tournament/${tournamentId}`);
   };
 
-  const getStatusBadge = (status: TournamentPoster['status']) => {
+  const handleJoinTournament = (tournamentId: string) => {
+    navigate(`/register/${tournamentId}`);
+  };
+
+  const getStatusBadge = (status: Tournament['status']) => {
     const variants = {
       upcoming: { variant: 'default' as const, label: 'Upcoming' },
       in_progress: { variant: 'default' as const, label: 'Live' },
@@ -33,7 +36,7 @@ export default function DiscoveryPage() {
     );
   };
 
-  const getFormatLabel = (format: TournamentPoster['format']) => {
+  const getFormatLabel = (format: Tournament['format']) => {
     const labels = {
       single_elimination: 'Single Elimination',
       round_robin: 'Round Robin',
@@ -41,6 +44,14 @@ export default function DiscoveryPage() {
     };
     return labels[format];
   };
+
+  if (isLoading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="h-full overflow-auto p-6">
@@ -69,25 +80,28 @@ export default function DiscoveryPage() {
                 className="hover-elevate overflow-hidden"
                 data-testid={`card-tournament-${tournament.id}`}
               >
-                <div className="aspect-video relative overflow-hidden">
-                  <img
-                    src={tournament.imageUrl}
-                    alt={tournament.name}
-                    className="w-full h-full object-cover"
-                    data-testid={`img-tournament-${tournament.id}`}
-                  />
-                  <div className="absolute top-4 right-4">
-                    {getStatusBadge(tournament.status)}
+                {tournament.imageUrl && (
+                  <div className="aspect-video relative overflow-hidden">
+                    <img
+                      src={tournament.imageUrl}
+                      alt={tournament.name}
+                      className="w-full h-full object-cover"
+                      data-testid={`img-tournament-${tournament.id}`}
+                    />
+                    <div className="absolute top-4 right-4">
+                      {getStatusBadge(tournament.status)}
+                    </div>
                   </div>
-                </div>
+                )}
                 <CardHeader>
                   <div className="space-y-2">
                     <CardTitle data-testid={`text-tournament-name-${tournament.id}`}>
                       {tournament.name}
                     </CardTitle>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant="outline">{tournament.game}</Badge>
+                      {tournament.game && <Badge variant="outline">{tournament.game}</Badge>}
                       <Badge variant="outline">{getFormatLabel(tournament.format)}</Badge>
+                      {!tournament.imageUrl && <div className="absolute top-4 right-4">{getStatusBadge(tournament.status)}</div>}
                     </div>
                   </div>
                 </CardHeader>
@@ -96,7 +110,7 @@ export default function DiscoveryPage() {
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-muted-foreground" />
                       <span className="text-muted-foreground">
-                        {tournament.currentTeams}/{tournament.maxTeams} teams
+                        {tournament.totalTeams} teams
                       </span>
                     </div>
                     {tournament.prizeReward && (
@@ -105,12 +119,14 @@ export default function DiscoveryPage() {
                         <span className="text-muted-foreground">{tournament.prizeReward}</span>
                       </div>
                     )}
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">
-                        {formatDistanceToNow(new Date(tournament.startDate), { addSuffix: true })}
-                      </span>
-                    </div>
+                    {tournament.startDate && (
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">
+                          {formatDistanceToNow(new Date(tournament.startDate), { addSuffix: true })}
+                        </span>
+                      </div>
+                    )}
                     {tournament.entryFee && (
                       <div className="flex items-center gap-2">
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -119,13 +135,31 @@ export default function DiscoveryPage() {
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between pt-2">
-                    <span className="text-sm text-muted-foreground">
-                      by {tournament.organizerName}
-                    </span>
-                    <Button size="sm" data-testid={`button-view-${tournament.id}`}>
-                      View Details
-                    </Button>
+                  <div className="flex items-center justify-between gap-2 pt-2">
+                    {tournament.organizerName && (
+                      <span className="text-sm text-muted-foreground">
+                        by {tournament.organizerName}
+                      </span>
+                    )}
+                    <div className="flex gap-2 flex-wrap">
+                      {tournament.status === 'upcoming' && (
+                        <Button 
+                          size="sm" 
+                          data-testid={`button-join-${tournament.id}`}
+                          onClick={() => handleJoinTournament(tournament.id)}
+                        >
+                          Join
+                        </Button>
+                      )}
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        data-testid={`button-view-${tournament.id}`}
+                        onClick={() => handleViewDetails(tournament.id)}
+                      >
+                        View Details
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
