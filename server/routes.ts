@@ -190,6 +190,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/tournaments/:id/registration/config", async (req, res) => {
+    try {
+      const config = await storage.getRegistrationConfigByTournament(req.params.id);
+      if (!config) {
+        return res.status(404).json({ error: "Registration config not found" });
+      }
+
+      const steps = await storage.getStepsByConfig(config.id);
+      
+      const stepsWithFields = await Promise.all(
+        steps.map(async (step) => {
+          const fields = await storage.getFieldsByStep(step.id);
+          return {
+            ...step,
+            fields: fields.sort((a, b) => a.displayOrder - b.displayOrder)
+          };
+        })
+      );
+
+      res.json({
+        ...config,
+        steps: stepsWithFields.sort((a, b) => a.stepNumber - b.stepNumber)
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Team routes
   app.get("/api/tournaments/:tournamentId/teams", async (req, res) => {
     try {
