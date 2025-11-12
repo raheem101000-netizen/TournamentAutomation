@@ -46,6 +46,55 @@ export const chatMessages = pgTable("chat_messages", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const registrationConfigs = pgTable("registration_configs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tournamentId: varchar("tournament_id").notNull(),
+  requiresPayment: integer("requires_payment").default(0),
+  entryFee: integer("entry_fee"),
+  paymentUrl: text("payment_url"),
+  paymentInstructions: text("payment_instructions"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const registrationSteps = pgTable("registration_steps", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  configId: varchar("config_id").notNull(),
+  stepNumber: integer("step_number").notNull(),
+  stepTitle: text("step_title").notNull(),
+  stepDescription: text("step_description"),
+});
+
+export const registrationFields = pgTable("registration_fields", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  stepId: varchar("step_id").notNull(),
+  fieldType: text("field_type", { enum: ["text", "dropdown", "yesno"] }).notNull(),
+  fieldLabel: text("field_label").notNull(),
+  fieldPlaceholder: text("field_placeholder"),
+  isRequired: integer("is_required").default(1),
+  dropdownOptions: text("dropdown_options"),
+  displayOrder: integer("display_order").notNull(),
+});
+
+export const registrations = pgTable("registrations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tournamentId: varchar("tournament_id").notNull(),
+  teamName: text("team_name").notNull(),
+  contactEmail: text("contact_email"),
+  status: text("status", { enum: ["draft", "submitted", "approved", "rejected"] }).notNull().default("draft"),
+  paymentStatus: text("payment_status", { enum: ["pending", "submitted", "verified", "rejected"] }).default("pending"),
+  paymentProofUrl: text("payment_proof_url"),
+  paymentTransactionId: text("payment_transaction_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const registrationResponses = pgTable("registration_responses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  registrationId: varchar("registration_id").notNull(),
+  fieldId: varchar("field_id").notNull(),
+  responseValue: text("response_value").notNull(),
+});
+
 export const insertTournamentSchema = createInsertSchema(tournaments).omit({
   id: true,
   createdAt: true,
@@ -69,6 +118,29 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
   createdAt: true,
 });
 
+export const insertRegistrationConfigSchema = createInsertSchema(registrationConfigs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertRegistrationStepSchema = createInsertSchema(registrationSteps).omit({
+  id: true,
+});
+
+export const insertRegistrationFieldSchema = createInsertSchema(registrationFields).omit({
+  id: true,
+});
+
+export const insertRegistrationSchema = createInsertSchema(registrations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertRegistrationResponseSchema = createInsertSchema(registrationResponses).omit({
+  id: true,
+});
+
 export type InsertTournament = z.infer<typeof insertTournamentSchema>;
 export type Tournament = typeof tournaments.$inferSelect;
 export type InsertTeam = z.infer<typeof insertTeamSchema>;
@@ -77,3 +149,13 @@ export type InsertMatch = z.infer<typeof insertMatchSchema>;
 export type Match = typeof matches.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type ChatMessage = typeof chatMessages.$inferSelect;
+export type InsertRegistrationConfig = z.infer<typeof insertRegistrationConfigSchema>;
+export type RegistrationConfig = typeof registrationConfigs.$inferSelect;
+export type InsertRegistrationStep = z.infer<typeof insertRegistrationStepSchema>;
+export type RegistrationStep = typeof registrationSteps.$inferSelect;
+export type InsertRegistrationField = z.infer<typeof insertRegistrationFieldSchema>;
+export type RegistrationField = typeof registrationFields.$inferSelect;
+export type InsertRegistration = z.infer<typeof insertRegistrationSchema>;
+export type Registration = typeof registrations.$inferSelect;
+export type InsertRegistrationResponse = z.infer<typeof insertRegistrationResponseSchema>;
+export type RegistrationResponse = typeof registrationResponses.$inferSelect;

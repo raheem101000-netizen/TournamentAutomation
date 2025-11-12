@@ -7,6 +7,11 @@ import {
   insertTeamSchema,
   insertMatchSchema,
   insertChatMessageSchema,
+  insertRegistrationConfigSchema,
+  insertRegistrationStepSchema,
+  insertRegistrationFieldSchema,
+  insertRegistrationSchema,
+  insertRegistrationResponseSchema,
 } from "@shared/schema";
 import {
   generateRoundRobinBracket,
@@ -290,6 +295,138 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(message);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Registration Config routes
+  app.post("/api/tournaments/:tournamentId/registration-config", async (req, res) => {
+    try {
+      const { steps, ...configData } = req.body;
+      
+      const config = await storage.createRegistrationConfig({
+        ...configData,
+        tournamentId: req.params.tournamentId,
+      });
+
+      if (steps && steps.length > 0) {
+        for (const step of steps) {
+          const { fields, ...stepData } = step;
+          const createdStep = await storage.createRegistrationStep({
+            ...stepData,
+            configId: config.id,
+          });
+
+          if (fields && fields.length > 0) {
+            await Promise.all(
+              fields.map((field: any) =>
+                storage.createRegistrationField({
+                  ...field,
+                  stepId: createdStep.id,
+                })
+              )
+            );
+          }
+        }
+      }
+
+      res.status(201).json(config);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/tournaments/:tournamentId/registration-config", async (req, res) => {
+    try {
+      const config = await storage.getRegistrationConfigByTournament(req.params.tournamentId);
+      if (!config) {
+        return res.status(404).json({ error: "Registration config not found" });
+      }
+
+      const steps = await storage.getStepsByConfig(config.id);
+      const stepsWithFields = await Promise.all(
+        steps.map(async (step) => {
+          const fields = await storage.getFieldsByStep(step.id);
+          return { ...step, fields };
+        })
+      );
+
+      res.json({ ...config, steps: stepsWithFields });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Registration submission routes
+  app.post("/api/tournaments/:tournamentId/registrations", async (req, res) => {
+    try {
+      const { responses, ...registrationData } = req.body;
+      
+      const registration = await storage.createRegistration({
+        ...registrationData,
+        tournamentId: req.params.tournamentId,
+        status: "submitted",
+      });
+
+      if (responses) {
+        await Promise.all(
+          Object.entries(responses).map(([fieldId, value]) =>
+            storage.createRegistrationResponse({
+              registrationId: registration.id,
+              fieldId,
+              responseValue: String(value),
+            })
+          )
+        );
+      }
+
+      res.status(201).json(registration);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/tournaments/:tournamentId/registrations", async (req, res) => {
+    try {
+      const registrations = await storage.getRegistrationsByTournament(req.params.tournamentId);
+      res.json(registrations);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/registrations/:id", async (req, res) => {
+    try {
+      const registration = await storage.getRegistration(req.params.id);
+      if (!registration) {
+        return res.status(404).json({ error: "Registration not found" });
+      }
+
+      const responses = await storage.getResponsesByRegistration(registration.id);
+      res.json({ ...registration, responses });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/registrations/:id", async (req, res) => {
+    try {
+      const registration = await storage.updateRegistration(req.params.id, req.body);
+      if (!registration) {
+        return res.status(404).json({ error: "Registration not found" });
+      }
+
+      if (req.body.paymentStatus === "verified" && registration.status === "submitted") {
+        await storage.createTeam({
+          name: registration.teamName,
+          tournamentId: registration.tournamentId,
+        });
+
+        await storage.updateRegistration(registration.id, { status: "approved" });
+      }
+
+      res.json(registration);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   });
 

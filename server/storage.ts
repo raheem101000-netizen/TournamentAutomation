@@ -5,14 +5,29 @@ import {
   teams,
   matches,
   chatMessages,
+  registrationConfigs,
+  registrationSteps,
+  registrationFields,
+  registrations,
+  registrationResponses,
   type Tournament,
   type Team,
   type Match,
   type ChatMessage,
+  type RegistrationConfig,
+  type RegistrationStep,
+  type RegistrationField,
+  type Registration,
+  type RegistrationResponse,
   type InsertTournament,
   type InsertTeam,
   type InsertMatch,
   type InsertChatMessage,
+  type InsertRegistrationConfig,
+  type InsertRegistrationStep,
+  type InsertRegistrationField,
+  type InsertRegistration,
+  type InsertRegistrationResponse,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -37,6 +52,25 @@ export interface IStorage {
   // Chat operations
   createChatMessage(data: InsertChatMessage): Promise<ChatMessage>;
   getChatMessagesByMatch(matchId: string): Promise<ChatMessage[]>;
+
+  // Registration operations
+  createRegistrationConfig(data: InsertRegistrationConfig): Promise<RegistrationConfig>;
+  getRegistrationConfigByTournament(tournamentId: string): Promise<RegistrationConfig | undefined>;
+  updateRegistrationConfig(id: string, data: Partial<RegistrationConfig>): Promise<RegistrationConfig | undefined>;
+  
+  createRegistrationStep(data: InsertRegistrationStep): Promise<RegistrationStep>;
+  getStepsByConfig(configId: string): Promise<RegistrationStep[]>;
+  
+  createRegistrationField(data: InsertRegistrationField): Promise<RegistrationField>;
+  getFieldsByStep(stepId: string): Promise<RegistrationField[]>;
+  
+  createRegistration(data: InsertRegistration): Promise<Registration>;
+  getRegistration(id: string): Promise<Registration | undefined>;
+  getRegistrationsByTournament(tournamentId: string): Promise<Registration[]>;
+  updateRegistration(id: string, data: Partial<Registration>): Promise<Registration | undefined>;
+  
+  createRegistrationResponse(data: InsertRegistrationResponse): Promise<RegistrationResponse>;
+  getResponsesByRegistration(registrationId: string): Promise<RegistrationResponse[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -120,6 +154,76 @@ export class DatabaseStorage implements IStorage {
 
   async getChatMessagesByMatch(matchId: string): Promise<ChatMessage[]> {
     return await db.select().from(chatMessages).where(eq(chatMessages.matchId, matchId));
+  }
+
+  // Registration operations
+  async createRegistrationConfig(data: InsertRegistrationConfig): Promise<RegistrationConfig> {
+    const [config] = await db.insert(registrationConfigs).values(data).returning();
+    return config;
+  }
+
+  async getRegistrationConfigByTournament(tournamentId: string): Promise<RegistrationConfig | undefined> {
+    const [config] = await db.select().from(registrationConfigs).where(eq(registrationConfigs.tournamentId, tournamentId));
+    return config || undefined;
+  }
+
+  async updateRegistrationConfig(id: string, data: Partial<RegistrationConfig>): Promise<RegistrationConfig | undefined> {
+    const [config] = await db
+      .update(registrationConfigs)
+      .set(data)
+      .where(eq(registrationConfigs.id, id))
+      .returning();
+    return config || undefined;
+  }
+
+  async createRegistrationStep(data: InsertRegistrationStep): Promise<RegistrationStep> {
+    const [step] = await db.insert(registrationSteps).values(data).returning();
+    return step;
+  }
+
+  async getStepsByConfig(configId: string): Promise<RegistrationStep[]> {
+    return await db.select().from(registrationSteps).where(eq(registrationSteps.configId, configId));
+  }
+
+  async createRegistrationField(data: InsertRegistrationField): Promise<RegistrationField> {
+    const [field] = await db.insert(registrationFields).values(data).returning();
+    return field;
+  }
+
+  async getFieldsByStep(stepId: string): Promise<RegistrationField[]> {
+    return await db.select().from(registrationFields).where(eq(registrationFields.stepId, stepId));
+  }
+
+  async createRegistration(data: InsertRegistration): Promise<Registration> {
+    const [registration] = await db.insert(registrations).values(data).returning();
+    return registration;
+  }
+
+  async getRegistration(id: string): Promise<Registration | undefined> {
+    const [registration] = await db.select().from(registrations).where(eq(registrations.id, id));
+    return registration || undefined;
+  }
+
+  async getRegistrationsByTournament(tournamentId: string): Promise<Registration[]> {
+    return await db.select().from(registrations).where(eq(registrations.tournamentId, tournamentId));
+  }
+
+  async updateRegistration(id: string, data: Partial<Registration>): Promise<Registration | undefined> {
+    const [registration] = await db
+      .update(registrations)
+      .set(data)
+      .where(eq(registrations.id, id))
+      .returning();
+    return registration || undefined;
+  }
+
+  async createRegistrationResponse(data: InsertRegistrationResponse): Promise<RegistrationResponse> {
+    const [response] = await db.insert(registrationResponses).values(data).returning();
+    return response;
+  }
+
+  async getResponsesByRegistration(registrationId: string): Promise<RegistrationResponse[]> {
+    return await db.select().from(registrationResponses).where(eq(registrationResponses.registrationId, registrationId));
   }
 }
 
