@@ -121,6 +121,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.updateTournament(tournament.id, { status: "in_progress" });
       }
 
+      const registrationConfig = req.body.registrationConfig;
+      if (registrationConfig) {
+        let createdConfigId: string | null = null;
+        const createdStepIds: string[] = [];
+        
+        try {
+          const configData = {
+            tournamentId: tournament.id,
+            requiresPayment: registrationConfig.requiresPayment,
+            entryFee: registrationConfig.entryFee,
+            paymentUrl: registrationConfig.paymentUrl,
+            paymentInstructions: registrationConfig.paymentInstructions
+          };
+          
+          const validatedConfig = insertRegistrationConfigSchema.parse(configData);
+          const createdConfig = await storage.createRegistrationConfig(validatedConfig);
+          createdConfigId = createdConfig.id;
+
+          for (const step of registrationConfig.steps) {
+            const stepData = {
+              configId: createdConfig.id,
+              stepNumber: step.stepNumber,
+              stepTitle: step.stepTitle,
+              stepDescription: step.stepDescription
+            };
+            const validatedStep = insertRegistrationStepSchema.parse(stepData);
+            const createdStep = await storage.createRegistrationStep(validatedStep);
+            createdStepIds.push(createdStep.id);
+
+            for (const field of step.fields) {
+              const fieldData = {
+                stepId: createdStep.id,
+                fieldType: field.fieldType,
+                fieldLabel: field.fieldLabel,
+                fieldPlaceholder: field.fieldPlaceholder,
+                isRequired: field.isRequired,
+                dropdownOptions: field.dropdownOptions,
+                displayOrder: field.displayOrder
+              };
+              const validatedField = insertRegistrationFieldSchema.parse(fieldData);
+              await storage.createRegistrationField(validatedField);
+            }
+          }
+        } catch (regError: any) {
+          if (createdConfigId) {
+            await storage.deleteRegistrationConfig(createdConfigId);
+          }
+          throw new Error(`Failed to create registration config: ${regError.message}`);
+        }
+      }
+
       res.status(201).json(tournament);
     } catch (error: any) {
       res.status(400).json({ error: error.message });

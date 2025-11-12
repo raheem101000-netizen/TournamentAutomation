@@ -57,6 +57,7 @@ export interface IStorage {
   createRegistrationConfig(data: InsertRegistrationConfig): Promise<RegistrationConfig>;
   getRegistrationConfigByTournament(tournamentId: string): Promise<RegistrationConfig | undefined>;
   updateRegistrationConfig(id: string, data: Partial<RegistrationConfig>): Promise<RegistrationConfig | undefined>;
+  deleteRegistrationConfig(configId: string): Promise<void>;
   
   createRegistrationStep(data: InsertRegistrationStep): Promise<RegistrationStep>;
   getStepsByConfig(configId: string): Promise<RegistrationStep[]>;
@@ -174,6 +175,52 @@ export class DatabaseStorage implements IStorage {
       .where(eq(registrationConfigs.id, id))
       .returning();
     return config || undefined;
+  }
+
+  async deleteRegistrationConfig(configId: string): Promise<void> {
+    await db.transaction(async (tx) => {
+      const steps = await tx
+        .select()
+        .from(registrationSteps)
+        .where(eq(registrationSteps.configId, configId));
+
+      if (steps.length > 0) {
+        const stepIds = steps.map(s => s.id);
+        
+        const allFields: { id: string }[] = [];
+        for (const stepId of stepIds) {
+          const fields = await tx
+            .select({ id: registrationFields.id })
+            .from(registrationFields)
+            .where(eq(registrationFields.stepId, stepId));
+          allFields.push(...fields);
+        }
+
+        if (allFields.length > 0) {
+          const fieldIds = allFields.map(f => f.id);
+          
+          for (const fieldId of fieldIds) {
+            await tx
+              .delete(registrationResponses)
+              .where(eq(registrationResponses.fieldId, fieldId));
+          }
+        }
+
+        for (const stepId of stepIds) {
+          await tx
+            .delete(registrationFields)
+            .where(eq(registrationFields.stepId, stepId));
+        }
+
+        await tx
+          .delete(registrationSteps)
+          .where(eq(registrationSteps.configId, configId));
+      }
+
+      await tx
+        .delete(registrationConfigs)
+        .where(eq(registrationConfigs.id, configId));
+    });
   }
 
   async createRegistrationStep(data: InsertRegistrationStep): Promise<RegistrationStep> {

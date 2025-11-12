@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,15 +11,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Users, Grid3x3, Repeat } from "lucide-react";
+import { Trophy, Users, Grid3x3, Repeat, FileText } from "lucide-react";
 import type { InsertTournament } from "@shared/schema";
+import RegistrationFormBuilder from "@/modules/registration/RegistrationFormBuilder";
+import { RegistrationPlatformProvider, defaultPlatformAdapter } from "@/modules/registration/platform-adapter";
+import type { RegistrationFormConfig } from "@/modules/registration/types";
 
 interface CreateTournamentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (tournament: InsertTournament & { teamNames: string[] }) => void;
+  onSubmit: (tournament: InsertTournament & { teamNames: string[]; registrationConfig?: RegistrationFormConfig }) => void;
 }
 
 export default function CreateTournamentDialog({ 
@@ -33,6 +37,12 @@ export default function CreateTournamentDialog({
   const [swissRounds, setSwissRounds] = useState(3);
   const [teamInput, setTeamInput] = useState("");
   const [teams, setTeams] = useState<string[]>([]);
+  const [enableRegistration, setEnableRegistration] = useState(false);
+  const [registrationConfig, setRegistrationConfig] = useState<RegistrationFormConfig | undefined>();
+
+  const handleRegistrationChange = useCallback((config: RegistrationFormConfig) => {
+    setRegistrationConfig(config);
+  }, []);
 
   const formats = [
     {
@@ -76,6 +86,7 @@ export default function CreateTournamentDialog({
       totalTeams: teams.length,
       swissRounds: format === "swiss" ? swissRounds : null,
       teamNames: teams,
+      registrationConfig: enableRegistration ? registrationConfig : undefined,
     });
     handleReset();
   };
@@ -87,22 +98,37 @@ export default function CreateTournamentDialog({
     setSwissRounds(3);
     setTeamInput("");
     setTeams([]);
+    setEnableRegistration(false);
+    setRegistrationConfig(undefined);
     onOpenChange(false);
   };
 
   const canProceedStep1 = name.trim().length > 0;
   const canProceedStep2 = true;
-  const canSubmit = teams.length >= 2;
+  const canProceedStep3 = teams.length >= 2;
+  const canProceedStep4 = !enableRegistration || (registrationConfig !== undefined);
+  const totalSteps = 4;
+
+  const getStepTitle = () => {
+    switch (step) {
+      case 1: return "Tournament Details";
+      case 2: return "Select Format";
+      case 3: return "Add Teams";
+      case 4: return "Registration Setup (Optional)";
+      default: return "";
+    }
+  };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="font-display text-2xl">Create Tournament</DialogTitle>
-          <DialogDescription>
-            Step {step} of 3: {step === 1 ? "Tournament Details" : step === 2 ? "Select Format" : "Add Teams"}
-          </DialogDescription>
-        </DialogHeader>
+    <RegistrationPlatformProvider value={defaultPlatformAdapter}>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl">Create Tournament</DialogTitle>
+            <DialogDescription>
+              Step {step} of {totalSteps}: {getStepTitle()}
+            </DialogDescription>
+          </DialogHeader>
 
         {step === 1 && (
           <div className="space-y-4 py-4">
@@ -233,6 +259,46 @@ export default function CreateTournamentDialog({
           </div>
         )}
 
+        {step === 4 && (
+          <div className="space-y-4 py-4">
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-md">
+                  <FileText className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <Label className="font-semibold">Enable Registration</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Allow teams to register through a custom sign-up form
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={enableRegistration}
+                onCheckedChange={setEnableRegistration}
+                data-testid="switch-enable-registration"
+              />
+            </div>
+
+            {enableRegistration && (
+              <div className="border rounded-lg p-4">
+                <RegistrationFormBuilder
+                  tournamentId="new"
+                  onChange={handleRegistrationChange}
+                  initialConfig={registrationConfig}
+                />
+              </div>
+            )}
+
+            {!enableRegistration && (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>Registration is disabled. Teams will need to be added manually.</p>
+                <p className="text-sm mt-2">You can enable registration later from the tournament settings.</p>
+              </div>
+            )}
+          </div>
+        )}
+
         <DialogFooter>
           {step > 1 && (
             <Button 
@@ -243,10 +309,14 @@ export default function CreateTournamentDialog({
               Back
             </Button>
           )}
-          {step < 3 ? (
+          {step < totalSteps ? (
             <Button
               onClick={() => setStep(step + 1)}
-              disabled={step === 1 ? !canProceedStep1 : !canProceedStep2}
+              disabled={
+                (step === 1 && !canProceedStep1) ||
+                (step === 2 && !canProceedStep2) ||
+                (step === 3 && !canProceedStep3)
+              }
               data-testid="button-next"
             >
               Next
@@ -254,7 +324,7 @@ export default function CreateTournamentDialog({
           ) : (
             <Button
               onClick={handleSubmit}
-              disabled={!canSubmit}
+              disabled={!canProceedStep4}
               data-testid="button-create-tournament"
             >
               Create Tournament
@@ -263,5 +333,6 @@ export default function CreateTournamentDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  </RegistrationPlatformProvider>
   );
 }
