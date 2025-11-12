@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,17 +11,15 @@ import { Plus, Trash2, GripVertical, DollarSign, Link as LinkIcon, Edit2 } from 
 import type { RegistrationFormConfig, RegistrationStepConfig, RegistrationFieldConfig, FieldType } from "./types";
 
 interface RegistrationFormBuilderProps {
-  tournamentId?: string;
+  tournamentId: string;
   initialConfig?: RegistrationFormConfig;
-  onSave?: (config: RegistrationFormConfig) => void;
-  onChange?: (config: RegistrationFormConfig) => void;
+  onSave: (config: RegistrationFormConfig) => void;
 }
 
 export default function RegistrationFormBuilder({
-  tournamentId = "new",
+  tournamentId,
   initialConfig,
-  onSave,
-  onChange
+  onSave
 }: RegistrationFormBuilderProps) {
   const [requiresPayment, setRequiresPayment] = useState(initialConfig?.requiresPayment === 1 || false);
   const [entryFee, setEntryFee] = useState(initialConfig?.entryFee?.toString() || "");
@@ -113,8 +111,8 @@ export default function RegistrationFormBuilder({
     }));
   };
 
-  const buildConfig = (): RegistrationFormConfig => {
-    return {
+  const handleSave = () => {
+    const config: RegistrationFormConfig = {
       id: initialConfig?.id || `config-${Date.now()}`,
       tournamentId,
       requiresPayment: requiresPayment ? 1 : 0,
@@ -123,21 +121,8 @@ export default function RegistrationFormBuilder({
       paymentInstructions: requiresPayment ? paymentInstructions : null,
       steps
     };
+    onSave(config);
   };
-
-  const handleSave = () => {
-    const config = buildConfig();
-    if (onSave) {
-      onSave(config);
-    }
-  };
-
-  useEffect(() => {
-    if (onChange) {
-      const config = buildConfig();
-      onChange(config);
-    }
-  }, [requiresPayment, entryFee, paymentUrl, paymentInstructions, steps, onChange]);
 
   return (
     <div className="space-y-6">
