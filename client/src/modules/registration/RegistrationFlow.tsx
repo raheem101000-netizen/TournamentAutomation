@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,7 @@ import {
   Save
 } from "lucide-react";
 import type { RegistrationFormConfig, RegistrationFormData } from "./types";
+import { usePlatform } from "./platform-adapter";
 
 interface RegistrationFlowProps {
   config: RegistrationFormConfig;
@@ -38,13 +39,14 @@ export default function RegistrationFlow({
   onSaveDraft
 }: RegistrationFlowProps) {
   const { toast } = useToast();
+  const platform = usePlatform();
+  const hasLoadedDraft = useRef(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [teamName, setTeamName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [paymentProofUrl, setPaymentProofUrl] = useState("");
   const [paymentTransactionId, setPaymentTransactionId] = useState("");
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [paymentWindowOpened, setPaymentWindowOpened] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -52,63 +54,101 @@ export default function RegistrationFlow({
   const storageKey = `registration-draft-${tournamentId}`;
 
   useEffect(() => {
-    const saved = localStorage.getItem(storageKey);
-    if (saved) {
+    const loadDraft = async () => {
       try {
-        const data = JSON.parse(saved);
-        setTeamName(data.teamName || "");
-        setContactEmail(data.contactEmail || "");
-        setResponses(data.responses || {});
-        setPaymentTransactionId(data.paymentTransactionId || "");
-        setCurrentStep(data.currentStep || 0);
+        const saved = await platform.storage.getItem(storageKey);
+        if (saved) {
+          const data = JSON.parse(saved);
+          setTeamName(data.teamName || "");
+          setContactEmail(data.contactEmail || "");
+          setResponses(data.responses || {});
+          setPaymentTransactionId(data.paymentTransactionId || "");
+          setCurrentStep(data.currentStep || 0);
+        }
       } catch (e) {
         console.error("Failed to load draft:", e);
+      } finally {
+        hasLoadedDraft.current = true;
       }
-    }
-  }, [storageKey]);
+    };
+    loadDraft();
+  }, [storageKey, platform.storage]);
 
   useEffect(() => {
-    const draft = {
-      teamName,
-      contactEmail,
-      responses,
-      paymentTransactionId,
-      currentStep
-    };
-    localStorage.setItem(storageKey, JSON.stringify(draft));
-
-    if (onSaveDraft) {
-      onSaveDraft({
-        tournamentId,
-        teamName,
-        contactEmail,
-        responses,
-        paymentTransactionId
-      });
+    if (!hasLoadedDraft.current) {
+      return;
     }
-  }, [teamName, contactEmail, responses, paymentTransactionId, currentStep, storageKey, tournamentId, onSaveDraft]);
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      setSelectedImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    const saveDraft = async () => {
+      try {
+        const draft = {
+          teamName,
+          contactEmail,
+          responses,
+          paymentTransactionId,
+          currentStep
+        };
+        await platform.storage.setItem(storageKey, JSON.stringify(draft));
+
+        if (onSaveDraft) {
+          onSaveDraft({
+            tournamentId,
+            teamName,
+            contactEmail,
+            responses,
+            paymentTransactionId
+          });
+        }
+      } catch (e) {
+        console.error("Failed to save draft:", e);
+      }
+    };
+    saveDraft();
+  }, [teamName, contactEmail, responses, paymentTransactionId, currentStep, storageKey, tournamentId, onSaveDraft, platform.storage]);
+
+  const handleImageSelect = async () => {
+    try {
+      const result = await platform.fileUpload.selectImage();
+      if (result) {
+        setImagePreview(result.base64 || result.uri);
+        setPaymentProofUrl(result.base64 || result.uri);
+      }
+    } catch (e) {
+      console.error("Failed to select image:", e);
+      toast({
+        title: "Upload Error",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
   const handleRemoveImage = () => {
-    setSelectedImage(null);
     setImagePreview(null);
+    setPaymentProofUrl("");
   };
 
-  const openPaymentLink = () => {
+  const openPaymentLink = async () => {
     if (config.paymentUrl) {
-      window.open(config.paymentUrl, "_blank");
-      setPaymentWindowOpened(true);
+      try {
+        const opened = await platform.navigation.openUrl(config.paymentUrl);
+        if (opened) {
+          setPaymentWindowOpened(true);
+        } else {
+          toast({
+            title: "Navigation Error",
+            description: "Failed to open payment link. Please try again.",
+            variant: "destructive"
+          });
+        }
+      } catch (e) {
+        console.error("Failed to open payment link:", e);
+        toast({
+          title: "Navigation Error",
+          description: "Failed to open payment link. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -134,7 +174,7 @@ export default function RegistrationFlow({
     }
 
     if (stepIndex === config.steps.length && config.requiresPayment === 1) {
-      if (!paymentTransactionId.trim() && !selectedImage) {
+      if (!paymentTransactionId.trim() && !paymentProofUrl) {
         newErrors.payment = "Please provide transaction ID or upload payment proof";
       }
     }
@@ -161,7 +201,7 @@ export default function RegistrationFlow({
     setErrors({});
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateStep(currentStep)) {
       toast({
         title: "Validation Error",
@@ -176,11 +216,15 @@ export default function RegistrationFlow({
       teamName,
       contactEmail,
       responses,
-      paymentProofUrl: imagePreview || undefined,
+      paymentProofUrl: paymentProofUrl || undefined,
       paymentTransactionId: paymentTransactionId || undefined
     });
 
-    localStorage.removeItem(storageKey);
+    try {
+      await platform.storage.removeItem(storageKey);
+    } catch (e) {
+      console.error("Failed to remove draft:", e);
+    }
   };
 
   const totalSteps = config.steps.length + (config.requiresPayment === 1 ? 1 : 0);
@@ -383,17 +427,15 @@ export default function RegistrationFlow({
               </Button>
             </div>
           ) : (
-            <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed rounded-md cursor-pointer hover-elevate">
+            <Button
+              variant="outline"
+              className="w-full h-32 flex flex-col items-center justify-center hover-elevate"
+              onClick={handleImageSelect}
+              data-testid="button-select-payment-proof"
+            >
               <Upload className="w-8 h-8 text-muted-foreground mb-2" />
               <span className="text-sm text-muted-foreground">Click to upload</span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageSelect}
-                className="hidden"
-                data-testid="input-payment-proof"
-              />
-            </label>
+            </Button>
           )}
         </div>
 
