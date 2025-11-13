@@ -11,11 +11,18 @@ import {
 } from './seedData';
 import { ProfileStore } from '../modules/profiles/store/profileStore';
 
+let initialized = false;
+
 export async function initializeModules() {
+  if (initialized) {
+    return;
+  }
+
   try {
     const currentUser = await ProfileStore.getCurrentUser();
     if (currentUser) {
       console.log('Modules already initialized');
+      initialized = true;
       return;
     }
 
@@ -33,9 +40,12 @@ export async function initializeModules() {
       seedProfiles.find(p => p.id === currentUserId)!
     );
 
+    initialized = true;
     console.log('Modules initialized successfully!');
   } catch (error) {
     console.error('Error initializing modules:', error);
+    initialized = true; // Don't retry on error
+    throw error;
   }
 }
 

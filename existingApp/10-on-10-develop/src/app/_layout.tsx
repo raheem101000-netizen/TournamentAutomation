@@ -19,6 +19,7 @@ import { AuthProvider } from "@/providers/AuthProvider"
 import { CmsApolloProvider } from "@/providers/CmsApolloProvider"
 import { ToastProvider } from "@/providers/ToastProvider"
 import { useExitBackHandler } from "@/utils/helpers/hook"
+import { initializeModules } from "@/lib/initializeModules"
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync()
@@ -69,13 +70,27 @@ const Init = () => {
 
 const RootLayout = () => {
   const [loaded] = useFonts(Fonts)
+  const [modulesInitialized, setModulesInitialized] = useState(false)
 
   useEffect(() => {
-    if (loaded) {
+    async function init() {
+      try {
+        await initializeModules()
+      } catch (error) {
+        console.error('Failed to initialize modules:', error)
+      } finally {
+        setModulesInitialized(true)
+      }
+    }
+    init()
+  }, [])
+
+  useEffect(() => {
+    if (loaded && modulesInitialized) {
       SplashScreen.hideAsync()
     }
-  }, [loaded])
-  return loaded ? (
+  }, [loaded, modulesInitialized])
+  return loaded && modulesInitialized ? (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <StatusBar style="light" />

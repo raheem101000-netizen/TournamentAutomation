@@ -27,6 +27,12 @@ export const TabBarIcon = ({ focused, routeName }: ITabBarIcon) => {
   switch (routeName) {
     case NAVIGATION_TABS_TITLE.Home:
       return <IconPicker icon="Home" iconColor={color} {...iconSize} />
+    case NAVIGATION_TABS_TITLE.Discovery:
+      return <IconPicker icon="Search" iconColor={color} {...iconSize} />
+    case NAVIGATION_TABS_TITLE.Messages:
+      return <IconPicker icon="MessageCircle" iconColor={color} {...iconSize} />
+    case NAVIGATION_TABS_TITLE.Notifications:
+      return <IconPicker icon="Bell" iconColor={color} {...iconSize} />
     case NAVIGATION_TABS_TITLE.MyServers:
       return <IconPicker icon="Calendar" iconColor={color} {...iconSize} />
     case NAVIGATION_TABS_TITLE.Account:

@@ -43,6 +43,27 @@ const TabsLayout = () => {
         }}
       />
       <Tabs.Screen
+        name={NAVIGATION_TABS_TITLE.Discovery}
+        options={{
+          headerTitle: "Discover",
+          title: "Discover"
+        }}
+      />
+      <Tabs.Screen
+        name={NAVIGATION_TABS_TITLE.Messages}
+        options={{
+          headerTitle: "Messages",
+          title: "Messages"
+        }}
+      />
+      <Tabs.Screen
+        name={NAVIGATION_TABS_TITLE.Notifications}
+        options={{
+          headerTitle: "Notifications",
+          title: "Alerts"
+        }}
+      />
+      <Tabs.Screen
         name={NAVIGATION_TABS_TITLE.MyServers}
         options={{
           headerTitle: t("Common.TabsHeader.MyServers"),
