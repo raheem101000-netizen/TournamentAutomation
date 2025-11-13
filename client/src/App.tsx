@@ -8,18 +8,16 @@ import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupCon
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import TournamentDetail from "@/pages/TournamentDetail";
-import RegistrationDemo from "@/pages/RegistrationDemo";
 import TournamentRegistration from "@/pages/TournamentRegistration";
 import ProfilePage from "@/pages/profile";
 import MessagingPage from "@/pages/messaging";
 import DiscoveryPage from "@/pages/discovery";
 import NotificationsPage from "@/pages/notifications";
-import { Trophy, User, MessageCircle, Search, Bell, Home } from "lucide-react";
+import { User, MessageCircle, Search, Bell, Home } from "lucide-react";
 import { initializeApp } from "../../lib/initializeApp";
 
 const tournamentItems = [
   { title: "Dashboard", url: "/", icon: Home },
-  { title: "Registration Demo", url: "/registration-demo", icon: Trophy },
 ];
 
 const socialItems = [
@@ -81,7 +79,6 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/tournament/:id" component={TournamentDetail} />
       <Route path="/register/:id" component={TournamentRegistration} />
-      <Route path="/registration-demo" component={RegistrationDemo} />
       <Route path="/profile" component={ProfilePage} />
       <Route path="/messages" component={MessagingPage} />
       <Route path="/discover" component={DiscoveryPage} />
