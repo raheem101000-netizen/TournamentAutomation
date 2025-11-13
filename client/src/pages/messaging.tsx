@@ -359,15 +359,9 @@ export default function MessagingPage() {
                               {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
                             </span>
                           </div>
-                          <div className={`rounded-md px-3 py-2 inline-block ${
-                            isCurrentUser 
-                              ? 'bg-primary text-primary-foreground' 
-                              : 'bg-muted'
-                          }`}>
-                            <p className="text-sm" data-testid={`text-message-content-${message.id}`}>
-                              {message.content}
-                            </p>
-                          </div>
+                          <p className="text-sm" data-testid={`text-message-content-${message.id}`}>
+                            {message.content}
+                          </p>
                         </div>
                       </div>
                     );
