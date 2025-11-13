@@ -27,9 +27,8 @@ export function TournamentDashboardScreen() {
   const loadTournament = async () => {
     try {
       setLoading(true);
-      const tournaments = await TournamentStore.getAllTournaments();
-      const channelTournament = tournaments.find(t => t.id === channel);
-      setTournament(channelTournament || null);
+      const channelTournament = await TournamentStore.getTournamentByChannelId(channel);
+      setTournament(channelTournament);
     } catch (error) {
       console.error('Error loading tournament:', error);
     } finally {

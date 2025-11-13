@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export class LocalStorage {
-  private static async getItem<T>(key: string): Promise<T | null> {
+  static async getItem<T>(key: string): Promise<T | null> {
     try {
       const value = await AsyncStorage.getItem(key);
       return value ? JSON.parse(value) : null;
@@ -11,7 +11,7 @@ export class LocalStorage {
     }
   }
 
-  private static async setItem<T>(key: string, value: T): Promise<void> {
+  static async setItem<T>(key: string, value: T): Promise<void> {
     try {
       await AsyncStorage.setItem(key, JSON.stringify(value));
     } catch (error) {
@@ -19,7 +19,7 @@ export class LocalStorage {
     }
   }
 
-  private static async removeItem(key: string): Promise<void> {
+  static async removeItem(key: string): Promise<void> {
     try {
       await AsyncStorage.removeItem(key);
     } catch (error) {

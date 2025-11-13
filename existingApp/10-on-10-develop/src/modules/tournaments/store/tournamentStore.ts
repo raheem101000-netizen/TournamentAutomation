@@ -23,11 +23,10 @@ export class TournamentStore {
   }
 
   static async createTournament(
-    data: Omit<Tournament, 'id' | 'teams' | 'currentTeams' | 'createdAt' | 'updatedAt'>
+    data: Omit<Tournament, 'teams' | 'currentTeams' | 'createdAt' | 'updatedAt'> & { id: string }
   ): Promise<Tournament> {
     const newTournament: Tournament = {
       ...data,
-      id: nanoid(),
       teams: [],
       currentTeams: 0,
       createdAt: new Date().toISOString(),
@@ -35,6 +34,17 @@ export class TournamentStore {
     };
     await LocalStorage.addToArray(StorageKeys.TOURNAMENTS, newTournament);
     return newTournament;
+  }
+
+  static async createTournamentForChannel(
+    channelId: string,
+    data: Omit<Tournament, 'id' | 'teams' | 'currentTeams' | 'createdAt' | 'updatedAt'>
+  ): Promise<Tournament> {
+    return this.createTournament({ ...data, id: channelId });
+  }
+
+  static async getTournamentByChannelId(channelId: string): Promise<Tournament | null> {
+    return this.getTournamentById(channelId);
   }
 
   static async updateTournament(
