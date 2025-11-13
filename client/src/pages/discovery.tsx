@@ -139,12 +139,11 @@ export default function DiscoveryPage() {
   };
 
   const getStatusBadge = (status: Tournament['status']) => {
-    const variants = {
+    const variants: Record<string, { variant: 'default' | 'secondary', label: string }> = {
       upcoming: { variant: 'default' as const, label: 'Upcoming' },
-      in_progress: { variant: 'default' as const, label: 'Live' },
       completed: { variant: 'secondary' as const, label: 'Completed' },
     };
-    const config = variants[status];
+    const config = variants[status] || variants.upcoming;
     return (
       <Badge variant={config.variant} className="text-xs">
         {config.label}

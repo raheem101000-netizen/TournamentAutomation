@@ -8,7 +8,7 @@ export const tournaments = pgTable("tournaments", {
   name: text("name").notNull(),
   game: text("game"),
   format: text("format", { enum: ["round_robin", "single_elimination", "swiss"] }).notNull(),
-  status: text("status", { enum: ["upcoming", "in_progress", "completed"] }).notNull().default("upcoming"),
+  status: text("status", { enum: ["upcoming", "completed"] }).notNull().default("upcoming"),
   totalTeams: integer("total_teams").notNull(),
   currentRound: integer("current_round").default(1),
   swissRounds: integer("swiss_rounds"),

@@ -41,7 +41,7 @@ export default function Dashboard() {
     setTotalUniqueTeams(uniqueTeamIds.length);
   };
 
-  const activeTournaments = tournaments.filter(t => t.status === "in_progress").length;
+  const upcomingTournaments = tournaments.filter(t => t.status === "upcoming").length;
   const completedTournaments = tournaments.filter(t => t.status === "completed").length;
 
   const handleCreateTournament = (data: any) => {
@@ -85,13 +85,13 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Tournaments</CardTitle>
+              <CardTitle className="text-sm font-medium">Upcoming Tournaments</CardTitle>
               <Trophy className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{activeTournaments}</div>
+              <div className="text-2xl font-bold">{upcomingTournaments}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Currently in progress
+                Scheduled to start
               </p>
             </CardContent>
           </Card>
@@ -123,25 +123,6 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {tournaments.filter(t => t.status === "in_progress").length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <h3 className="font-display text-xl font-semibold">Active Tournaments</h3>
-              <Badge>{tournaments.filter(t => t.status === "in_progress").length}</Badge>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {tournaments
-                .filter(t => t.status === "in_progress")
-                .map(tournament => (
-                  <TournamentCard
-                    key={tournament.id}
-                    tournament={tournament}
-                    onView={handleViewTournament}
-                  />
-                ))}
-            </div>
-          </div>
-        )}
 
         {tournaments.filter(t => t.status === "upcoming").length > 0 && (
           <div className="space-y-4">

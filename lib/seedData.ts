@@ -200,7 +200,7 @@ export const seedTournaments: TournamentPoster[] = [
     maxTeams: 20,
     currentTeams: 20,
     startDate: new Date(Date.now() - 86400000 * 2).toISOString(),
-    status: 'in_progress',
+    status: 'upcoming',
   },
   {
     id: 'tournament-upcoming-3',
