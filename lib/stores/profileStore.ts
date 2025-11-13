@@ -109,6 +109,15 @@ export class ProfileStore {
     );
   }
 
+  static async getMutualFriends(viewerId: string, profileUserId: string): Promise<UserProfile[]> {
+    const viewerFriends = await this.getFriends(viewerId);
+    const profileUserFriends = await this.getFriends(profileUserId);
+    
+    const viewerFriendIds = new Set(viewerFriends.map(f => f.id));
+    
+    return profileUserFriends.filter(friend => viewerFriendIds.has(friend.id));
+  }
+
   static async getTrophies(userId: string): Promise<Trophy[]> {
     const all = await LocalStorage.getArray<Trophy>(StorageKeys.TROPHIES);
     return all.filter(t => t.userId === userId);

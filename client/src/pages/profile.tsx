@@ -9,7 +9,8 @@ import { Users, Trophy as TrophyIcon } from 'lucide-react';
 
 export default function ProfilePage() {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
-  const [friends, setFriends] = useState<UserProfile[]>([]);
+  const [friendCount, setFriendCount] = useState<number>(0);
+  const [mutualFriends, setMutualFriends] = useState<UserProfile[]>([]);
   const [trophies, setTrophies] = useState<Trophy[]>([]);
 
   useEffect(() => {
@@ -20,7 +21,10 @@ export default function ProfilePage() {
     const user = await ProfileStore.getCurrentUser();
     if (user) {
       setCurrentUser(user);
-      setFriends(await ProfileStore.getFriends(user.id));
+      const allFriends = await ProfileStore.getFriends(user.id);
+      setFriendCount(allFriends.length);
+      const mutuals = await ProfileStore.getMutualFriends(user.id, user.id);
+      setMutualFriends(mutuals);
       setTrophies(await ProfileStore.getTrophies(user.id));
     }
   };
@@ -64,21 +68,24 @@ export default function ProfilePage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Friends ({friends.length})
+              Friends ({friendCount})
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {friends.length === 0 ? (
-              <p className="text-muted-foreground text-sm" data-testid="text-no-friends">
-                No friends yet
+            {mutualFriends.length === 0 ? (
+              <p className="text-muted-foreground text-sm" data-testid="text-no-mutual-friends">
+                No mutual friends to display
               </p>
             ) : (
               <div className="space-y-4">
-                {friends.map((friend) => (
+                <p className="text-sm text-muted-foreground">
+                  Showing mutual friends only
+                </p>
+                {mutualFriends.map((friend) => (
                   <div
                     key={friend.id}
                     className="flex items-center gap-4"
-                    data-testid={`card-friend-${friend.id}`}
+                    data-testid={`card-mutual-friend-${friend.id}`}
                   >
                     <Avatar>
                       <AvatarImage src={friend.avatarUri} alt={friend.displayName} />
@@ -90,6 +97,9 @@ export default function ProfilePage() {
                       </p>
                       <p className="text-sm text-muted-foreground">@{friend.username}</p>
                     </div>
+                    <Badge variant="secondary" className="text-xs">
+                      Mutual Friend
+                    </Badge>
                   </div>
                 ))}
               </div>
