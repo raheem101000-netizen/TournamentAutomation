@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import type { Tournament } from '@shared/schema';
@@ -8,9 +8,19 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Calendar, Users, DollarSign, Trophy, Loader2, X, Share2, LogIn, ClipboardList, Filter } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { RegistrationStore } from '../../../lib/stores/registrationStore';
+import { MessagingStore } from '../../../lib/stores/messagingStore';
+import { ProfileStore } from '../../../lib/stores/profileStore';
+import type { ChatThread, UserProfile } from '@shared/types';
+
+interface ThreadOption {
+  thread: ChatThread;
+  displayName: string;
+}
 
 export default function DiscoveryPage() {
   const [, navigate] = useLocation();
@@ -21,13 +31,54 @@ export default function DiscoveryPage() {
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [gameFilter, setGameFilter] = useState<string>('all');
   const [prizeFilter, setPrizeFilter] = useState<string>('all');
+  const [registeredTournamentIds, setRegisteredTournamentIds] = useState<string[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [availableThreads, setAvailableThreads] = useState<ThreadOption[]>([]);
 
   const { data: tournaments = [], isLoading } = useQuery<Tournament[]>({
     queryKey: ['/api/tournaments'],
   });
 
-  // Mock registered tournaments for demo
-  const registeredTournamentIds = ['892f865e-ab70-4aeb-8f08-966e1194da4c'];
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    const user = await ProfileStore.getCurrentUser();
+    if (user) {
+      setCurrentUserId(user.id);
+      
+      // Load registered tournaments
+      const registrations = await RegistrationStore.getUserRegistrations(user.id);
+      setRegisteredTournamentIds(registrations.map(r => r.tournamentId));
+
+      // Seed mock registration if needed
+      await RegistrationStore.seedMockData(user.id);
+      const updatedRegs = await RegistrationStore.getUserRegistrations(user.id);
+      setRegisteredTournamentIds(updatedRegs.map(r => r.tournamentId));
+
+      // Load threads for sharing
+      const threads = await MessagingStore.getAllThreads(user.id);
+      const threadOptions: ThreadOption[] = await Promise.all(
+        threads.map(async (thread) => {
+          let displayName = 'Unknown';
+          if (thread.type === 'group') {
+            displayName = thread.name || 'Group Chat';
+          } else {
+            const otherUserId = thread.participantIds.find(id => id !== user.id);
+            if (otherUserId) {
+              const otherUser = await ProfileStore.getProfileById(otherUserId);
+              if (otherUser) {
+                displayName = otherUser.displayName;
+              }
+            }
+          }
+          return { thread, displayName };
+        })
+      );
+      setAvailableThreads(threadOptions);
+    }
+  };
 
   const handleJoinClick = (tournament: Tournament) => {
     setSelectedTournament(tournament);
@@ -45,7 +96,6 @@ export default function DiscoveryPage() {
   };
 
   const handleJoinServerNow = () => {
-    // For now, just navigate to tournament detail
     if (selectedTournament) {
       navigate(`/tournament/${selectedTournament.id}`);
       setShowJoinDialog(false);
@@ -63,12 +113,29 @@ export default function DiscoveryPage() {
     }
   };
 
-  const handleShareToChat = (chatType: 'group' | 'dm') => {
-    toast({
-      title: "Shared!",
-      description: `Event shared to ${chatType === 'group' ? 'group chat' : 'DM'}`,
-    });
-    setShowShareDialog(false);
+  const handleShareToThread = async (threadId: string) => {
+    if (!selectedTournament || !currentUserId) return;
+
+    try {
+      await MessagingStore.forwardTournamentToThread(
+        threadId,
+        currentUserId,
+        selectedTournament.id,
+        selectedTournament.name
+      );
+      
+      toast({
+        title: "Shared!",
+        description: `${selectedTournament.name} has been shared to the chat`,
+      });
+      setShowShareDialog(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to share tournament",
+        variant: "destructive",
+      });
+    }
   };
 
   const getStatusBadge = (status: Tournament['status']) => {
@@ -425,28 +492,30 @@ export default function DiscoveryPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <p className="text-sm text-muted-foreground">
-              Share "{selectedTournament?.name}" with:
+              Share "{selectedTournament?.name}" to:
             </p>
-            <div className="space-y-2">
-              <Button
-                className="w-full justify-start"
-                variant="outline"
-                onClick={() => handleShareToChat('group')}
-                data-testid="button-share-group"
-              >
-                <Users className="h-4 w-4 mr-2" />
-                Group Chat
-              </Button>
-              <Button
-                className="w-full justify-start"
-                variant="outline"
-                onClick={() => handleShareToChat('dm')}
-                data-testid="button-share-dm"
-              >
-                <Share2 className="h-4 w-4 mr-2" />
-                Direct Message
-              </Button>
-            </div>
+            {availableThreads.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No conversations available. Start a chat first!
+              </p>
+            ) : (
+              <ScrollArea className="h-60">
+                <div className="space-y-2">
+                  {availableThreads.map(({ thread, displayName }) => (
+                    <Button
+                      key={thread.id}
+                      className="w-full justify-start"
+                      variant="outline"
+                      onClick={() => handleShareToThread(thread.id)}
+                      data-testid={`button-share-thread-${thread.id}`}
+                    >
+                      {thread.type === 'group' ? <Users className="h-4 w-4 mr-2" /> : <Share2 className="h-4 w-4 mr-2" />}
+                      {displayName}
+                    </Button>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
           </div>
         </DialogContent>
       </Dialog>

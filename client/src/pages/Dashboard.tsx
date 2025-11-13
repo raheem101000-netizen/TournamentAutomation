@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -10,10 +10,12 @@ import CreateTournamentDialog from "@/components/CreateTournamentDialog";
 import ThemeToggle from "@/components/ThemeToggle";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Tournament } from "@shared/schema";
+import { RegistrationStore } from "../../../lib/stores/registrationStore";
 
 export default function Dashboard() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [, navigate] = useLocation();
+  const [totalUniqueTeams, setTotalUniqueTeams] = useState(0);
 
   const { data: tournaments = [], isLoading } = useQuery<Tournament[]>({
     queryKey: ["/api/tournaments"],
@@ -30,20 +32,16 @@ export default function Dashboard() {
     },
   });
 
+  useEffect(() => {
+    loadUniqueTeamCount();
+  }, [tournaments]);
+
+  const loadUniqueTeamCount = async () => {
+    const uniqueTeamIds = await RegistrationStore.getUniqueTeamIds();
+    setTotalUniqueTeams(uniqueTeamIds.length);
+  };
+
   const activeTournaments = tournaments.filter(t => t.status === "in_progress").length;
-  
-  // Count unique teams across all tournaments
-  // In a real implementation, this would query registrations and extract unique team IDs
-  // For now, using a placeholder calculation that simulates unique team counting
-  const uniqueTeamIds = new Set<string>();
-  tournaments.forEach(t => {
-    // Simulate team IDs - in production this would come from actual registration data
-    for (let i = 0; i < t.totalTeams; i++) {
-      uniqueTeamIds.add(`${t.id}-team-${i}`);
-    }
-  });
-  const totalUniqueTeams = uniqueTeamIds.size;
-  
   const completedTournaments = tournaments.filter(t => t.status === "completed").length;
 
   const handleCreateTournament = (data: any) => {

@@ -137,4 +137,14 @@ export class MessagingStore {
       await LocalStorage.setArray(StorageKeys.MESSAGES, messages);
     }
   }
+
+  static async forwardTournamentToThread(
+    threadId: string,
+    userId: string,
+    tournamentId: string,
+    tournamentName: string
+  ): Promise<Message> {
+    const content = `Check out this tournament: ${tournamentName}`;
+    return await this.sendMessage(threadId, userId, content);
+  }
 }

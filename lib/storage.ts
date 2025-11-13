@@ -82,5 +82,6 @@ export const StorageKeys = {
   DM_REQUESTS: 'dm_requests',
   TOURNAMENTS: 'tournaments',
   NOTIFICATIONS: 'notifications',
+  REGISTRATIONS: 'registrations',
   INITIALIZED: 'app_initialized',
 } as const;
