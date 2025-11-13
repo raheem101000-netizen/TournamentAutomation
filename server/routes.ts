@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
+import { createProxyMiddleware } from "http-proxy-middleware";
 import { storage } from "./storage";
 import {
   insertTournamentSchema,
@@ -20,6 +21,15 @@ import {
 } from "./bracket-generator";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  app.use('/expo-app', createProxyMiddleware({
+    target: 'http://127.0.0.1:8081',
+    changeOrigin: true,
+    ws: true,
+    pathRewrite: {
+      '^/expo-app': ''
+    },
+    logLevel: 'debug'
+  }));
   const httpServer = createServer(app);
   const wss = new WebSocketServer({ 
     noServer: true
