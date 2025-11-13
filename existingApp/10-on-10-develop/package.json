@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "npx expo start",
+    "web": "npx expo start --web --port 8081",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
@@ -53,7 +54,8 @@
     "react-native-svg": "15.2.0",
     "zod": "3.23.8",
     "expo-image-picker": "15.0.7",
-    "expo-image-manipulator": "~12.0.5"
+    "expo-image-manipulator": "~12.0.5",
+    "react-native-web": "~0.19.10"
   },
   "devDependencies": {
     "@babel/core": "7.25.7",
