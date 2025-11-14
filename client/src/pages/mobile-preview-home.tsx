@@ -56,16 +56,33 @@ export default function MobilePreviewHome() {
                 </div>
               )}
               
-              {/* Prize Badge Overlay */}
-              {tournament.prizeReward && (
-                <div 
-                  className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-1.5 rounded text-sm font-bold flex items-center gap-1.5 shadow-lg"
-                  data-testid={`tournament-prize-${tournament.id}`}
-                >
-                  <Trophy className="h-4 w-4" />
-                  {tournament.prizeReward}
-                </div>
-              )}
+              {/* Dark gradient overlay for better text readability */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+              
+              {/* Prize & Entry Fee Text Overlays */}
+              <div className="absolute bottom-0 left-0 right-0 p-4 flex flex-col items-center">
+                {/* Prize Reward - LARGE FONT */}
+                {tournament.prizeReward && (
+                  <div 
+                    className="text-white font-black text-5xl md:text-4xl mb-1 drop-shadow-2xl tracking-tight"
+                    style={{ textShadow: '0 4px 12px rgba(0,0,0,0.9), 0 2px 4px rgba(0,0,0,0.8)' }}
+                    data-testid={`tournament-prize-${tournament.id}`}
+                  >
+                    {tournament.prizeReward}
+                  </div>
+                )}
+                
+                {/* Entry Fee - SMALL FONT */}
+                {tournament.entryFee && (
+                  <div 
+                    className="text-white/90 font-semibold text-sm md:text-xs drop-shadow-lg"
+                    style={{ textShadow: '0 2px 6px rgba(0,0,0,0.8)' }}
+                    data-testid={`tournament-entry-fee-${tournament.id}`}
+                  >
+                    Entry Fee: ${tournament.entryFee}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Card Content */}
