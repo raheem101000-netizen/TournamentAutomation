@@ -105,7 +105,7 @@ function App() {
                 <h1 className="text-lg font-semibold">10 on 10</h1>
                 <div className="w-9" />
               </header>
-              <main className="flex-1 overflow-hidden">
+              <main className="flex-1 overflow-y-auto">
                 <Router />
               </main>
             </div>
