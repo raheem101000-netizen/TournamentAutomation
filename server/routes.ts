@@ -584,5 +584,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Mobile preview API routes
+  app.get("/api/mobile-preview/servers", async (_req, res) => {
+    try {
+      const servers = await storage.getAllServers();
+      res.json(servers);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/mobile-preview/messages", async (_req, res) => {
+    try {
+      const messages = await storage.getAllMessageThreads();
+      res.json(messages);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/mobile-preview/notifications", async (_req, res) => {
+    try {
+      const notifications = await storage.getAllNotifications();
+      res.json(notifications);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }

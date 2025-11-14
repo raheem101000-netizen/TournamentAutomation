@@ -166,3 +166,55 @@ export type InsertRegistration = z.infer<typeof insertRegistrationSchema>;
 export type Registration = typeof registrations.$inferSelect;
 export type InsertRegistrationResponse = z.infer<typeof insertRegistrationResponseSchema>;
 export type RegistrationResponse = typeof registrationResponses.$inferSelect;
+
+export const servers = pgTable("servers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  memberCount: integer("member_count").default(0),
+  iconUrl: text("icon_url"),
+  category: text("category"),
+  isPublic: integer("is_public").default(1),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const messageThreads = pgTable("message_threads", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  participantName: text("participant_name").notNull(),
+  participantAvatar: text("participant_avatar"),
+  lastMessage: text("last_message").notNull(),
+  lastMessageTime: timestamp("last_message_time").defaultNow().notNull(),
+  unreadCount: integer("unread_count").default(0),
+});
+
+export const notifications = pgTable("notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  type: text("type", { enum: ["match_result", "friend_request", "tournament_alert", "system"] }).notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  isRead: integer("is_read").default(0),
+  actionUrl: text("action_url"),
+});
+
+export const insertServerSchema = createInsertSchema(servers).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertMessageThreadSchema = createInsertSchema(messageThreads).omit({
+  id: true,
+  lastMessageTime: true,
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  timestamp: true,
+});
+
+export type InsertServer = z.infer<typeof insertServerSchema>;
+export type Server = typeof servers.$inferSelect;
+export type InsertMessageThread = z.infer<typeof insertMessageThreadSchema>;
+export type MessageThread = typeof messageThreads.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type Notification = typeof notifications.$inferSelect;

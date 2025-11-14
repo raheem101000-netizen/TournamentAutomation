@@ -10,6 +10,9 @@ import {
   registrationFields,
   registrations,
   registrationResponses,
+  servers,
+  messageThreads,
+  notifications,
   type Tournament,
   type Team,
   type Match,
@@ -19,6 +22,9 @@ import {
   type RegistrationField,
   type Registration,
   type RegistrationResponse,
+  type Server,
+  type MessageThread,
+  type Notification,
   type InsertTournament,
   type InsertTeam,
   type InsertMatch,
@@ -72,6 +78,11 @@ export interface IStorage {
   
   createRegistrationResponse(data: InsertRegistrationResponse): Promise<RegistrationResponse>;
   getResponsesByRegistration(registrationId: string): Promise<RegistrationResponse[]>;
+
+  // Mobile preview operations
+  getAllServers(): Promise<Server[]>;
+  getAllMessageThreads(): Promise<MessageThread[]>;
+  getAllNotifications(): Promise<Notification[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -271,6 +282,19 @@ export class DatabaseStorage implements IStorage {
 
   async getResponsesByRegistration(registrationId: string): Promise<RegistrationResponse[]> {
     return await db.select().from(registrationResponses).where(eq(registrationResponses.registrationId, registrationId));
+  }
+
+  // Mobile preview operations
+  async getAllServers(): Promise<Server[]> {
+    return await db.select().from(servers).orderBy(servers.createdAt);
+  }
+
+  async getAllMessageThreads(): Promise<MessageThread[]> {
+    return await db.select().from(messageThreads).orderBy(messageThreads.lastMessageTime);
+  }
+
+  async getAllNotifications(): Promise<Notification[]> {
+    return await db.select().from(notifications).orderBy(notifications.timestamp);
   }
 }
 

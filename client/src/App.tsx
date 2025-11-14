@@ -13,7 +13,13 @@ import ProfilePage from "@/pages/profile";
 import MessagingPage from "@/pages/messaging";
 import DiscoveryPage from "@/pages/discovery";
 import NotificationsPage from "@/pages/notifications";
-import { User, MessageCircle, Search, Bell, Home } from "lucide-react";
+import MobilePreviewHome from "@/pages/mobile-preview-home";
+import MobilePreviewServers from "@/pages/mobile-preview-servers";
+import MobilePreviewMessages from "@/pages/mobile-preview-messages";
+import MobilePreviewNotifications from "@/pages/mobile-preview-notifications";
+import MobilePreviewMyServers from "@/pages/mobile-preview-myservers";
+import MobilePreviewAccount from "@/pages/mobile-preview-account";
+import { User, MessageCircle, Search, Bell, Home, Trophy, Server, MessageSquare, Users } from "lucide-react";
 import { initializeApp } from "../../lib/initializeApp";
 
 const tournamentItems = [
@@ -25,6 +31,15 @@ const socialItems = [
   { title: "Messages", url: "/messages", icon: MessageCircle },
   { title: "Discovery", url: "/discover", icon: Search },
   { title: "Notifications", url: "/notifications", icon: Bell },
+];
+
+const mobilePreviewItems = [
+  { title: "Home", url: "/mobile/home", icon: Trophy },
+  { title: "Discovery", url: "/mobile/discovery", icon: Search },
+  { title: "Messages", url: "/mobile/messages", icon: MessageSquare },
+  { title: "Notifications", url: "/mobile/notifications", icon: Bell },
+  { title: "My Servers", url: "/mobile/myservers", icon: Server },
+  { title: "Account", url: "/mobile/account", icon: User },
 ];
 
 function AppSidebar() {
@@ -68,6 +83,24 @@ function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Mobile Preview</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {mobilePreviewItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild isActive={location === item.url}>
+                    <Link href={item.url} data-testid={`link-mobile-${item.title.toLowerCase().replace(' ', '-')}`}>
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
     </Sidebar>
   );
@@ -83,6 +116,12 @@ function Router() {
       <Route path="/messages" component={MessagingPage} />
       <Route path="/discover" component={DiscoveryPage} />
       <Route path="/notifications" component={NotificationsPage} />
+      <Route path="/mobile/home" component={MobilePreviewHome} />
+      <Route path="/mobile/discovery" component={MobilePreviewServers} />
+      <Route path="/mobile/messages" component={MobilePreviewMessages} />
+      <Route path="/mobile/notifications" component={MobilePreviewNotifications} />
+      <Route path="/mobile/myservers" component={MobilePreviewMyServers} />
+      <Route path="/mobile/account" component={MobilePreviewAccount} />
       <Route component={NotFound} />
     </Switch>
   );
