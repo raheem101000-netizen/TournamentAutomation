@@ -292,6 +292,21 @@ export const seedTournaments: TournamentPoster[] = [
     startDate: new Date(Date.now() + 86400000 * 16).toISOString(),
     status: 'upcoming',
   },
+  {
+    id: 'tournament-upcoming-9',
+    name: 'FIFA Ultimate Championship',
+    game: 'FIFA',
+    imageUrl: '/attached_assets/generated_images/FIFA_tournament_poster_caed26a8.png',
+    format: 'single_elimination',
+    prizeReward: '$500',
+    entryFee: 50,
+    organizerId: 'user-carol-101',
+    organizerName: 'Carol Martinez',
+    maxTeams: 32,
+    currentTeams: 24,
+    startDate: new Date(Date.now() + 86400000 * 5).toISOString(),
+    status: 'upcoming',
+  },
 ];
 
 export const seedNotifications: Notification[] = [
