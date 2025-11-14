@@ -1,146 +1,137 @@
-# Tournament App Preview Website - Design Guidelines
+# 10 on 10 App - Design Guidelines
 
 ## Design Approach
 
-**Selected Approach**: Reference-Based with Mobile-First Showcase
-**Primary References**: Apple.com product pages, Vercel's app showcases, Linear's marketing site
-
+**Visual Language**: Match the native 10 on 10 mobile app
 **Key Principles**:
-- Mobile-centric: Center stage for app interface preview in phone frame
-- Visual energy: Tournament posters and app screens create vibrancy
-- Clean showcase: Minimal chrome, maximum focus on app content
+- Gaming-oriented dark theme with vibrant accent
+- Compact, mobile-first layout
+- Clean card-based design with subtle borders
+- Consistent 8px border radius
+- Minimal spacing for information density
+
+---
+
+## Color System
+
+**Primary Palette** (from 10 on 10 mobile app):
+- **Accent/Primary**: `#1A8BE1` - Bright blue for buttons, links, and interactive elements
+- **Background**: `#171A23` - Dark navy for main surfaces
+- **Text Primary**: `#E7E8EA` - Light gray for primary content
+- **Text Secondary**: `#9CA3AF` - Muted gray for secondary information
+- **Text Tertiary**: `#6B7280` - Subtle gray for least important info
+
+**Surface Colors**:
+- **Card Background**: `rgba(231, 232, 234, 0.1)` - Subtle overlay on dark background
+- **Border**: `rgba(229, 231, 235, 0.2)` - Minimal contrast borders
+
+**Usage Guidelines**:
+- Use accent color (#1A8BE1) ONLY on controls, buttons, badges, and indicators
+- Never use accent color for body text (accessibility concern)
+- Maintain contrast ratio of at least 4.5:1 for text on backgrounds
 
 ---
 
 ## Typography System
 
 **Font Families**:
-- Primary: Inter (Google Fonts) - UI, body text, navigation
-- Accent: Space Grotesk (Google Fonts) - Tournament titles, team names, headings
+- Primary: Inter (system default) - All UI elements
+- Fallback: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto
 
 **Hierarchy**:
-- Hero Headline: Space Grotesk, 4xl-5xl, font-bold
-- Tab Labels: Inter, sm, font-medium
-- Tournament Titles: Space Grotesk, lg, font-semibold
-- Card Content: Inter, sm-base, font-normal
-- Meta Text: Inter, xs, font-normal
+- Page Titles: 2xl (24px), font-bold
+- Section Headers: lg (18px), font-semibold
+- Card Titles: base (16px), font-semibold
+- Body Text: sm (14px), font-normal
+- Meta Text: xs (12px), font-normal
 
 ---
 
 ## Layout System
 
-**Spacing Primitives**: Tailwind units of 2, 4, 6, 8
+**Spacing Primitives** (from 10 on 10):
+- Small: 8px (p-2, gap-2)
+- Medium: 16px (p-4, gap-4)  
+- Large: 24px (p-6, gap-6)
 
 **Page Structure**:
-- Hero section: 90vh with dramatic tournament imagery, gradient overlay
-- App preview section: max-w-7xl container with sidebar (240px) + phone frame (375px) + details panel (flex-1)
-- Responsive: Stacked mobile, sidebar + phone on tablet, full layout desktop
+- Main container: max-w-7xl with horizontal padding
+- Content padding: 16-24px (compact, mobile-like)
+- Card padding: 16px (p-4)
+- Gap between cards: 16px (gap-4)
+
+**Responsive Behavior**:
+- Mobile: Full-width with 16px side padding
+- Tablet: Centered with max-width constraints
+- Desktop: Centered, preserving mobile-like proportions
 
 ---
 
 ## Component Library
 
-### Hero Section
-- Full-width competitive gaming scene: Esports arena with monitors, players, crowd energy
-- Gradient overlay (bottom to top, dark to transparent)
-- Centered headline: "Manage Tournaments. Track Matches. Anywhere."
-- Primary CTA: "Download App" with backdrop-blur-md background
-- Floating phone mockup showing app interface (positioned bottom-right, 30% visible)
+### Card Components
+- **Border Radius**: 8px (rounded-md)
+- **Border**: 1px solid with rgba(229, 231, 235, 0.2)
+- **Background**: rgba(231, 232, 234, 0.1) over dark surface
+- **Padding**: 16px (p-4)
+- **Hover**: Subtle elevation using hover-elevate class
 
-### Sidebar Navigation
-- Vertical tab list with icons + labels
-- Tabs: Home, Discovery, Messages, Notifications, MyServers, Account
-- Active state: background treatment, accent indicator (left border-4)
-- Icons: Heroicons solid style
-- Fixed width: w-60, sticky positioning
+### Home Tab - Tournament Grid
+- Compact 2-column grid
+- Tournament cards: Image + title overlay
+- Participant count badge (right)
+- 8px border radius, subtle hover effect
 
-### Phone Frame Container
-- iPhone-style frame: rounded-3xl border, shadow-2xl
-- Dimensions: 375px width, 812px height
-- Screen area with rounded corners matching device
-- Status bar: time (left), signal/battery (right)
-- Bottom safe area spacing
+### Discovery Tab - Server List
+- Full-width server cards
+- Layout: Icon (circular, left) | Name + Members (center) | Join button (right)
+- Compact 16px padding
+- Border bottom dividers between items
 
-### Tab Content Screens
+### Messages Tab - Chat Threads
+- List of message cards
+- Layout: Avatar (left) | Name + preview (center) | Time + badge (right)
+- Unread count: Primary color badge
+- Relative timestamps ("5 minutes ago")
 
-**Home Tab - Tournament Grid**:
-- 2-column grid of tournament poster cards
-- Each card: Image (16:9 aspect), tournament name overlay, participant count badge
-- Vibrant poster images: Colorful tournament graphics, game artwork, competitive themes
-- Cards with rounded-2xl, overflow-hidden
+### Notifications Tab - Alerts Feed
+- Chronological notification list
+- Layout: Type icon (left) | Title + message (center) | Timestamp (right)
+- Unread items: Subtle background highlight (bg-accent/50)
+- Colored icon backgrounds by type
 
-**Discovery Tab - Server List**:
-- Stacked server cards (full-width)
-- Each card: Server icon (circular, left), name + member count (center), join button (right)
-- Compact padding-4, border-b dividers
+### My Servers Tab - Overview Cards
+- Grid of server feature cards
+- Stats display: Matches, Teams, Tournaments
+- Placeholder state with helpful text
 
-**Messages Tab - Chat Threads**:
-- List of conversation cards
-- Each: Avatar + team icon (left), name + last message preview (center), timestamp + unread badge (right)
-- Unread messages: slightly bolder, unread count badge
-
-**Notifications Tab - Alerts Feed**:
-- Chronological list with grouped headers (Today, Yesterday, Earlier)
-- Each notification: Icon type (trophy/bell/alert), message text, timestamp
-- Action items (match result, score submission) with inline CTA buttons
-
-**MyServers Tab - Calendar View**:
-- Month calendar grid (7 columns)
-- Day cells with match count dots (colored indicators)
-- Selected day shows match list below calendar
-- Upcoming matches as compact list items
-
-**Account Tab - Profile**:
-- Profile header: Large avatar, username, stats row (Tournaments/Wins/Teams)
-- Settings list: Grouped sections (Account, Notifications, Privacy)
-- Each setting as tappable row with right chevron
-
-### Details Panel (Right Side)
-- Feature callouts corresponding to active tab
-- Screenshot enlargements on hover over phone content
-- Bullet list of key features with icons
-- Secondary CTA: "Learn More" or "View Documentation"
-
----
-
-## Images
-
-**Hero**: Full-width esports tournament scene - players at gaming stations, monitors glowing, dramatic lighting, audience atmosphere
-
-**Tournament Posters** (Home Tab): 6+ vibrant images showing various tournament types:
-- Fighting game tournament art (bold colors, character silhouettes)
-- Battle royale event graphics (landscape, weapon icons)
-- MOBA championship designs (team crests, arena views)
-- Racing league posters (vehicles, speed effects)
-
-**Server Icons** (Discovery Tab): Circular logos representing different gaming communities (placeholder geometric patterns)
-
-**Avatars** (Messages/Account): Circular team/user photos (placeholder with initials)
+### Account Tab - Profile
+- Profile header: Avatar + username + stats
+- Stats row: Tournaments | Wins | Teams
+- Clean, centered layout
 
 ---
 
 ## Icons
-**Library**: Heroicons (CDN)
-- Navigation tabs: home, globe-alt, chat-bubble-left, bell, calendar, user-circle
-- Solid style for sidebar, outline for in-app UI elements
+**Library**: Lucide React
+- Use outline style for consistency
+- Size: 20px (h-5 w-5) for list items
+- Size: 16px (h-4 w-4) for inline icons
 
 ---
 
 ## Animations
 **Minimal, Strategic**:
-- Tab switching: 300ms cross-fade between phone screen content
-- Hover states: Subtle scale (1.02) on tournament posters
-- Details panel updates: Fade-in corresponding to active tab
-- No page load animations, no excessive motion
+- Hover states: Use hover-elevate utility class
+- Active states: Use active-elevate-2 utility class
+- No excessive motion or page load animations
+- Smooth transitions (300ms) for state changes
 
 ---
 
-## Key Layout Patterns
-
-**Desktop (lg+)**: 3-panel layout - Sidebar (240px) | Phone Frame (375px centered) | Details Panel (flex-1)
-
-**Tablet (md)**: 2-panel - Sidebar (200px) | Phone Frame (centered)
-
-**Mobile**: Single column - Tab selector horizontal scroll, phone frame full-width (max 375px centered)
-
-**Spacing**: Container padding-8, inter-element spacing using 4 and 6, section gaps using 8
+## Accessibility
+- Maintain 4.5:1 contrast ratio for all text
+- Use accent color only on interactive elements
+- Provide clear focus indicators
+- Support keyboard navigation
+- Include data-testid on all interactive elements

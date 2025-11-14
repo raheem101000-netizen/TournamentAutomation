@@ -75,6 +75,9 @@ function App() {
       setIsInitialized(true);
     }
     init();
+    
+    // Enable dark mode by default for 10 on 10 theme
+    document.documentElement.classList.add('dark');
   }, []);
 
   const style = {
