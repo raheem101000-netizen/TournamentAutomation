@@ -32,16 +32,16 @@ export default function MobilePreviewHome() {
         </h2>
       </div>
       
-      {/* Vertical Scrolling Grid: 3 columns on desktop, 3 columns on mobile */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* Responsive Grid: 1 column on mobile (phone), 3 columns on desktop */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {tournaments?.map((tournament) => (
           <Card 
             key={tournament.id}
             className="overflow-hidden hover-elevate"
             data-testid={`tournament-card-${tournament.id}`}
           >
-            {/* Portrait Poster Image */}
-            <div className="relative aspect-[3/4] bg-gradient-to-br from-primary/30 to-primary/10">
+            {/* Portrait Poster Image - Large on mobile */}
+            <div className="relative aspect-[3/4] md:aspect-[3/4] bg-gradient-to-br from-primary/30 to-primary/10">
               {tournament.imageUrl ? (
                 <img 
                   src={tournament.imageUrl} 
@@ -51,7 +51,7 @@ export default function MobilePreviewHome() {
                 />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
-                  <Trophy className="h-16 w-16 text-primary opacity-60 mb-2" />
+                  <Trophy className="h-20 w-20 text-primary opacity-60 mb-2" />
                   <p className="text-xs text-muted-foreground">No Poster</p>
                 </div>
               )}
@@ -59,24 +59,24 @@ export default function MobilePreviewHome() {
               {/* Prize Badge Overlay */}
               {tournament.prizeReward && (
                 <div 
-                  className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold flex items-center gap-1"
+                  className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-1.5 rounded text-sm font-bold flex items-center gap-1.5 shadow-lg"
                   data-testid={`tournament-prize-${tournament.id}`}
                 >
-                  <Trophy className="h-3 w-3" />
+                  <Trophy className="h-4 w-4" />
                   {tournament.prizeReward}
                 </div>
               )}
             </div>
 
             {/* Card Content */}
-            <div className="p-3">
+            <div className="p-4">
               {/* Tournament Title & Time */}
-              <div className="text-center mb-3">
-                <p className="text-sm font-bold uppercase tracking-wide mb-1" data-testid={`tournament-name-${tournament.id}`}>
+              <div className="text-center mb-4">
+                <p className="text-base md:text-sm font-bold uppercase tracking-wide mb-2" data-testid={`tournament-name-${tournament.id}`}>
                   TOURNAMENT
                 </p>
-                <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
-                  <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
+                <div className="flex items-center justify-center gap-1.5 text-sm md:text-xs text-muted-foreground">
+                  <Star className="h-4 w-4 md:h-3 md:w-3 fill-yellow-500 text-yellow-500" />
                   <span data-testid={`tournament-time-${tournament.id}`}>
                     {tournament.startDate 
                       ? new Date(tournament.startDate).toLocaleTimeString('en-US', { 
@@ -90,9 +90,9 @@ export default function MobilePreviewHome() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <Button 
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold py-2"
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold h-11 md:h-9"
                   data-testid={`button-join-${tournament.id}`}
                 >
                   Join
@@ -100,10 +100,11 @@ export default function MobilePreviewHome() {
                 <Button 
                   variant="outline"
                   size="icon"
+                  className="h-11 w-11 md:h-9 md:w-9"
                   onClick={() => setSelectedTournament(tournament)}
                   data-testid={`button-details-${tournament.id}`}
                 >
-                  <Info className="h-4 w-4" />
+                  <Info className="h-5 w-5 md:h-4 md:w-4" />
                 </Button>
               </div>
             </div>
