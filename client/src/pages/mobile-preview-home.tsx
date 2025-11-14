@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Calendar, Users, Trophy, DollarSign, Star } from "lucide-react";
+import { Loader2, Calendar, Users, Trophy, DollarSign, Star, Info } from "lucide-react";
 import type { Tournament } from "@shared/schema";
 
 export default function MobilePreviewHome() {
@@ -32,13 +32,12 @@ export default function MobilePreviewHome() {
         </h2>
       </div>
       
-      {/* Compact 3-Column Grid */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* Desktop: 3-Column Grid, Mobile: Horizontal Scroll */}
+      <div className="md:grid md:grid-cols-3 md:gap-3 flex md:flex-none overflow-x-auto snap-x snap-mandatory gap-3 pb-4 -mx-4 px-4 md:mx-0 md:px-0">
         {tournaments?.map((tournament) => (
           <Card 
             key={tournament.id}
-            className="overflow-hidden hover-elevate cursor-pointer"
-            onClick={() => setSelectedTournament(tournament)}
+            className="overflow-hidden hover-elevate flex-shrink-0 w-[85vw] md:w-auto snap-center"
             data-testid={`tournament-card-${tournament.id}`}
           >
             {/* Portrait Poster Image */}
@@ -51,28 +50,61 @@ export default function MobilePreviewHome() {
                   data-testid={`tournament-poster-${tournament.id}`}
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Trophy className="h-12 w-12 text-primary opacity-40" />
+                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
+                  <Trophy className="h-16 w-16 text-primary opacity-60 mb-2" />
+                  <p className="text-xs text-muted-foreground">No Poster</p>
+                </div>
+              )}
+              
+              {/* Prize Badge Overlay */}
+              {tournament.prizeReward && (
+                <div 
+                  className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold flex items-center gap-1"
+                  data-testid={`tournament-prize-${tournament.id}`}
+                >
+                  <Trophy className="h-3 w-3" />
+                  {tournament.prizeReward}
                 </div>
               )}
             </div>
 
-            {/* Card Footer */}
-            <div className="p-2 text-center">
-              <p className="text-xs font-bold uppercase tracking-wide mb-1" data-testid={`tournament-name-${tournament.id}`}>
-                TOURNAMENT
-              </p>
-              <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
-                <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
-                <span data-testid={`tournament-time-${tournament.id}`}>
-                  {tournament.startDate 
-                    ? new Date(tournament.startDate).toLocaleTimeString('en-US', { 
-                        hour: 'numeric', 
-                        minute: '2-digit',
-                        hour12: true 
-                      }).replace(' ', '').toLowerCase()
-                    : '0pm'}
-                </span>
+            {/* Card Content */}
+            <div className="p-3">
+              {/* Tournament Title & Time */}
+              <div className="text-center mb-3">
+                <p className="text-sm font-bold uppercase tracking-wide mb-1" data-testid={`tournament-name-${tournament.id}`}>
+                  TOURNAMENT
+                </p>
+                <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                  <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
+                  <span data-testid={`tournament-time-${tournament.id}`}>
+                    {tournament.startDate 
+                      ? new Date(tournament.startDate).toLocaleTimeString('en-US', { 
+                          hour: 'numeric', 
+                          minute: '2-digit',
+                          hour12: true 
+                        }).replace(' ', '').toLowerCase()
+                      : '0pm'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <Button 
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold"
+                  data-testid={`button-join-${tournament.id}`}
+                >
+                  Join
+                </Button>
+                <Button 
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setSelectedTournament(tournament)}
+                  data-testid={`button-details-${tournament.id}`}
+                >
+                  <Info className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </Card>
@@ -85,7 +117,7 @@ export default function MobilePreviewHome() {
         </div>
       )}
 
-      {/* Tournament Details Modal with Join & Detail Buttons */}
+      {/* Tournament Details Modal */}
       <Dialog open={!!selectedTournament} onOpenChange={(open) => !open && setSelectedTournament(null)}>
         <DialogContent className="max-w-md" data-testid="tournament-details-modal">
           <DialogHeader>
@@ -169,7 +201,7 @@ export default function MobilePreviewHome() {
               )}
             </div>
 
-            {/* Action Buttons */}
+            {/* Action Buttons in Modal */}
             <div className="flex gap-3 pt-2">
               <Button 
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold"
@@ -181,9 +213,9 @@ export default function MobilePreviewHome() {
                 variant="outline"
                 className="flex-1"
                 onClick={() => setSelectedTournament(null)}
-                data-testid="modal-button-details"
+                data-testid="modal-button-close"
               >
-                View Details
+                Close
               </Button>
             </div>
           </div>
