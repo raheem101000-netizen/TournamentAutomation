@@ -39,14 +39,15 @@ const TabsLayout = () => {
       <Tabs.Screen
         name={NAVIGATION_TABS_TITLE.Home}
         options={{
-          headerTitle: t("Common.TabsHeader.Home"),
+          headerTitle: "Tournaments",
+          title: "Tournaments"
         }}
       />
       <Tabs.Screen
         name={NAVIGATION_TABS_TITLE.Discovery}
         options={{
-          headerTitle: "Discover",
-          title: "Discover"
+          headerTitle: "Discover Servers",
+          title: "Servers"
         }}
       />
       <Tabs.Screen
