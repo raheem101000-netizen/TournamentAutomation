@@ -32,12 +32,12 @@ export default function MobilePreviewHome() {
         </h2>
       </div>
       
-      {/* Desktop: 3-Column Grid, Mobile: Horizontal Scroll */}
-      <div className="md:grid md:grid-cols-3 md:gap-3 flex md:flex-none overflow-x-auto snap-x snap-mandatory gap-3 pb-4 -mx-4 px-4 md:mx-0 md:px-0">
+      {/* Vertical Scrolling Grid: 3 columns on desktop, 3 columns on mobile */}
+      <div className="grid grid-cols-3 gap-3">
         {tournaments?.map((tournament) => (
           <Card 
             key={tournament.id}
-            className="overflow-hidden hover-elevate flex-shrink-0 w-[85vw] md:w-auto snap-center"
+            className="overflow-hidden hover-elevate"
             data-testid={`tournament-card-${tournament.id}`}
           >
             {/* Portrait Poster Image */}
@@ -92,7 +92,7 @@ export default function MobilePreviewHome() {
               {/* Action Buttons */}
               <div className="flex gap-2">
                 <Button 
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold"
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold py-2"
                   data-testid={`button-join-${tournament.id}`}
                 >
                   Join
