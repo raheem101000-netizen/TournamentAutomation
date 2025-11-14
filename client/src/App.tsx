@@ -56,7 +56,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={MobilePreviewHome} />
-      <Route path="/discovery" component={MobilePreviewServers} />
+      <Route path="/discovery" component={MobilePreviewHome} />
       <Route path="/messages" component={MobilePreviewMessages} />
       <Route path="/notifications" component={MobilePreviewNotifications} />
       <Route path="/myservers" component={MobilePreviewMyServers} />
