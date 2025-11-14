@@ -19,13 +19,13 @@ export default function MobilePreviewMessages() {
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6" data-testid="page-title">Messages</h1>
-      <p className="text-muted-foreground mb-8" data-testid="page-description">
+    <div className="p-4 max-w-3xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4" data-testid="page-title">Messages</h1>
+      <p className="text-sm text-muted-foreground mb-6" data-testid="page-description">
         Your recent conversations
       </p>
       
-      <div className="space-y-4">
+      <div className="space-y-3">
         {messages?.map((thread) => (
           <Card 
             key={thread.id} 

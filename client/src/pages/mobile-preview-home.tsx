@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trophy } from "lucide-react";
 import type { Tournament } from "@shared/schema";
 
 export default function MobilePreviewHome() {
@@ -17,13 +17,13 @@ export default function MobilePreviewHome() {
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6" data-testid="page-title">Tournaments</h1>
-      <p className="text-muted-foreground mb-8" data-testid="page-description">
+    <div className="p-4 max-w-5xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4" data-testid="page-title">Tournaments</h1>
+      <p className="text-sm text-muted-foreground mb-6" data-testid="page-description">
         Discover and join exciting gaming tournaments
       </p>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {tournaments?.map((tournament) => (
           <Card 
             key={tournament.id} 
@@ -31,9 +31,7 @@ export default function MobilePreviewHome() {
             data-testid={`tournament-card-${tournament.id}`}
           >
             <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 rounded-t-lg flex items-center justify-center">
-              <span className="text-4xl font-bold text-primary opacity-50" data-testid={`tournament-icon-${tournament.id}`}>
-                🏆
-              </span>
+              <Trophy className="h-16 w-16 text-primary opacity-50" data-testid={`tournament-icon-${tournament.id}`} />
             </div>
             <CardContent className="p-4">
               <h3 className="font-semibold text-lg mb-2" data-testid={`tournament-name-${tournament.id}`}>

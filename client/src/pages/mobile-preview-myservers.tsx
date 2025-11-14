@@ -3,13 +3,13 @@ import { Calendar } from "lucide-react";
 
 export default function MobilePreviewMyServers() {
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6" data-testid="page-title">My Servers</h1>
-      <p className="text-muted-foreground mb-8" data-testid="page-description">
+    <div className="p-4 max-w-5xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4" data-testid="page-title">My Servers</h1>
+      <p className="text-sm text-muted-foreground mb-6" data-testid="page-description">
         Your gaming communities and tournaments
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card data-testid="card-upcoming-matches">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
