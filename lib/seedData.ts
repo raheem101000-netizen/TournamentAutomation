@@ -195,6 +195,7 @@ export const seedTournaments: TournamentPoster[] = [
     imageUrl: '/attached_assets/stock_images/league_of_legends_es_56c6b74b.jpg',
     format: 'swiss',
     prizeReward: '$15,000',
+    entryFee: 1200,
     organizerId: 'user-alice-456',
     organizerName: 'Alice Johnson',
     maxTeams: 20,

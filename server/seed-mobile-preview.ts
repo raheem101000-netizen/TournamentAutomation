@@ -1,8 +1,16 @@
 import { db } from "./db";
-import { servers, messageThreads, notifications } from "@shared/schema";
+import { servers, messageThreads, notifications, tournaments } from "@shared/schema";
+import { sql } from "drizzle-orm";
 
 async function seedMobilePreview() {
   console.log("Seeding mobile preview data...");
+
+  // Clear existing data to ensure clean state
+  console.log("Clearing existing mobile preview data...");
+  await db.delete(tournaments);
+  await db.delete(notifications);
+  await db.delete(messageThreads);
+  await db.delete(servers);
 
   // Seed servers
   await db.insert(servers).values([
@@ -80,6 +88,130 @@ async function seedMobilePreview() {
       lastMessage: "Great game today!",
       lastMessageTime: new Date(now.getTime() - 1000 * 60 * 60 * 24), // 1 day ago
       unreadCount: 3,
+    },
+  ]);
+
+  // Seed tournaments
+  await db.insert(tournaments).values([
+    {
+      name: "Valorant Champions Cup 2024",
+      game: "Valorant",
+      imageUrl: "/attached_assets/stock_images/valorant_esports_cha_a54c6cb2.jpg",
+      format: "single_elimination",
+      prizeReward: "$5,000",
+      entryFee: 500,
+      organizerName: "Carol Martinez",
+      totalTeams: 16,
+      startDate: new Date(Date.now() + 86400000 * 7),
+      status: "upcoming",
+    },
+    {
+      name: "CS:GO Pro League",
+      game: "CS:GO",
+      imageUrl: "/attached_assets/stock_images/counter_strike_csgo__b6102c0a.jpg",
+      format: "round_robin",
+      prizeReward: "$10,000",
+      entryFee: 1000,
+      organizerName: "Bob Smith",
+      totalTeams: 12,
+      startDate: new Date(Date.now() + 86400000 * 14),
+      status: "upcoming",
+    },
+    {
+      name: "League of Legends Spring Split",
+      game: "League of Legends",
+      imageUrl: "/attached_assets/stock_images/league_of_legends_es_56c6b74b.jpg",
+      format: "swiss",
+      prizeReward: "$15,000",
+      entryFee: 1200,
+      organizerName: "Alice Johnson",
+      totalTeams: 20,
+      startDate: new Date(Date.now() - 86400000 * 2),
+      status: "upcoming",
+    },
+    {
+      name: "Apex Legends Battle Royale",
+      game: "Apex Legends",
+      imageUrl: "/attached_assets/stock_images/apex_legends_battle__899cf222.jpg",
+      format: "single_elimination",
+      prizeReward: "$3,000",
+      entryFee: 250,
+      organizerName: "Carol Martinez",
+      totalTeams: 32,
+      startDate: new Date(Date.now() + 86400000 * 21),
+      status: "upcoming",
+    },
+    {
+      name: "Fortnite Championship",
+      game: "Fortnite",
+      imageUrl: "/attached_assets/stock_images/fortnite_battle_roya_6be8cfb7.jpg",
+      format: "single_elimination",
+      prizeReward: "$8,000",
+      entryFee: 750,
+      organizerName: "Alice Johnson",
+      totalTeams: 24,
+      startDate: new Date(Date.now() + 86400000 * 10),
+      status: "upcoming",
+    },
+    {
+      name: "Rocket League Masters",
+      game: "Rocket League",
+      imageUrl: "/attached_assets/stock_images/rocket_league_esport_503d8de2.jpg",
+      format: "round_robin",
+      prizeReward: "$6,500",
+      entryFee: 600,
+      organizerName: "Bob Smith",
+      totalTeams: 16,
+      startDate: new Date(Date.now() + 86400000 * 18),
+      status: "upcoming",
+    },
+    {
+      name: "Overwatch Invitational",
+      game: "Overwatch",
+      imageUrl: "/attached_assets/stock_images/overwatch_esports_co_0b995362.jpg",
+      format: "single_elimination",
+      prizeReward: "$7,200",
+      entryFee: 650,
+      organizerName: "Carol Martinez",
+      totalTeams: 20,
+      startDate: new Date(Date.now() + 86400000 * 25),
+      status: "upcoming",
+    },
+    {
+      name: "PUBG Mobile Showdown",
+      game: "PUBG Mobile",
+      imageUrl: "/attached_assets/stock_images/pubg_mobile_battle_r_e0cdd485.jpg",
+      format: "swiss",
+      prizeReward: "$4,500",
+      entryFee: 400,
+      organizerName: "Alice Johnson",
+      totalTeams: 28,
+      startDate: new Date(Date.now() + 86400000 * 12),
+      status: "upcoming",
+    },
+    {
+      name: "Rainbow Six Siege Cup",
+      game: "Rainbow Six Siege",
+      imageUrl: "/attached_assets/stock_images/rainbow_six_siege_ta_08a7ae9d.jpg",
+      format: "single_elimination",
+      prizeReward: "$9,000",
+      entryFee: 800,
+      organizerName: "Bob Smith",
+      totalTeams: 16,
+      startDate: new Date(Date.now() + 86400000 * 16),
+      status: "upcoming",
+    },
+    {
+      name: "FIFA Ultimate Championship",
+      game: "FIFA",
+      imageUrl: "/attached_assets/generated_images/FIFA_tournament_poster_caed26a8.png",
+      format: "single_elimination",
+      prizeReward: "$500",
+      entryFee: 50,
+      organizerName: "Carol Martinez",
+      totalTeams: 32,
+      startDate: new Date(Date.now() + 86400000 * 5),
+      status: "upcoming",
     },
   ]);
 
