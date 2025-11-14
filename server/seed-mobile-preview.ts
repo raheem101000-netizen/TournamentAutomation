@@ -20,6 +20,7 @@ async function seedMobilePreview() {
       memberCount: 1247,
       category: "Competitive",
       isPublic: 1,
+      iconUrl: "/attached_assets/generated_images/Pro_League_Tournament_Branding_dcf9285c.png",
     },
     {
       name: "Casual Gaming Hub",
@@ -27,6 +28,7 @@ async function seedMobilePreview() {
       memberCount: 856,
       category: "Casual",
       isPublic: 1,
+      iconUrl: "/attached_assets/generated_images/Casual_Gaming_Hub_Branding_9f9396a6.png",
     },
     {
       name: "Esports Academy",
@@ -34,6 +36,7 @@ async function seedMobilePreview() {
       memberCount: 432,
       category: "Training",
       isPublic: 1,
+      iconUrl: "/attached_assets/generated_images/Esports_Academy_Branding_4a858f31.png",
     },
     {
       name: "Weekend Warriors",
@@ -41,6 +44,7 @@ async function seedMobilePreview() {
       memberCount: 623,
       category: "Community",
       isPublic: 1,
+      iconUrl: "/attached_assets/generated_images/Weekend_Warriors_Branding_82481fd5.png",
     },
     {
       name: "Championship Series",
@@ -48,6 +52,7 @@ async function seedMobilePreview() {
       memberCount: 2104,
       category: "Competitive",
       isPublic: 1,
+      iconUrl: "/attached_assets/generated_images/Championship_Series_Branding_02fa0528.png",
     },
   ]);
 

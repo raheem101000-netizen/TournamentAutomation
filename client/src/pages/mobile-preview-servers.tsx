@@ -29,10 +29,17 @@ export default function MobilePreviewServers() {
         {servers?.map((server) => (
           <Card 
             key={server.id} 
-            className="hover-elevate"
+            className="hover-elevate overflow-hidden relative"
             data-testid={`server-card-${server.id}`}
           >
-            <CardContent className="p-4">
+            {server.iconUrl && (
+              <div 
+                className="absolute inset-0 bg-cover bg-center opacity-30"
+                style={{ backgroundImage: `url(${server.iconUrl})` }}
+                data-testid={`server-background-${server.id}`}
+              />
+            )}
+            <CardContent className="p-4 relative z-10">
               <div className="flex items-center gap-4">
                 <Avatar data-testid={`server-avatar-${server.id}`}>
                   <AvatarFallback className="bg-primary text-primary-foreground">
