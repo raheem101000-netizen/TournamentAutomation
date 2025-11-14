@@ -96,7 +96,7 @@ async function seedMobilePreview() {
     {
       name: "Valorant Champions Cup 2024",
       game: "Valorant",
-      imageUrl: "/attached_assets/stock_images/valorant_esports_cha_a54c6cb2.jpg",
+      imageUrl: "/attached_assets/generated_images/Valorant_Championship_Tournament_Poster_f19f1be7.png",
       format: "single_elimination",
       prizeReward: "$5,000",
       entryFee: 500,
@@ -108,7 +108,7 @@ async function seedMobilePreview() {
     {
       name: "CS:GO Pro League",
       game: "CS:GO",
-      imageUrl: "/attached_assets/stock_images/counter_strike_csgo__b6102c0a.jpg",
+      imageUrl: "/attached_assets/generated_images/CS:GO_Pro_League_Poster_405d1762.png",
       format: "round_robin",
       prizeReward: "$10,000",
       entryFee: 1000,
@@ -120,7 +120,7 @@ async function seedMobilePreview() {
     {
       name: "League of Legends Spring Split",
       game: "League of Legends",
-      imageUrl: "/attached_assets/stock_images/league_of_legends_es_56c6b74b.jpg",
+      imageUrl: "/attached_assets/generated_images/League_of_Legends_Tournament_Poster_3f50b053.png",
       format: "swiss",
       prizeReward: "$15,000",
       entryFee: 1200,
@@ -132,7 +132,7 @@ async function seedMobilePreview() {
     {
       name: "Apex Legends Battle Royale",
       game: "Apex Legends",
-      imageUrl: "/attached_assets/stock_images/apex_legends_battle__899cf222.jpg",
+      imageUrl: "/attached_assets/generated_images/Apex_Legends_Battle_Royale_Poster_77713e93.png",
       format: "single_elimination",
       prizeReward: "$3,000",
       entryFee: 250,
@@ -144,7 +144,7 @@ async function seedMobilePreview() {
     {
       name: "Fortnite Championship",
       game: "Fortnite",
-      imageUrl: "/attached_assets/stock_images/fortnite_battle_roya_6be8cfb7.jpg",
+      imageUrl: "/attached_assets/generated_images/Fortnite_Championship_Poster_a359f503.png",
       format: "single_elimination",
       prizeReward: "$8,000",
       entryFee: 750,
@@ -156,7 +156,7 @@ async function seedMobilePreview() {
     {
       name: "Rocket League Masters",
       game: "Rocket League",
-      imageUrl: "/attached_assets/stock_images/rocket_league_esport_503d8de2.jpg",
+      imageUrl: "/attached_assets/generated_images/Rocket_League_Masters_Poster_55ae82a5.png",
       format: "round_robin",
       prizeReward: "$6,500",
       entryFee: 600,
@@ -168,7 +168,7 @@ async function seedMobilePreview() {
     {
       name: "Overwatch Invitational",
       game: "Overwatch",
-      imageUrl: "/attached_assets/stock_images/overwatch_esports_co_0b995362.jpg",
+      imageUrl: "/attached_assets/generated_images/Overwatch_Invitational_Poster_246ea3cc.png",
       format: "single_elimination",
       prizeReward: "$7,200",
       entryFee: 650,
@@ -180,7 +180,7 @@ async function seedMobilePreview() {
     {
       name: "PUBG Mobile Showdown",
       game: "PUBG Mobile",
-      imageUrl: "/attached_assets/stock_images/pubg_mobile_battle_r_e0cdd485.jpg",
+      imageUrl: "/attached_assets/generated_images/PUBG_Mobile_Tournament_Poster_1815828c.png",
       format: "swiss",
       prizeReward: "$4,500",
       entryFee: 400,
@@ -192,7 +192,7 @@ async function seedMobilePreview() {
     {
       name: "Rainbow Six Siege Cup",
       game: "Rainbow Six Siege",
-      imageUrl: "/attached_assets/stock_images/rainbow_six_siege_ta_08a7ae9d.jpg",
+      imageUrl: "/attached_assets/generated_images/Rainbow_Six_Siege_Poster_9dc5fb5d.png",
       format: "single_elimination",
       prizeReward: "$9,000",
       entryFee: 800,
@@ -204,7 +204,7 @@ async function seedMobilePreview() {
     {
       name: "FIFA Ultimate Championship",
       game: "FIFA",
-      imageUrl: "/attached_assets/generated_images/FIFA_tournament_poster_caed26a8.png",
+      imageUrl: "/attached_assets/generated_images/FIFA_Ultimate_Championship_Poster_e5b1c00e.png",
       format: "single_elimination",
       prizeReward: "$500",
       entryFee: 50,
