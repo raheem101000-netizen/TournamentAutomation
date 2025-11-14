@@ -6,40 +6,22 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger } from "@/components/ui/sidebar";
 import NotFound from "@/pages/not-found";
-import Dashboard from "@/pages/Dashboard";
-import TournamentDetail from "@/pages/TournamentDetail";
-import TournamentRegistration from "@/pages/TournamentRegistration";
-import ProfilePage from "@/pages/profile";
-import MessagingPage from "@/pages/messaging";
-import DiscoveryPage from "@/pages/discovery";
-import NotificationsPage from "@/pages/notifications";
 import MobilePreviewHome from "@/pages/mobile-preview-home";
 import MobilePreviewServers from "@/pages/mobile-preview-servers";
 import MobilePreviewMessages from "@/pages/mobile-preview-messages";
 import MobilePreviewNotifications from "@/pages/mobile-preview-notifications";
 import MobilePreviewMyServers from "@/pages/mobile-preview-myservers";
 import MobilePreviewAccount from "@/pages/mobile-preview-account";
-import { User, MessageCircle, Search, Bell, Home, Trophy, Server, MessageSquare, Users } from "lucide-react";
+import { User, Search, Bell, Trophy, Server, MessageSquare } from "lucide-react";
 import { initializeApp } from "../../lib/initializeApp";
 
-const tournamentItems = [
-  { title: "Dashboard", url: "/", icon: Home },
-];
-
-const socialItems = [
-  { title: "Profile", url: "/profile", icon: User },
-  { title: "Messages", url: "/messages", icon: MessageCircle },
-  { title: "Discovery", url: "/discover", icon: Search },
+const appItems = [
+  { title: "Home", url: "/", icon: Trophy },
+  { title: "Discovery", url: "/discovery", icon: Search },
+  { title: "Messages", url: "/messages", icon: MessageSquare },
   { title: "Notifications", url: "/notifications", icon: Bell },
-];
-
-const mobilePreviewItems = [
-  { title: "Home", url: "/mobile/home", icon: Trophy },
-  { title: "Discovery", url: "/mobile/discovery", icon: Search },
-  { title: "Messages", url: "/mobile/messages", icon: MessageSquare },
-  { title: "Notifications", url: "/mobile/notifications", icon: Bell },
-  { title: "My Servers", url: "/mobile/myservers", icon: Server },
-  { title: "Account", url: "/mobile/account", icon: User },
+  { title: "My Servers", url: "/myservers", icon: Server },
+  { title: "Account", url: "/account", icon: User },
 ];
 
 function AppSidebar() {
@@ -49,49 +31,13 @@ function AppSidebar() {
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Tournament Management</SidebarGroupLabel>
+          <SidebarGroupLabel>10 on 10</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {tournamentItems.map((item) => (
+              {appItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={location === item.url}>
                     <Link href={item.url} data-testid={`link-${item.title.toLowerCase().replace(' ', '-')}`}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Social Features</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {socialItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={location === item.url}>
-                    <Link href={item.url} data-testid={`link-${item.title.toLowerCase()}`}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Mobile Preview</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mobilePreviewItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={location === item.url}>
-                    <Link href={item.url} data-testid={`link-mobile-${item.title.toLowerCase().replace(' ', '-')}`}>
                       <item.icon />
                       <span>{item.title}</span>
                     </Link>
@@ -109,19 +55,12 @@ function AppSidebar() {
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/tournament/:id" component={TournamentDetail} />
-      <Route path="/register/:id" component={TournamentRegistration} />
-      <Route path="/profile" component={ProfilePage} />
-      <Route path="/messages" component={MessagingPage} />
-      <Route path="/discover" component={DiscoveryPage} />
-      <Route path="/notifications" component={NotificationsPage} />
-      <Route path="/mobile/home" component={MobilePreviewHome} />
-      <Route path="/mobile/discovery" component={MobilePreviewServers} />
-      <Route path="/mobile/messages" component={MobilePreviewMessages} />
-      <Route path="/mobile/notifications" component={MobilePreviewNotifications} />
-      <Route path="/mobile/myservers" component={MobilePreviewMyServers} />
-      <Route path="/mobile/account" component={MobilePreviewAccount} />
+      <Route path="/" component={MobilePreviewHome} />
+      <Route path="/discovery" component={MobilePreviewServers} />
+      <Route path="/messages" component={MobilePreviewMessages} />
+      <Route path="/notifications" component={MobilePreviewNotifications} />
+      <Route path="/myservers" component={MobilePreviewMyServers} />
+      <Route path="/account" component={MobilePreviewAccount} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -160,7 +99,7 @@ function App() {
             <div className="flex flex-col flex-1">
               <header className="flex items-center justify-between p-2 border-b">
                 <SidebarTrigger data-testid="button-sidebar-toggle" />
-                <h1 className="text-lg font-semibold">Tournament Platform</h1>
+                <h1 className="text-lg font-semibold">10 on 10</h1>
                 <div className="w-9" />
               </header>
               <main className="flex-1 overflow-hidden">
