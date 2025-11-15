@@ -137,17 +137,46 @@ const rarityColors: Record<string, string> = {
 export default function PreviewAccount() {
   const [, setLocation] = useLocation();
   const [selectedTeam, setSelectedTeam] = useState<typeof mockTeams[0] | null>(null);
+  const [viewingUser, setViewingUser] = useState<string | null>(null);
   const earnedAchievements = mockAchievements.filter(a => a.earned);
   const lockedAchievements = mockAchievements.filter(a => !a.earned);
+
+  // Check if viewing own profile or another user's profile
+  const isOwnProfile = viewingUser === null;
+  const displayUser = viewingUser || mockUser.username;
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Profile</h1>
-          <Button size="icon" variant="ghost" data-testid="button-settings">
-            <Settings className="w-5 h-5" />
-          </Button>
+          <h1 className="text-2xl font-bold">{isOwnProfile ? "Profile" : `@${displayUser}`}</h1>
+          <div className="flex items-center gap-2">
+            {isOwnProfile && (
+              <>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => setViewingUser("NinjaKid")}
+                  data-testid="button-demo-visitor"
+                >
+                  View as Visitor
+                </Button>
+                <Button size="icon" variant="ghost" data-testid="button-settings">
+                  <Settings className="w-5 h-5" />
+                </Button>
+              </>
+            )}
+            {!isOwnProfile && (
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => setViewingUser(null)} 
+                data-testid="button-back-to-profile"
+              >
+                Back to My Profile
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -185,10 +214,22 @@ export default function PreviewAccount() {
                 </p>
               </div>
 
-              <Button variant="outline" className="w-full" data-testid="button-edit-profile">
-                <Edit className="w-4 h-4 mr-2" />
-                Edit Profile
-              </Button>
+              {isOwnProfile ? (
+                <Button variant="outline" className="w-full" data-testid="button-edit-profile">
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit Profile
+                </Button>
+              ) : (
+                <div className="flex gap-2 w-full">
+                  <Button variant="default" className="flex-1" data-testid="button-add-friend">
+                    <Users className="w-4 h-4 mr-2" />
+                    Add Friend
+                  </Button>
+                  <Button variant="outline" className="flex-1" data-testid="button-message">
+                    Message
+                  </Button>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -196,14 +237,16 @@ export default function PreviewAccount() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">Teams</h3>
-            <Button 
-              size="sm" 
-              onClick={() => setLocation("/create-team")}
-              data-testid="button-create-team"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create Team
-            </Button>
+            {isOwnProfile && (
+              <Button 
+                size="sm" 
+                onClick={() => setLocation("/create-team")}
+                data-testid="button-create-team"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Team
+              </Button>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -336,6 +379,10 @@ export default function PreviewAccount() {
                       <Card 
                         key={idx} 
                         className="p-3 hover-elevate cursor-pointer"
+                        onClick={() => {
+                          setSelectedTeam(null);
+                          setViewingUser(player.username);
+                        }}
                         data-testid={`player-${player.username}`}
                       >
                         <div className="flex items-center justify-between">
