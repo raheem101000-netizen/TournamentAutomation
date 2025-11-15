@@ -3,11 +3,11 @@ import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { path: "/preview/home", icon: Home, label: "Home" },
-  { path: "/preview/discovery", icon: Compass, label: "Discovery" },
-  { path: "/preview/messages", icon: MessageCircle, label: "Messages" },
-  { path: "/preview/my-servers", icon: Server, label: "My Servers" },
-  { path: "/preview/account", icon: User, label: "Account" },
+  { path: "/", icon: Home, label: "Home" },
+  { path: "/discovery", icon: Compass, label: "Discovery" },
+  { path: "/messages", icon: MessageCircle, label: "Messages" },
+  { path: "/myservers", icon: Server, label: "My Servers" },
+  { path: "/account", icon: User, label: "Account" },
 ];
 
 export function BottomNavigation() {
