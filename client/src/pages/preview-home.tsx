@@ -1,10 +1,18 @@
+import { useState } from "react";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Search, SlidersHorizontal, Share2, Trophy, Coins, Clock, Users, Monitor, MapPin, Shield } from "lucide-react";
+import { Search, SlidersHorizontal, Share2, Trophy, Coins, Clock, Users, Monitor, MapPin, Shield, Info, ArrowRight } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 const mockPosters = [
   {
@@ -78,6 +86,9 @@ const mockPosters = [
 ];
 
 export default function PreviewHome() {
+  const [detailsModal, setDetailsModal] = useState<typeof mockPosters[0] | null>(null);
+  const [joinModal, setJoinModal] = useState<typeof mockPosters[0] | null>(null);
+
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -169,7 +180,7 @@ export default function PreviewHome() {
                     {poster.game}
                   </div>
 
-                  <div className="flex flex-col gap-4 w-full max-w-sm">
+                  <div className="flex flex-col gap-4 w-full max-w-xs">
                     <div className="flex items-center justify-center gap-6">
                       <div className="flex flex-col items-center">
                         <Trophy className="w-6 h-6 mb-1" />
@@ -183,63 +194,33 @@ export default function PreviewHome() {
                       </div>
                     </div>
 
-                    <div className="bg-black/40 backdrop-blur-sm border border-white/20 rounded-md p-4 space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2 text-white/80">
-                          <Clock className="w-4 h-4" />
-                          <span>Start Time</span>
-                        </div>
-                        <span className="font-semibold">{poster.startDate} • {poster.startTime}</span>
-                      </div>
-                      
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2 text-white/80">
-                          <Users className="w-4 h-4" />
-                          <span>Players</span>
-                        </div>
-                        <span className="font-semibold">{poster.participants}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2 text-white/80">
-                          <Trophy className="w-4 h-4" />
-                          <span>Format</span>
-                        </div>
-                        <span className="font-semibold">{poster.format}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2 text-white/80">
-                          <Monitor className="w-4 h-4" />
-                          <span>Platform</span>
-                        </div>
-                        <span className="font-semibold">{poster.platform}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2 text-white/80">
-                          <MapPin className="w-4 h-4" />
-                          <span>Region</span>
-                        </div>
-                        <span className="font-semibold">{poster.region}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2 text-white/80">
-                          <Shield className="w-4 h-4" />
-                          <span>Rank Req.</span>
-                        </div>
-                        <span className="font-semibold">{poster.rankReq}</span>
-                      </div>
+                    <div className="flex items-center justify-center gap-4 text-sm">
+                      <Badge className="bg-white/20 backdrop-blur-sm border border-white/30 text-white px-4 py-1">
+                        {poster.participants} Players
+                      </Badge>
+                      <span className="text-white/80">Starts {poster.startDate}</span>
                     </div>
 
-                    <Button 
-                      size="lg" 
-                      className="w-full bg-white text-black hover:bg-white/90 font-bold text-lg"
-                      data-testid={`button-register-${poster.id}`}
-                    >
-                      Register Now
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        size="lg" 
+                        variant="outline"
+                        className="flex-1 bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20"
+                        onClick={() => setDetailsModal(poster)}
+                        data-testid={`button-details-${poster.id}`}
+                      >
+                        <Info className="w-4 h-4 mr-2" />
+                        Details
+                      </Button>
+                      <Button 
+                        size="lg" 
+                        className="flex-1 bg-green-600 text-white hover:bg-green-700 font-bold"
+                        onClick={() => setJoinModal(poster)}
+                        data-testid={`button-join-${poster.id}`}
+                      >
+                        Join
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -249,6 +230,154 @@ export default function PreviewHome() {
       </main>
 
       <BottomNavigation />
+
+      {/* Details Modal */}
+      <Dialog open={!!detailsModal} onOpenChange={() => setDetailsModal(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">{detailsModal?.title}</DialogTitle>
+            <DialogDescription>{detailsModal?.game}</DialogDescription>
+          </DialogHeader>
+          
+          {detailsModal && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Avatar className="w-12 h-12">
+                  <AvatarFallback className="text-2xl">{detailsModal.serverLogo}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold">{detailsModal.serverName}</p>
+                  <p className="text-sm text-muted-foreground">Tournament Host</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Prize Pool</p>
+                  <p className="text-xl font-bold text-green-600">{detailsModal.prize}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Entry Fee</p>
+                  <p className="text-xl font-bold">{detailsModal.entryFee}</p>
+                </div>
+              </div>
+
+              <div className="space-y-3 pt-2 border-t">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Clock className="w-4 h-4" />
+                    <span className="text-sm">Start Time</span>
+                  </div>
+                  <span className="font-semibold text-sm">{detailsModal.startDate} • {detailsModal.startTime}</span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Users className="w-4 h-4" />
+                    <span className="text-sm">Players</span>
+                  </div>
+                  <span className="font-semibold text-sm">{detailsModal.participants}</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Trophy className="w-4 h-4" />
+                    <span className="text-sm">Format</span>
+                  </div>
+                  <span className="font-semibold text-sm">{detailsModal.format}</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Monitor className="w-4 h-4" />
+                    <span className="text-sm">Platform</span>
+                  </div>
+                  <span className="font-semibold text-sm">{detailsModal.platform}</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="w-4 h-4" />
+                    <span className="text-sm">Region</span>
+                  </div>
+                  <span className="font-semibold text-sm">{detailsModal.region}</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Shield className="w-4 h-4" />
+                    <span className="text-sm">Rank Requirement</span>
+                  </div>
+                  <span className="font-semibold text-sm">{detailsModal.rankReq}</span>
+                </div>
+              </div>
+
+              <Button 
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold"
+                onClick={() => {
+                  setDetailsModal(null);
+                  setJoinModal(detailsModal);
+                }}
+                data-testid="button-join-from-details"
+              >
+                Join Tournament
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Join Options Modal */}
+      <Dialog open={!!joinModal} onOpenChange={() => setJoinModal(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Join Tournament</DialogTitle>
+            <DialogDescription>
+              Choose how you'd like to join {joinModal?.title}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-3">
+            <Button
+              className="w-full justify-between h-auto py-4 px-4"
+              variant="outline"
+              data-testid="button-join-server"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-primary/10">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold">Join Server & Tournament</p>
+                  <p className="text-xs text-muted-foreground">
+                    Join {joinModal?.serverName} and register
+                  </p>
+                </div>
+              </div>
+              <ArrowRight className="w-5 h-5 text-muted-foreground" />
+            </Button>
+
+            <Button
+              className="w-full justify-between h-auto py-4 px-4"
+              variant="outline"
+              data-testid="button-signup-page"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-primary/10">
+                  <Trophy className="w-5 h-5" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold">Go to Sign-Up Page</p>
+                  <p className="text-xs text-muted-foreground">
+                    View full tournament details & register
+                  </p>
+                </div>
+              </div>
+              <ArrowRight className="w-5 h-5 text-muted-foreground" />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
