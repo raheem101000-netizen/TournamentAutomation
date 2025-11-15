@@ -93,14 +93,9 @@ function Router() {
 }
 
 function App() {
-  const [isInitialized, setIsInitialized] = useState(false);
-
   useEffect(() => {
-    async function init() {
-      await initializeApp();
-      setIsInitialized(true);
-    }
-    init();
+    // Temporarily skip initialization for testing
+    // initializeApp();
     
     // Enable dark mode by default for 10 on 10 theme
     document.documentElement.classList.add('dark');
@@ -110,14 +105,6 @@ function App() {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
   };
-
-  if (!isInitialized) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-muted-foreground">Initializing...</p>
-      </div>
-    );
-  }
 
   return (
     <QueryClientProvider client={queryClient}>
