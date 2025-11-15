@@ -1,8 +1,11 @@
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Plus, Users, Trophy, Server } from "lucide-react";
+import { Plus, Users, Trophy, Server as ServerIcon, Search } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
+import type { Server } from "@shared/schema";
 
 const mockServers = [
   {
@@ -32,6 +35,12 @@ const mockServers = [
 ];
 
 export default function PreviewMyServers() {
+  const { data: servers, isLoading } = useQuery<Server[]>({
+    queryKey: ['/api/mobile-preview/servers'],
+  });
+
+  const myServers = servers || [];
+
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -45,60 +54,60 @@ export default function PreviewMyServers() {
       </header>
 
       <main className="container max-w-lg mx-auto px-4 py-4">
-        <div className="space-y-3">
-          {mockServers.map((server) => (
-            <Card
-              key={server.id}
-              className="p-4 hover-elevate cursor-pointer"
-              data-testid={`server-${server.id}`}
-            >
-              <div className="flex items-center gap-4">
-                <Avatar className="w-14 h-14">
-                  <AvatarFallback className="text-2xl">{server.logo}</AvatarFallback>
-                </Avatar>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <p className="text-muted-foreground">Loading servers...</p>
+          </div>
+        ) : myServers.length > 0 ? (
+          <div className="space-y-3">
+            {myServers.map((server) => (
+              <Link key={server.id} href={`/server/${server.id}`}>
+                <Card
+                  className="p-4 hover-elevate cursor-pointer"
+                  data-testid={`server-${server.id}`}
+                >
+                  <div className="flex items-center gap-4">
+                    <Avatar className="w-14 h-14">
+                      <AvatarFallback className="text-2xl">{"🎮"}</AvatarFallback>
+                    </Avatar>
 
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-lg truncate mb-1">
-                    {server.name}
-                  </h3>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Users className="w-3 h-3" />
-                      <span>{server.members}</span>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-lg truncate mb-1">
+                        {server.name}
+                      </h3>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Users className="w-3 h-3" />
+                          <span>{server.memberCount || 0} members</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Trophy className="w-3 h-3" />
-                      <span>{server.activeTournaments} active</span>
+
+                    <div className="text-right">
+                      <Button size="sm" variant="outline" data-testid={`button-manage-${server.id}`}>
+                        View
+                      </Button>
                     </div>
                   </div>
-                </div>
-
-                <div className="text-right">
-                  <div className="text-xs font-medium text-muted-foreground mb-1">
-                    {server.role}
-                  </div>
-                  <Button size="sm" variant="outline" data-testid={`button-manage-${server.id}`}>
-                    Manage
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        {mockServers.length === 0 && (
+                </Card>
+              </Link>
+            ))}
+          </div>
+        ) : (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
-              <Server className="w-10 h-10 text-muted-foreground" />
+              <ServerIcon className="w-10 h-10 text-muted-foreground" />
             </div>
             <h3 className="text-lg font-semibold mb-2">No servers yet</h3>
             <p className="text-sm text-muted-foreground mb-4 max-w-sm">
-              Create your first server to start organizing tournaments and building your gaming community
+              Join a server from the Discovery page to get started!
             </p>
-            <Button data-testid="button-create-first-server">
-              <Plus className="w-4 h-4 mr-2" />
-              Create Server
-            </Button>
+            <Link href="/discovery">
+              <Button data-testid="button-go-to-discovery">
+                <Search className="w-4 h-4 mr-2" />
+                Discover Servers
+              </Button>
+            </Link>
           </div>
         )}
       </main>

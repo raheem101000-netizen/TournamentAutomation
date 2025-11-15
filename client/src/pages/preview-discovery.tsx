@@ -1,4 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -70,6 +71,8 @@ const mockServers = [
 
 export default function PreviewDiscovery() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  
   const { data: servers, isLoading } = useQuery<Server[]>({
     queryKey: ['/api/mobile-preview/servers'],
   });
@@ -81,12 +84,14 @@ export default function PreviewDiscovery() {
         role: "member",
       });
     },
-    onSuccess: () => {
+    onSuccess: (_data, serverId) => {
       toast({
         title: "Joined server!",
         description: "You've successfully joined the server.",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/mobile-preview/servers'] });
+      // Navigate to the server detail page
+      setLocation(`/server/${serverId}`);
     },
     onError: (error: any) => {
       toast({
