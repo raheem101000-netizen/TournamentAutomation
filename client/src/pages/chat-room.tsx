@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,14 +22,13 @@ interface ChatMessage {
 
 export default function ChatRoom() {
   const { matchId } = useParams<{ matchId: string }>();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [ws, setWs] = useState<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  // Fetch initial messages
-  const { data: initialMessages } = useQuery<ChatMessage[]>({
+  // Fetch messages from query cache (single source of truth)
+  const { data: messages = [] } = useQuery<ChatMessage[]>({
     queryKey: ["/api/matches", matchId, "messages"],
     enabled: !!matchId,
   });
@@ -50,7 +50,18 @@ export default function ChatRoom() {
         const payload = JSON.parse(event.data);
         // Handle both REST and WebSocket message formats
         const message = payload.type === "new_message" ? payload.message : payload;
-        setMessages((prev) => [...prev, message]);
+        
+        // Update query cache instead of local state
+        queryClient.setQueryData<ChatMessage[]>(
+          ["/api/matches", matchId, "messages"],
+          (oldMessages = []) => {
+            // Avoid duplicates by checking if message ID already exists
+            if (oldMessages.some((m) => m.id === message.id)) {
+              return oldMessages;
+            }
+            return [...oldMessages, message];
+          }
+        );
       } catch (error) {
         console.error("Error parsing message:", error);
       }
@@ -60,13 +71,18 @@ export default function ChatRoom() {
       console.error("WebSocket error:", error);
       toast({
         title: "Connection Error",
-        description: "Failed to connect to chat",
+        description: "Failed to connect to chat. Retrying...",
         variant: "destructive",
       });
     };
 
     websocket.onclose = () => {
       console.log("WebSocket disconnected");
+      // Could add reconnection logic here
+      toast({
+        title: "Disconnected",
+        description: "Chat connection closed",
+      });
     };
 
     setWs(websocket);
@@ -76,14 +92,7 @@ export default function ChatRoom() {
     };
   }, [matchId, toast]);
 
-  // Load initial messages
-  useEffect(() => {
-    if (initialMessages) {
-      setMessages(initialMessages);
-    }
-  }, [initialMessages]);
-
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
