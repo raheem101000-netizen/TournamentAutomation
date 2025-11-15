@@ -134,12 +134,12 @@ export default function PreviewHome() {
         </div>
       </header>
 
-      <main className="container max-w-lg mx-auto px-4 py-4">
+      <main className="container max-w-md mx-auto px-4 py-4">
         <div className="space-y-6">
           {mockPosters.map((poster) => (
             <Card
               key={poster.id}
-              className="overflow-hidden hover-elevate cursor-pointer"
+              className="overflow-hidden hover-elevate cursor-pointer max-w-sm mx-auto"
               data-testid={`tournament-poster-${poster.id}`}
             >
               <div className="relative h-[450px] overflow-hidden">
