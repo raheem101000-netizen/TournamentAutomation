@@ -3,7 +3,7 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Edit, Users, Trophy, Medal, Award, Star, Target, Plus, ArrowRight, Crown } from "lucide-react";
+import { Settings, Edit, Users, Trophy, Medal, Award, Star, Target, Plus, ArrowRight, Crown, Calendar, Shield } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Dialog,
@@ -24,57 +24,51 @@ const mockUser = {
 const mockAchievements = [
   {
     id: "1",
-    title: "First Victory",
+    title: "Summer Champion",
     description: "Win your first tournament",
     icon: Trophy,
     earned: true,
     type: "solo",
-    rarity: "common",
+    rarity: "rare",
+    organizer: "ESportsLeague",
+    tournament: "Summer Championship 2024",
+    date: "Aug 15, 2024",
   },
   {
     id: "2",
-    title: "Champion",
-    description: "Win 10 tournaments",
+    title: "MVP Award",
+    description: "Most Valuable Player",
     icon: Medal,
     earned: true,
     type: "solo",
-    rarity: "rare",
+    rarity: "epic",
+    organizer: "ProGaming",
+    tournament: "Winter Masters",
+    date: "Dec 3, 2024",
   },
   {
     id: "3",
-    title: "Team Player",
-    description: "Win 5 team tournaments",
+    title: "Team Victory",
+    description: "Win as a team",
     icon: Users,
     earned: true,
     type: "team",
     rarity: "rare",
+    organizer: "ESportsLeague",
+    tournament: "Summer Championship 2024",
+    date: "Aug 15, 2024",
   },
   {
     id: "4",
-    title: "Legendary",
-    description: "Win 50 tournaments",
-    icon: Award,
-    earned: false,
-    type: "solo",
-    rarity: "legendary",
-  },
-  {
-    id: "5",
     title: "Perfect Score",
-    description: "Win a tournament without losing a single match",
+    description: "Flawless victory",
     icon: Star,
     earned: true,
     type: "solo",
-    rarity: "epic",
-  },
-  {
-    id: "6",
-    title: "Tournament Master",
-    description: "Organize 20 successful tournaments",
-    icon: Target,
-    earned: false,
-    type: "solo",
-    rarity: "epic",
+    rarity: "legendary",
+    organizer: "MidnightGaming",
+    tournament: "Midnight Masters",
+    date: "Oct 22, 2024",
   },
 ];
 
@@ -138,6 +132,7 @@ export default function PreviewAccount() {
   const [, setLocation] = useLocation();
   const [selectedTeam, setSelectedTeam] = useState<typeof mockTeams[0] | null>(null);
   const [viewingUser, setViewingUser] = useState<string | null>(null);
+  const [selectedAchievement, setSelectedAchievement] = useState<typeof mockAchievements[0] | null>(null);
   const earnedAchievements = mockAchievements.filter(a => a.earned);
   const lockedAchievements = mockAchievements.filter(a => !a.earned);
 
@@ -276,72 +271,69 @@ export default function PreviewAccount() {
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">Achievements</h3>
             <Badge variant="secondary">
-              {earnedAchievements.length}/{mockAchievements.length}
+              {earnedAchievements.length} earned
             </Badge>
           </div>
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-muted-foreground">Earned</h4>
-              <div className="grid grid-cols-3 gap-3">
-                {earnedAchievements.map((achievement) => {
-                  const Icon = achievement.icon;
-                  return (
-                    <Card
-                      key={achievement.id}
-                      className={`p-4 hover-elevate cursor-pointer ${rarityColors[achievement.rarity]}`}
-                      data-testid={`achievement-${achievement.id}`}
-                    >
-                      <div className="flex flex-col items-center text-center space-y-2">
+          <div className="space-y-3">
+            {earnedAchievements.map((achievement) => {
+              const Icon = achievement.icon;
+              return (
+                <Card
+                  key={achievement.id}
+                  className="hover-elevate cursor-pointer"
+                  onClick={() => setSelectedAchievement(achievement)}
+                  data-testid={`achievement-${achievement.id}`}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex gap-4">
+                      <div className={`p-3 rounded-lg ${rarityColors[achievement.rarity]} flex items-center justify-center shrink-0`}>
                         <Icon className="w-8 h-8" />
-                        <div className="space-y-1">
-                          <p className="text-xs font-semibold line-clamp-2">
-                            {achievement.title}
-                          </p>
+                      </div>
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold text-sm">{achievement.title}</h4>
                           <Badge variant="outline" className="text-xs capitalize">
                             {achievement.type}
                           </Badge>
                         </div>
-                      </div>
-                    </Card>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-muted-foreground">Locked</h4>
-              <div className="grid grid-cols-3 gap-3">
-                {lockedAchievements.map((achievement) => {
-                  const Icon = achievement.icon;
-                  return (
-                    <Card
-                      key={achievement.id}
-                      className="p-4 opacity-50 grayscale"
-                      data-testid={`achievement-locked-${achievement.id}`}
-                    >
-                      <div className="flex flex-col items-center text-center space-y-2">
-                        <Icon className="w-8 h-8" />
-                        <div className="space-y-1">
-                          <p className="text-xs font-semibold line-clamp-2">
-                            {achievement.title}
-                          </p>
-                          <Badge variant="outline" className="text-xs capitalize">
-                            {achievement.type}
-                          </Badge>
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          {achievement.tournament}
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Shield className="w-3 h-3" />
+                          <span>@{achievement.organizer}</span>
+                          <span>•</span>
+                          <span>{achievement.date}</span>
                         </div>
                       </div>
-                    </Card>
-                  );
-                })}
-              </div>
-            </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
           <Card className="p-4">
-            <p className="text-sm text-muted-foreground text-center">
-              Click on any achievement to view details and progress
-            </p>
+            <div className="flex items-start gap-3">
+              <Shield className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+              <div className="text-sm text-muted-foreground flex-1">
+                <p className="font-medium text-foreground mb-1">Verified Achievements</p>
+                <p>All achievements are awarded by tournament organizers and cannot be self-added.</p>
+              </div>
+            </div>
+            {isOwnProfile && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full mt-4"
+                onClick={() => setLocation("/organizer-award")}
+                data-testid="button-organizer-panel"
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                Organizer Panel (Demo)
+              </Button>
+            )}
           </Card>
         </div>
       </main>
@@ -434,6 +426,71 @@ export default function PreviewAccount() {
                       </Card>
                     ))}
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Achievement Detail Modal */}
+      <Dialog open={!!selectedAchievement} onOpenChange={() => setSelectedAchievement(null)}>
+        <DialogContent className="max-w-md">
+          {selectedAchievement && (
+            <div className="space-y-6">
+              <DialogHeader className="space-y-4">
+                <div className="flex flex-col items-center text-center space-y-4">
+                  <div className={`p-6 rounded-2xl ${rarityColors[selectedAchievement.rarity]}`}>
+                    <selectedAchievement.icon className="w-16 h-16" />
+                  </div>
+                  <div>
+                    <DialogTitle className="text-2xl mb-2">{selectedAchievement.title}</DialogTitle>
+                    <Badge className="capitalize">{selectedAchievement.rarity}</Badge>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-muted-foreground">Description</h4>
+                  <p className="text-sm">{selectedAchievement.description}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-muted-foreground">Tournament</h4>
+                  <Card className="p-3">
+                    <p className="font-semibold text-sm">{selectedAchievement.tournament}</p>
+                  </Card>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-muted-foreground">Awarded By</h4>
+                  <Card className="p-3">
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-primary" />
+                      <p className="font-semibold text-sm">@{selectedAchievement.organizer}</p>
+                      <Badge variant="secondary" className="text-xs ml-auto">Verified</Badge>
+                    </div>
+                  </Card>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-muted-foreground">Date Awarded</h4>
+                  <Card className="p-3">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-muted-foreground" />
+                      <p className="text-sm">{selectedAchievement.date}</p>
+                    </div>
+                  </Card>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-muted-foreground">Achievement Type</h4>
+                  <Card className="p-3">
+                    <Badge variant="outline" className="capitalize">
+                      {selectedAchievement.type}
+                    </Badge>
+                  </Card>
                 </div>
               </div>
             </div>
