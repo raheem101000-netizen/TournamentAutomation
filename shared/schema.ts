@@ -272,6 +272,8 @@ export type PosterTemplateTag = typeof posterTemplateTags.$inferSelect;
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull(),
+  fullName: text("full_name"),
+  passwordHash: text("password_hash"),
   displayName: text("display_name"),
   avatarUrl: text("avatar_url"),
   bio: text("bio"),
