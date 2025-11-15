@@ -29,6 +29,7 @@ import Login from "@/pages/login";
 import CreateServer from "@/pages/create-server";
 import CreateTournament from "@/pages/create-tournament";
 import ChatRoom from "@/pages/chat-room";
+import TeamBuilder from "@/pages/team-builder";
 import { User, Search, Bell, Trophy, Server, MessageSquare } from "lucide-react";
 import { initializeApp } from "../../lib/initializeApp";
 
@@ -77,6 +78,7 @@ function Router() {
       <Route path="/create-server" component={CreateServer} />
       <Route path="/create-tournament" component={CreateTournament} />
       <Route path="/chat/:matchId" component={ChatRoom} />
+      <Route path="/team-builder" component={TeamBuilder} />
       <Route path="/" component={PreviewHome} />
       <Route path="/discovery" component={PreviewDiscovery} />
       <Route path="/messages" component={PreviewMessages} />
