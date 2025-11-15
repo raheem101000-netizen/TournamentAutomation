@@ -47,7 +47,9 @@ export default function ChatRoom() {
 
     websocket.onmessage = (event) => {
       try {
-        const message = JSON.parse(event.data);
+        const payload = JSON.parse(event.data);
+        // Handle both REST and WebSocket message formats
+        const message = payload.type === "new_message" ? payload.message : payload;
         setMessages((prev) => [...prev, message]);
       } catch (error) {
         console.error("Error parsing message:", error);

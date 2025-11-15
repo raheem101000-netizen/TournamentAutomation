@@ -64,6 +64,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       matchConnections.get(matchId)!.add(ws);
 
+      // Handle incoming messages
+      ws.on("message", async (data) => {
+        try {
+          const messageData = JSON.parse(data.toString());
+          
+          // Validate using schema and ensure matchId from URL is used
+          const validatedData = insertChatMessageSchema.parse({
+            matchId: matchId, // Use matchId from connection URL for security
+            teamId: messageData.teamId || null, // Optional field
+            message: messageData.message,
+            imageUrl: messageData.imageUrl || null, // Optional field
+          });
+
+          // Save message to storage
+          const savedMessage = await storage.createChatMessage(validatedData);
+
+          // Broadcast to all connections in this match with consistent format
+          const broadcastPayload = {
+            type: "new_message",
+            message: savedMessage,
+          };
+          broadcastToMatch(matchId, broadcastPayload);
+        } catch (error: any) {
+          console.error("Error handling WebSocket message:", error);
+          console.error("Error details:", error.message);
+          ws.send(JSON.stringify({ error: "Failed to process message", details: error.message }));
+        }
+      });
+
       ws.on("close", () => {
         matchConnections.get(matchId)?.delete(ws);
         if (matchConnections.get(matchId)?.size === 0) {
