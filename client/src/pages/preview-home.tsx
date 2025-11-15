@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Search, SlidersHorizontal, Share2, Trophy, Coins } from "lucide-react";
+import { Search, SlidersHorizontal, Share2, Trophy, Coins, Clock, Users, Monitor, MapPin, Shield } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const mockPosters = [
@@ -17,7 +17,12 @@ const mockPosters = [
     prize: "$5,000",
     entryFee: "$25",
     startDate: "Dec 20, 2024",
+    startTime: "6:00 PM EST",
     participants: "64/128",
+    format: "Single Elimination",
+    platform: "PC",
+    region: "North America",
+    rankReq: "Gold+",
   },
   {
     id: "2",
@@ -29,7 +34,12 @@ const mockPosters = [
     prize: "$10,000",
     entryFee: "Free",
     startDate: "Dec 18, 2024",
+    startTime: "8:00 PM EST",
     participants: "32/64",
+    format: "Best of 3",
+    platform: "PC",
+    region: "EU West",
+    rankReq: "Platinum+",
   },
   {
     id: "3",
@@ -41,7 +51,12 @@ const mockPosters = [
     prize: "$2,500",
     entryFee: "$10",
     startDate: "Dec 22, 2024",
+    startTime: "3:00 PM EST",
     participants: "16/32",
+    format: "Swiss System",
+    platform: "PC",
+    region: "Global",
+    rankReq: "Any Rank",
   },
   {
     id: "4",
@@ -53,7 +68,12 @@ const mockPosters = [
     prize: "$7,500",
     entryFee: "$15",
     startDate: "Dec 25, 2024",
+    startTime: "5:00 PM EST",
     participants: "48/96",
+    format: "Battle Royale",
+    platform: "Cross-Platform",
+    region: "Americas",
+    rankReq: "Diamond+",
   },
 ];
 
@@ -149,7 +169,7 @@ export default function PreviewHome() {
                     {poster.game}
                   </div>
 
-                  <div className="flex flex-col gap-4 w-full max-w-xs">
+                  <div className="flex flex-col gap-4 w-full max-w-sm">
                     <div className="flex items-center justify-center gap-6">
                       <div className="flex flex-col items-center">
                         <Trophy className="w-6 h-6 mb-1" />
@@ -163,11 +183,54 @@ export default function PreviewHome() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-center gap-4 text-sm">
-                      <Badge className="bg-white/20 backdrop-blur-sm border border-white/30 text-white px-4 py-1">
-                        {poster.participants} Players
-                      </Badge>
-                      <span className="text-white/80">Starts {poster.startDate}</span>
+                    <div className="bg-black/40 backdrop-blur-sm border border-white/20 rounded-md p-4 space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-white/80">
+                          <Clock className="w-4 h-4" />
+                          <span>Start Time</span>
+                        </div>
+                        <span className="font-semibold">{poster.startDate} • {poster.startTime}</span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-white/80">
+                          <Users className="w-4 h-4" />
+                          <span>Players</span>
+                        </div>
+                        <span className="font-semibold">{poster.participants}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-white/80">
+                          <Trophy className="w-4 h-4" />
+                          <span>Format</span>
+                        </div>
+                        <span className="font-semibold">{poster.format}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-white/80">
+                          <Monitor className="w-4 h-4" />
+                          <span>Platform</span>
+                        </div>
+                        <span className="font-semibold">{poster.platform}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-white/80">
+                          <MapPin className="w-4 h-4" />
+                          <span>Region</span>
+                        </div>
+                        <span className="font-semibold">{poster.region}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-white/80">
+                          <Shield className="w-4 h-4" />
+                          <span>Rank Req.</span>
+                        </div>
+                        <span className="font-semibold">{poster.rankReq}</span>
+                      </div>
                     </div>
 
                     <Button 
