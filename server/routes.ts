@@ -13,6 +13,7 @@ import {
   insertRegistrationFieldSchema,
   insertRegistrationSchema,
   insertRegistrationResponseSchema,
+  insertServerSchema,
   insertChannelSchema,
   insertPosterTemplateSchema,
   insertPosterTemplateTagSchema,
@@ -620,6 +621,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Server routes
+  app.post("/api/servers", async (req, res) => {
+    try {
+      const validatedData = insertServerSchema.parse(req.body);
+      const server = await storage.createServer(validatedData);
+      
+      // Create default channels for the server
+      const defaultChannels = [
+        { name: "general", slug: "general", type: "chat" as const, serverId: server.id, position: 0 },
+        { name: "announcements", slug: "announcements", type: "announcements" as const, serverId: server.id, position: 1 },
+      ];
+      
+      for (const channelData of defaultChannels) {
+        await storage.createChannel(channelData);
+      }
+      
+      res.status(201).json(server);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   app.get("/api/servers/:id", async (req, res) => {
     try {
       const server = await storage.getServer(req.params.id);

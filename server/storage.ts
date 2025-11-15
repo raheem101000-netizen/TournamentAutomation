@@ -50,6 +50,7 @@ import {
   type InsertRegistrationField,
   type InsertRegistration,
   type InsertRegistrationResponse,
+  type InsertServer,
   type InsertChannel,
   type InsertPosterTemplate,
   type InsertPosterTemplateTag,
@@ -104,6 +105,7 @@ export interface IStorage {
   getResponsesByRegistration(registrationId: string): Promise<RegistrationResponse[]>;
 
   // Server operations
+  createServer(data: InsertServer): Promise<Server>;
   getAllServers(): Promise<Server[]>;
   getServer(id: string): Promise<Server | undefined>;
   
@@ -356,6 +358,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Server operations
+  async createServer(data: InsertServer): Promise<Server> {
+    const [server] = await db.insert(servers).values(data).returning();
+    return server;
+  }
+
   async getAllServers(): Promise<Server[]> {
     return await db.select().from(servers).orderBy(servers.createdAt);
   }
