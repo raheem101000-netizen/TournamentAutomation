@@ -114,20 +114,20 @@ export default function PreviewHome() {
             </Button>
           </div>
 
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            <Badge variant="default" className="whitespace-nowrap" data-testid="filter-all">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4">
+            <Badge variant="default" className="whitespace-nowrap text-xs px-3" data-testid="filter-all">
               All Games
             </Badge>
-            <Badge variant="outline" className="whitespace-nowrap" data-testid="filter-valorant">
+            <Badge variant="outline" className="whitespace-nowrap text-xs px-3" data-testid="filter-valorant">
               Valorant
             </Badge>
-            <Badge variant="outline" className="whitespace-nowrap" data-testid="filter-lol">
+            <Badge variant="outline" className="whitespace-nowrap text-xs px-3" data-testid="filter-lol">
               League of Legends
             </Badge>
-            <Badge variant="outline" className="whitespace-nowrap" data-testid="filter-csgo">
+            <Badge variant="outline" className="whitespace-nowrap text-xs px-3" data-testid="filter-csgo">
               CS:GO
             </Badge>
-            <Badge variant="outline" className="whitespace-nowrap" data-testid="filter-apex">
+            <Badge variant="outline" className="whitespace-nowrap text-xs px-3" data-testid="filter-apex">
               Apex Legends
             </Badge>
           </div>
@@ -201,19 +201,19 @@ export default function PreviewHome() {
                       <span className="text-white/80">Starts {poster.startDate}</span>
                     </div>
 
-                    <div className="flex items-center justify-center gap-6">
+                    <div className="flex items-center justify-center gap-3">
                       <Button 
                         size="lg" 
-                        className="bg-green-600 text-white hover:bg-green-700 font-bold px-20"
+                        className="bg-green-600 text-white hover:bg-green-700 font-bold px-8 flex-1"
                         onClick={() => setJoinModal(poster)}
                         data-testid={`button-join-${poster.id}`}
                       >
-                        Join
+                        Join Tournament
                       </Button>
                       <Button 
                         size="icon"
                         variant="outline"
-                        className="bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20 rounded-full w-9 h-9"
+                        className="bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20 rounded-full shrink-0"
                         onClick={() => setDetailsModal(poster)}
                         data-testid={`button-details-${poster.id}`}
                       >
