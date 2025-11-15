@@ -22,6 +22,8 @@ import PreviewAccount from "@/pages/preview-account";
 import PreviewPosterBuilder from "@/pages/preview-poster-builder";
 import PreviewCreateTeam from "@/pages/preview-create-team";
 import PreviewOrganizerAward from "@/pages/preview-organizer-award";
+import PreviewTemplates from "@/pages/preview-templates";
+import PreviewAdminTemplates from "@/pages/preview-admin-templates";
 import { User, Search, Bell, Trophy, Server, MessageSquare } from "lucide-react";
 import { initializeApp } from "../../lib/initializeApp";
 
@@ -74,6 +76,8 @@ function Router() {
       <Route path="/poster-builder" component={PreviewPosterBuilder} />
       <Route path="/create-team" component={PreviewCreateTeam} />
       <Route path="/organizer-award" component={PreviewOrganizerAward} />
+      <Route path="/templates" component={PreviewTemplates} />
+      <Route path="/admin/templates" component={PreviewAdminTemplates} />
       
       <Route path="/old" component={MobilePreviewHome} />
       <Route path="/old/discovery" component={MobilePreviewServers} />

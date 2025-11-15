@@ -239,3 +239,32 @@ export type InsertMessageThread = z.infer<typeof insertMessageThreadSchema>;
 export type MessageThread = typeof messageThreads.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
+
+export const posterTemplates = pgTable("poster_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  backgroundImageUrl: text("background_image_url").notNull(),
+  category: text("category").notNull(),
+  isActive: integer("is_active").default(1).notNull(),
+  displayOrder: integer("display_order").default(0).notNull(),
+});
+
+export const posterTemplateTags = pgTable("poster_template_tags", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  templateId: varchar("template_id").notNull(),
+  tag: text("tag").notNull(),
+});
+
+export const insertPosterTemplateSchema = createInsertSchema(posterTemplates).omit({
+  id: true,
+});
+
+export const insertPosterTemplateTagSchema = createInsertSchema(posterTemplateTags).omit({
+  id: true,
+});
+
+export type InsertPosterTemplate = z.infer<typeof insertPosterTemplateSchema>;
+export type PosterTemplate = typeof posterTemplates.$inferSelect;
+export type InsertPosterTemplateTag = z.infer<typeof insertPosterTemplateTagSchema>;
+export type PosterTemplateTag = typeof posterTemplateTags.$inferSelect;
