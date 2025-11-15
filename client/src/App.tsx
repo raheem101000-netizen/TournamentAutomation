@@ -20,6 +20,7 @@ import PreviewMyServers from "@/pages/preview-my-servers";
 import PreviewServerDetail from "@/pages/preview-server-detail";
 import PreviewAccount from "@/pages/preview-account";
 import PreviewPosterBuilder from "@/pages/preview-poster-builder";
+import PreviewCreateTeam from "@/pages/preview-create-team";
 import { User, Search, Bell, Trophy, Server, MessageSquare } from "lucide-react";
 import { initializeApp } from "../../lib/initializeApp";
 
@@ -70,6 +71,7 @@ function Router() {
       <Route path="/server/:serverId" component={PreviewServerDetail} />
       <Route path="/account" component={PreviewAccount} />
       <Route path="/poster-builder" component={PreviewPosterBuilder} />
+      <Route path="/create-team" component={PreviewCreateTeam} />
       
       <Route path="/old" component={MobilePreviewHome} />
       <Route path="/old/discovery" component={MobilePreviewServers} />
