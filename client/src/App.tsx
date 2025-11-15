@@ -27,6 +27,7 @@ import PreviewAdminTemplates from "@/pages/preview-admin-templates";
 import Register from "@/pages/register";
 import Login from "@/pages/login";
 import CreateServer from "@/pages/create-server";
+import CreateTournament from "@/pages/create-tournament";
 import { User, Search, Bell, Trophy, Server, MessageSquare } from "lucide-react";
 import { initializeApp } from "../../lib/initializeApp";
 
@@ -73,6 +74,7 @@ function Router() {
       <Route path="/register" component={Register} />
       <Route path="/login" component={Login} />
       <Route path="/create-server" component={CreateServer} />
+      <Route path="/create-tournament" component={CreateTournament} />
       <Route path="/" component={PreviewHome} />
       <Route path="/discovery" component={PreviewDiscovery} />
       <Route path="/messages" component={PreviewMessages} />
