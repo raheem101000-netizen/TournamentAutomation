@@ -268,3 +268,100 @@ export type InsertPosterTemplate = z.infer<typeof insertPosterTemplateSchema>;
 export type PosterTemplate = typeof posterTemplates.$inferSelect;
 export type InsertPosterTemplateTag = z.infer<typeof insertPosterTemplateTagSchema>;
 export type PosterTemplateTag = typeof posterTemplateTags.$inferSelect;
+
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  username: text("username").notNull(),
+  displayName: text("display_name"),
+  avatarUrl: text("avatar_url"),
+  bio: text("bio"),
+  level: integer("level").default(1),
+  xp: integer("xp").default(0),
+  rankTitle: text("rank_title").default("Rookie"),
+  totalTournaments: integer("total_tournaments").default(0),
+  totalWins: integer("total_wins").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const achievements = pgTable("achievements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  iconUrl: text("icon_url"),
+  achievedAt: timestamp("achieved_at").defaultNow().notNull(),
+  category: text("category"),
+  type: text("type", { enum: ["solo", "team"] }).notNull(),
+});
+
+export const teamProfiles = pgTable("team_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  tag: text("tag"),
+  bio: text("bio"),
+  logoUrl: text("logo_url"),
+  ownerId: varchar("owner_id").notNull(),
+  totalMembers: integer("total_members").default(1),
+  totalTournaments: integer("total_tournaments").default(0),
+  totalWins: integer("total_wins").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const teamMembers = pgTable("team_members", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  teamId: varchar("team_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  role: text("role").default("Member"),
+  joinedAt: timestamp("joined_at").defaultNow().notNull(),
+});
+
+export const serverMembers = pgTable("server_members", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  serverId: varchar("server_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  role: text("role").default("Member"),
+  joinedAt: timestamp("joined_at").defaultNow().notNull(),
+});
+
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  level: true,
+  xp: true,
+  totalTournaments: true,
+  totalWins: true,
+});
+
+export const insertAchievementSchema = createInsertSchema(achievements).omit({
+  id: true,
+  achievedAt: true,
+});
+
+export const insertTeamProfileSchema = createInsertSchema(teamProfiles).omit({
+  id: true,
+  createdAt: true,
+  totalMembers: true,
+  totalTournaments: true,
+  totalWins: true,
+});
+
+export const insertTeamMemberSchema = createInsertSchema(teamMembers).omit({
+  id: true,
+  joinedAt: true,
+});
+
+export const insertServerMemberSchema = createInsertSchema(serverMembers).omit({
+  id: true,
+  joinedAt: true,
+});
+
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;
+export type InsertAchievement = z.infer<typeof insertAchievementSchema>;
+export type Achievement = typeof achievements.$inferSelect;
+export type InsertTeamProfile = z.infer<typeof insertTeamProfileSchema>;
+export type TeamProfile = typeof teamProfiles.$inferSelect;
+export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
+export type TeamMember = typeof teamMembers.$inferSelect;
+export type InsertServerMember = z.infer<typeof insertServerMemberSchema>;
+export type ServerMember = typeof serverMembers.$inferSelect;

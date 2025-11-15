@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db } from "./db";
 import {
   tournaments,
@@ -14,6 +14,13 @@ import {
   channels,
   messageThreads,
   notifications,
+  posterTemplates,
+  posterTemplateTags,
+  users,
+  achievements,
+  teamProfiles,
+  teamMembers,
+  serverMembers,
   type Tournament,
   type Team,
   type Match,
@@ -27,6 +34,13 @@ import {
   type Channel,
   type MessageThread,
   type Notification,
+  type PosterTemplate,
+  type PosterTemplateTag,
+  type User,
+  type Achievement,
+  type TeamProfile,
+  type TeamMember,
+  type ServerMember,
   type InsertTournament,
   type InsertTeam,
   type InsertMatch,
@@ -37,6 +51,13 @@ import {
   type InsertRegistration,
   type InsertRegistrationResponse,
   type InsertChannel,
+  type InsertPosterTemplate,
+  type InsertPosterTemplateTag,
+  type InsertUser,
+  type InsertAchievement,
+  type InsertTeamProfile,
+  type InsertTeamMember,
+  type InsertServerMember,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -94,6 +115,45 @@ export interface IStorage {
   // Mobile preview operations
   getAllMessageThreads(): Promise<MessageThread[]>;
   getAllNotifications(): Promise<Notification[]>;
+
+  // Poster template operations
+  createPosterTemplate(data: InsertPosterTemplate): Promise<PosterTemplate>;
+  getAllPosterTemplates(): Promise<PosterTemplate[]>;
+  getActivePosterTemplates(): Promise<PosterTemplate[]>;
+  getPosterTemplate(id: string): Promise<PosterTemplate | undefined>;
+  updatePosterTemplate(id: string, data: Partial<PosterTemplate>): Promise<PosterTemplate | undefined>;
+  deletePosterTemplate(id: string): Promise<void>;
+  
+  createPosterTemplateTag(data: InsertPosterTemplateTag): Promise<PosterTemplateTag>;
+  getTagsByTemplate(templateId: string): Promise<PosterTemplateTag[]>;
+  deleteTagsByTemplate(templateId: string): Promise<void>;
+
+  // User operations
+  createUser(data: InsertUser): Promise<User>;
+  getUser(id: string): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  updateUser(id: string, data: Partial<User>): Promise<User | undefined>;
+
+  // Achievement operations
+  createAchievement(data: InsertAchievement): Promise<Achievement>;
+  getAchievementsByUser(userId: string): Promise<Achievement[]>;
+
+  // Team profile operations
+  createTeamProfile(data: InsertTeamProfile): Promise<TeamProfile>;
+  getTeamProfile(id: string): Promise<TeamProfile | undefined>;
+  getTeamProfilesByOwner(ownerId: string): Promise<TeamProfile[]>;
+  updateTeamProfile(id: string, data: Partial<TeamProfile>): Promise<TeamProfile | undefined>;
+  deleteTeamProfile(id: string): Promise<void>;
+
+  // Team member operations
+  createTeamMember(data: InsertTeamMember): Promise<TeamMember>;
+  getMembersByTeam(teamId: string): Promise<TeamMember[]>;
+  deleteMemberFromTeam(teamId: string, userId: string): Promise<void>;
+
+  // Server member operations
+  createServerMember(data: InsertServerMember): Promise<ServerMember>;
+  getMembersByServer(serverId: string): Promise<ServerMember[]>;
+  deleteMemberFromServer(serverId: string, userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -327,6 +387,156 @@ export class DatabaseStorage implements IStorage {
 
   async getAllNotifications(): Promise<Notification[]> {
     return await db.select().from(notifications).orderBy(notifications.timestamp);
+  }
+
+  // Poster template operations
+  async createPosterTemplate(data: InsertPosterTemplate): Promise<PosterTemplate> {
+    const [template] = await db.insert(posterTemplates).values(data).returning();
+    return template;
+  }
+
+  async getAllPosterTemplates(): Promise<PosterTemplate[]> {
+    return await db.select().from(posterTemplates).orderBy(posterTemplates.displayOrder);
+  }
+
+  async getActivePosterTemplates(): Promise<PosterTemplate[]> {
+    return await db.select().from(posterTemplates)
+      .where(eq(posterTemplates.isActive, 1))
+      .orderBy(posterTemplates.displayOrder);
+  }
+
+  async getPosterTemplate(id: string): Promise<PosterTemplate | undefined> {
+    const [template] = await db.select().from(posterTemplates).where(eq(posterTemplates.id, id));
+    return template || undefined;
+  }
+
+  async updatePosterTemplate(id: string, data: Partial<PosterTemplate>): Promise<PosterTemplate | undefined> {
+    const [template] = await db
+      .update(posterTemplates)
+      .set(data)
+      .where(eq(posterTemplates.id, id))
+      .returning();
+    return template || undefined;
+  }
+
+  async deletePosterTemplate(id: string): Promise<void> {
+    await this.deleteTagsByTemplate(id);
+    await db.delete(posterTemplates).where(eq(posterTemplates.id, id));
+  }
+
+  async createPosterTemplateTag(data: InsertPosterTemplateTag): Promise<PosterTemplateTag> {
+    const [tag] = await db.insert(posterTemplateTags).values(data).returning();
+    return tag;
+  }
+
+  async getTagsByTemplate(templateId: string): Promise<PosterTemplateTag[]> {
+    return await db.select().from(posterTemplateTags).where(eq(posterTemplateTags.templateId, templateId));
+  }
+
+  async deleteTagsByTemplate(templateId: string): Promise<void> {
+    await db.delete(posterTemplateTags).where(eq(posterTemplateTags.templateId, templateId));
+  }
+
+  // User operations
+  async createUser(data: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(data).returning();
+    return user;
+  }
+
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async updateUser(id: string, data: Partial<User>): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set(data)
+      .where(eq(users.id, id))
+      .returning();
+    return user || undefined;
+  }
+
+  // Achievement operations
+  async createAchievement(data: InsertAchievement): Promise<Achievement> {
+    const [achievement] = await db.insert(achievements).values(data).returning();
+    return achievement;
+  }
+
+  async getAchievementsByUser(userId: string): Promise<Achievement[]> {
+    return await db.select().from(achievements)
+      .where(eq(achievements.userId, userId))
+      .orderBy(achievements.achievedAt);
+  }
+
+  // Team profile operations
+  async createTeamProfile(data: InsertTeamProfile): Promise<TeamProfile> {
+    const [teamProfile] = await db.insert(teamProfiles).values(data).returning();
+    return teamProfile;
+  }
+
+  async getTeamProfile(id: string): Promise<TeamProfile | undefined> {
+    const [teamProfile] = await db.select().from(teamProfiles).where(eq(teamProfiles.id, id));
+    return teamProfile || undefined;
+  }
+
+  async getTeamProfilesByOwner(ownerId: string): Promise<TeamProfile[]> {
+    return await db.select().from(teamProfiles).where(eq(teamProfiles.ownerId, ownerId));
+  }
+
+  async updateTeamProfile(id: string, data: Partial<TeamProfile>): Promise<TeamProfile | undefined> {
+    const [teamProfile] = await db
+      .update(teamProfiles)
+      .set(data)
+      .where(eq(teamProfiles.id, id))
+      .returning();
+    return teamProfile || undefined;
+  }
+
+  async deleteTeamProfile(id: string): Promise<void> {
+    await db.delete(teamMembers).where(eq(teamMembers.teamId, id));
+    await db.delete(teamProfiles).where(eq(teamProfiles.id, id));
+  }
+
+  // Team member operations
+  async createTeamMember(data: InsertTeamMember): Promise<TeamMember> {
+    const [member] = await db.insert(teamMembers).values(data).returning();
+    return member;
+  }
+
+  async getMembersByTeam(teamId: string): Promise<TeamMember[]> {
+    return await db.select().from(teamMembers).where(eq(teamMembers.teamId, teamId));
+  }
+
+  async deleteMemberFromTeam(teamId: string, userId: string): Promise<void> {
+    await db.delete(teamMembers)
+      .where(and(
+        eq(teamMembers.teamId, teamId),
+        eq(teamMembers.userId, userId)
+      ));
+  }
+
+  // Server member operations
+  async createServerMember(data: InsertServerMember): Promise<ServerMember> {
+    const [member] = await db.insert(serverMembers).values(data).returning();
+    return member;
+  }
+
+  async getMembersByServer(serverId: string): Promise<ServerMember[]> {
+    return await db.select().from(serverMembers).where(eq(serverMembers.serverId, serverId));
+  }
+
+  async deleteMemberFromServer(serverId: string, userId: string): Promise<void> {
+    await db.delete(serverMembers)
+      .where(and(
+        eq(serverMembers.serverId, serverId),
+        eq(serverMembers.userId, userId)
+      ));
   }
 }
 

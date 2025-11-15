@@ -14,6 +14,13 @@ import {
   insertRegistrationSchema,
   insertRegistrationResponseSchema,
   insertChannelSchema,
+  insertPosterTemplateSchema,
+  insertPosterTemplateTagSchema,
+  insertUserSchema,
+  insertAchievementSchema,
+  insertTeamProfileSchema,
+  insertTeamMemberSchema,
+  insertServerMemberSchema,
 } from "@shared/schema";
 import {
   generateRoundRobinBracket,
@@ -655,6 +662,277 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Channel not found" });
       }
       res.json(channel);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Poster template routes
+  app.get("/api/poster-templates", async (req, res) => {
+    try {
+      const templates = req.query.active === "true"
+        ? await storage.getActivePosterTemplates()
+        : await storage.getAllPosterTemplates();
+      res.json(templates);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/poster-templates/:id", async (req, res) => {
+    try {
+      const template = await storage.getPosterTemplate(req.params.id);
+      if (!template) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      res.json(template);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/poster-templates", async (req, res) => {
+    try {
+      const validatedData = insertPosterTemplateSchema.parse(req.body);
+      const template = await storage.createPosterTemplate(validatedData);
+      
+      if (req.body.tags && Array.isArray(req.body.tags)) {
+        for (const tag of req.body.tags) {
+          await storage.createPosterTemplateTag({
+            templateId: template.id,
+            tag,
+          });
+        }
+      }
+      
+      res.status(201).json(template);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/poster-templates/:id", async (req, res) => {
+    try {
+      const { tags, ...templateData } = req.body;
+      
+      const template = await storage.updatePosterTemplate(req.params.id, templateData);
+      if (!template) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      
+      if (tags && Array.isArray(tags)) {
+        await storage.deleteTagsByTemplate(template.id);
+        for (const tag of tags) {
+          await storage.createPosterTemplateTag({
+            templateId: template.id,
+            tag,
+          });
+        }
+      }
+      
+      res.json(template);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/poster-templates/:id", async (req, res) => {
+    try {
+      await storage.deletePosterTemplate(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/poster-templates/:id/tags", async (req, res) => {
+    try {
+      const tags = await storage.getTagsByTemplate(req.params.id);
+      res.json(tags);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // User routes
+  app.post("/api/users", async (req, res) => {
+    try {
+      const validatedData = insertUserSchema.parse(req.body);
+      const user = await storage.createUser(validatedData);
+      res.status(201).json(user);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/users/:id", async (req, res) => {
+    try {
+      const user = await storage.getUser(req.params.id);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(user);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/users/username/:username", async (req, res) => {
+    try {
+      const user = await storage.getUserByUsername(req.params.username);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(user);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/users/:id", async (req, res) => {
+    try {
+      const user = await storage.updateUser(req.params.id, req.body);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(user);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Achievement routes
+  app.post("/api/achievements", async (req, res) => {
+    try {
+      const validatedData = insertAchievementSchema.parse(req.body);
+      const achievement = await storage.createAchievement(validatedData);
+      res.status(201).json(achievement);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/users/:userId/achievements", async (req, res) => {
+    try {
+      const achievements = await storage.getAchievementsByUser(req.params.userId);
+      res.json(achievements);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Team profile routes
+  app.post("/api/team-profiles", async (req, res) => {
+    try {
+      const validatedData = insertTeamProfileSchema.parse(req.body);
+      const teamProfile = await storage.createTeamProfile(validatedData);
+      res.status(201).json(teamProfile);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/team-profiles/:id", async (req, res) => {
+    try {
+      const teamProfile = await storage.getTeamProfile(req.params.id);
+      if (!teamProfile) {
+        return res.status(404).json({ error: "Team profile not found" });
+      }
+      res.json(teamProfile);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/users/:ownerId/team-profiles", async (req, res) => {
+    try {
+      const teamProfiles = await storage.getTeamProfilesByOwner(req.params.ownerId);
+      res.json(teamProfiles);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/team-profiles/:id", async (req, res) => {
+    try {
+      const teamProfile = await storage.updateTeamProfile(req.params.id, req.body);
+      if (!teamProfile) {
+        return res.status(404).json({ error: "Team profile not found" });
+      }
+      res.json(teamProfile);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/team-profiles/:id", async (req, res) => {
+    try {
+      await storage.deleteTeamProfile(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Team member routes
+  app.post("/api/team-profiles/:teamId/members", async (req, res) => {
+    try {
+      const validatedData = insertTeamMemberSchema.parse({
+        ...req.body,
+        teamId: req.params.teamId,
+      });
+      const member = await storage.createTeamMember(validatedData);
+      res.status(201).json(member);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/team-profiles/:teamId/members", async (req, res) => {
+    try {
+      const members = await storage.getMembersByTeam(req.params.teamId);
+      res.json(members);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/team-profiles/:teamId/members/:userId", async (req, res) => {
+    try {
+      await storage.deleteMemberFromTeam(req.params.teamId, req.params.userId);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Server member routes
+  app.post("/api/servers/:serverId/members", async (req, res) => {
+    try {
+      const validatedData = insertServerMemberSchema.parse({
+        ...req.body,
+        serverId: req.params.serverId,
+      });
+      const member = await storage.createServerMember(validatedData);
+      res.status(201).json(member);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/servers/:serverId/members", async (req, res) => {
+    try {
+      const members = await storage.getMembersByServer(req.params.serverId);
+      res.json(members);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/servers/:serverId/members/:userId", async (req, res) => {
+    try {
+      await storage.deleteMemberFromServer(req.params.serverId, req.params.userId);
+      res.status(204).send();
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
