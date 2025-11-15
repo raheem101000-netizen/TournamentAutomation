@@ -21,7 +21,7 @@ const mockPosters = [
     game: "Valorant",
     serverName: "ProGaming League",
     serverLogo: "🎮",
-    backgroundImage: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&h=600&fit=crop",
+    backgroundImage: "https://images.unsplash.com/photo-1542751110-97427bbecf20?w=800&h=1200&fit=crop",
     prize: "$5,000",
     entryFee: "$25",
     startDate: "Dec 20, 2024",
@@ -38,7 +38,7 @@ const mockPosters = [
     game: "League of Legends",
     serverName: "Elite Esports",
     serverLogo: "⚔️",
-    backgroundImage: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&h=600&fit=crop",
+    backgroundImage: "https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=800&h=1200&fit=crop",
     prize: "$10,000",
     entryFee: "Free",
     startDate: "Dec 18, 2024",
@@ -55,7 +55,7 @@ const mockPosters = [
     game: "CS:GO",
     serverName: "Competitive Arena",
     serverLogo: "🔫",
-    backgroundImage: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800&h=600&fit=crop",
+    backgroundImage: "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=800&h=1200&fit=crop",
     prize: "$2,500",
     entryFee: "$10",
     startDate: "Dec 22, 2024",
@@ -72,7 +72,7 @@ const mockPosters = [
     game: "Apex Legends",
     serverName: "Battle Royale Hub",
     serverLogo: "👑",
-    backgroundImage: "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=800&h=600&fit=crop",
+    backgroundImage: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&h=1200&fit=crop",
     prize: "$7,500",
     entryFee: "$15",
     startDate: "Dec 25, 2024",
@@ -160,47 +160,47 @@ export default function PreviewHome() {
                 </Button>
 
                 <button
-                  className="absolute top-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer hover-elevate active-elevate-2 p-3 rounded-lg"
+                  className="absolute top-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 cursor-pointer hover-elevate active-elevate-2 p-2 rounded-lg"
                   onClick={() => alert('Navigate to server')}
                   data-testid={`button-server-${poster.id}`}
                 >
-                  <Avatar className="w-20 h-20 border-4 border-white/30">
-                    <AvatarFallback className="text-3xl bg-black/40 backdrop-blur-sm text-white">
+                  <Avatar className="w-16 h-16 border-4 border-white/30">
+                    <AvatarFallback className="text-2xl bg-black/40 backdrop-blur-sm text-white">
                       {poster.serverLogo}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="text-sm font-semibold text-white/90 tracking-wider uppercase">
+                  <div className="text-xs font-semibold text-white/90 tracking-wider uppercase">
                     {poster.serverName}
                   </div>
                 </button>
 
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-white px-4 w-full">
-                  <h2 className="text-4xl font-black mb-3 drop-shadow-2xl leading-tight">
+                <div className="absolute inset-x-0 bottom-32 text-center text-white px-4">
+                  <h2 className="text-3xl font-black mb-2 drop-shadow-2xl leading-tight">
                     {poster.title}
                   </h2>
                   
-                  <div className="text-lg font-semibold text-white/90 mb-8">
+                  <div className="text-base font-semibold text-white/90 mb-6">
                     {poster.game}
                   </div>
 
-                  <div className="flex items-center justify-center gap-10 mb-6">
+                  <div className="flex items-center justify-center gap-8 mb-4">
                     <div className="flex flex-col items-center">
-                      <Trophy className="w-6 h-6 mb-1" />
-                      <span className="text-2xl font-bold">{poster.prize}</span>
-                      <span className="text-xs text-white/70">Prize Pool</span>
+                      <Trophy className="w-5 h-5 mb-1" />
+                      <span className="text-xl font-bold">{poster.prize}</span>
+                      <span className="text-xs text-white/70">Prize</span>
                     </div>
                     <div className="flex flex-col items-center">
-                      <Coins className="w-6 h-6 mb-1" />
-                      <span className="text-2xl font-bold">{poster.entryFee}</span>
-                      <span className="text-xs text-white/70">Entry Fee</span>
+                      <Coins className="w-5 h-5 mb-1" />
+                      <span className="text-xl font-bold">{poster.entryFee}</span>
+                      <span className="text-xs text-white/70">Entry</span>
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-2">
-                    <Badge className="bg-white/20 backdrop-blur-sm border border-white/30 text-white px-4 py-1 mx-auto">
+                  <div className="flex flex-col gap-1.5">
+                    <Badge className="bg-white/20 backdrop-blur-sm border border-white/30 text-white px-3 py-1 mx-auto text-xs">
                       {poster.participants} Players
                     </Badge>
-                    <span className="text-white/80 text-sm">Starts {poster.startDate}</span>
+                    <span className="text-white/80 text-xs">Starts {poster.startDate}</span>
                   </div>
                 </div>
 
