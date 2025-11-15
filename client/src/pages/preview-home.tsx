@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import type { Tournament } from "@shared/schema";
+import { format } from "date-fns";
 
 const mockPosters = [
   {
@@ -89,6 +92,30 @@ export default function PreviewHome() {
   const [detailsModal, setDetailsModal] = useState<typeof mockPosters[0] | null>(null);
   const [joinModal, setJoinModal] = useState<typeof mockPosters[0] | null>(null);
 
+  const { data: tournaments, isLoading } = useQuery<Tournament[]>({
+    queryKey: ['/api/tournaments'],
+  });
+
+  const tournamentPosters = (tournaments || []).map((t) => ({
+    id: t.id,
+    title: t.name,
+    game: t.game || "Tournament",
+    serverName: t.organizerName || "Gaming Server",
+    serverLogo: t.game?.charAt(0) || "🎮",
+    backgroundImage: t.imageUrl || "https://images.unsplash.com/photo-1542751110-97427bbecf20?w=800&h=1200&fit=crop",
+    prize: t.prizeReward || "TBD",
+    entryFee: t.entryFee ? `$${t.entryFee}` : "Free",
+    startDate: t.startDate ? format(new Date(t.startDate), "MMM dd, yyyy") : "TBD",
+    startTime: t.startDate ? format(new Date(t.startDate), "h:mm a") : "TBD",
+    participants: `${t.totalTeams || 0}/${t.totalTeams || 0}`,
+    format: t.format === "round_robin" ? "Round Robin" : t.format === "single_elimination" ? "Single Elimination" : "Swiss System",
+    platform: "PC",
+    region: "Global",
+    rankReq: "Any Rank",
+  }));
+
+  const displayPosters = tournamentPosters.length > 0 ? tournamentPosters : mockPosters;
+
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -136,7 +163,18 @@ export default function PreviewHome() {
 
       <main className="px-3 py-4">
         <div className="space-y-6 max-w-sm mx-auto">
-          {mockPosters.map((poster) => (
+          {isLoading ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Loading tournaments...</p>
+            </div>
+          ) : displayPosters.length === 0 ? (
+            <div className="text-center py-12">
+              <Trophy className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground font-semibold">No tournaments available</p>
+              <p className="text-sm text-muted-foreground mt-2">Check back soon for upcoming events!</p>
+            </div>
+          ) : (
+            displayPosters.map((poster) => (
             <Card
               key={poster.id}
               className="overflow-hidden hover-elevate cursor-pointer w-full"
@@ -229,7 +267,8 @@ export default function PreviewHome() {
                 </div>
               </div>
             </Card>
-          ))}
+          ))
+          )}
         </div>
       </main>
 
