@@ -142,7 +142,7 @@ export default function PreviewHome() {
               className="overflow-hidden hover-elevate cursor-pointer max-w-sm mx-auto"
               data-testid={`tournament-poster-${poster.id}`}
             >
-              <div className="relative h-[450px] overflow-hidden">
+              <div className="relative h-[600px] overflow-hidden">
                 <img
                   src={poster.backgroundImage}
                   alt={poster.title}
