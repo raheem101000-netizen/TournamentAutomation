@@ -1,5 +1,25 @@
 # Tournament Management Platform
 
+## Recent Changes (Nov 15, 2025)
+
+### Backend Integration Complete
+- Added 6 new database tables: users, achievements, teamProfiles, teamMembers, serverMembers, posterTemplates + poster TemplateTags
+- Built complete storage layer with 40+ CRUD methods using Drizzle ORM
+- Created comprehensive REST API routes for all new features
+- Successfully migrated database schema
+
+### Frontend Integration (4 Pages Connected)
+1. **preview-home.tsx** - Fetches real tournaments from /api/tournaments
+2. **preview-discovery.tsx** - Fetches servers from /api/mobile-preview/servers
+3. **preview-templates.tsx** - Fetches poster templates from /api/poster-templates
+4. **preview-account.tsx** - Fetches users and achievements from APIs
+
+All pages include proper loading/error states and fallback to mock data.
+
+### Known Limitations
+- Achievement schema lacks organizer/tournament fields - using placeholders
+- Recommended: Add tournamentId FK and organizerName to achievements
+
 ## Overview
 
 A dual-purpose web application combining:
