@@ -63,21 +63,21 @@ function AppSidebar() {
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={MobilePreviewHome} />
-      <Route path="/discovery" component={MobilePreviewServers} />
-      <Route path="/messages" component={MobilePreviewMessages} />
-      <Route path="/notifications" component={MobilePreviewNotifications} />
-      <Route path="/myservers" component={MobilePreviewMyServers} />
-      <Route path="/server/:serverId" component={MobilePreviewServerDetail} />
-      <Route path="/account" component={MobilePreviewAccount} />
+      <Route path="/" component={PreviewHome} />
+      <Route path="/discovery" component={PreviewDiscovery} />
+      <Route path="/messages" component={PreviewMessages} />
+      <Route path="/myservers" component={PreviewMyServers} />
+      <Route path="/server/:serverId" component={PreviewServerDetail} />
+      <Route path="/account" component={PreviewAccount} />
+      <Route path="/poster-builder" component={PreviewPosterBuilder} />
       
-      <Route path="/preview/home" component={PreviewHome} />
-      <Route path="/preview/discovery" component={PreviewDiscovery} />
-      <Route path="/preview/messages" component={PreviewMessages} />
-      <Route path="/preview/my-servers" component={PreviewMyServers} />
-      <Route path="/preview/server/:serverId" component={PreviewServerDetail} />
-      <Route path="/preview/account" component={PreviewAccount} />
-      <Route path="/preview/poster-builder" component={PreviewPosterBuilder} />
+      <Route path="/old" component={MobilePreviewHome} />
+      <Route path="/old/discovery" component={MobilePreviewServers} />
+      <Route path="/old/messages" component={MobilePreviewMessages} />
+      <Route path="/old/notifications" component={MobilePreviewNotifications} />
+      <Route path="/old/myservers" component={MobilePreviewMyServers} />
+      <Route path="/old/server/:serverId" component={MobilePreviewServerDetail} />
+      <Route path="/old/account" component={MobilePreviewAccount} />
       
       <Route component={NotFound} />
     </Switch>
