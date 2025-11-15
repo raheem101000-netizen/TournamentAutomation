@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useLocation } from "wouter";
+import type { User, Achievement } from "@shared/schema";
 
 const mockUser = {
   username: "ProGamer2024",
@@ -133,12 +135,48 @@ export default function PreviewAccount() {
   const [selectedTeam, setSelectedTeam] = useState<typeof mockTeams[0] | null>(null);
   const [viewingUser, setViewingUser] = useState<string | null>(null);
   const [selectedAchievement, setSelectedAchievement] = useState<typeof mockAchievements[0] | null>(null);
-  const earnedAchievements = mockAchievements.filter(a => a.earned);
-  const lockedAchievements = mockAchievements.filter(a => !a.earned);
+
+  const { data: users, isLoading: isLoadingUser, isError: isUserError } = useQuery<User[]>({
+    queryKey: ['/api/users'],
+  });
+
+  const { data: achievements, isLoading: isLoadingAchievements, isError: isAchievementsError } = useQuery<Achievement[]>({
+    queryKey: ['/api/achievements'],
+  });
+
+  const currentUser = users?.[0] ? {
+    username: users[0].username,
+    avatarUrl: users[0].avatarUrl,
+    bio: users[0].bio,
+    level: users[0].level,
+    friendCount: mockUser.friendCount, // Not in schema, use mock
+    displayName: users[0].displayName,
+  } : mockUser;
+  
+  const userAchievements = achievements && achievements.length > 0
+    ? achievements.map(a => ({
+        id: a.id,
+        title: a.title,
+        description: a.description || "",
+        icon: Trophy, // UI expects component, could use iconUrl for custom icons later
+        iconUrl: a.iconUrl, // Preserve from schema for future use
+        earned: Boolean(a.achievedAt), // Derived from achievedAt presence
+        type: a.type,
+        rarity: a.category || "common", // Map category to rarity
+        organizer: "Tournament Organizer", // Schema limitation - not available
+        tournament: a.category || "Tournament", // Use category as best proxy
+        date: a.achievedAt 
+          ? new Date(a.achievedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          : "Unknown",
+      }))
+    : mockAchievements;
+
+  const earnedAchievements = userAchievements.filter(a => a.earned);
+  const lockedAchievements = userAchievements.filter(a => !a.earned);
 
   // Check if viewing own profile or another user's profile
   const isOwnProfile = viewingUser === null;
-  const displayUser = viewingUser || mockUser.username;
+  const displayUser = viewingUser || currentUser.username;
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
@@ -179,35 +217,47 @@ export default function PreviewAccount() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex flex-col items-center text-center space-y-4">
-              <div className="relative">
-                <Avatar className="w-24 h-24 border-4 border-primary/20">
-                  <AvatarImage src={mockUser.avatar} />
-                  <AvatarFallback>PG</AvatarFallback>
-                </Avatar>
-                <Button
-                  size="icon"
-                  className="absolute bottom-0 right-0 w-8 h-8 rounded-full"
-                  data-testid="button-edit-avatar"
-                >
-                  <Edit className="w-4 h-4" />
-                </Button>
-              </div>
-
-              <div className="space-y-2 w-full">
-                <div className="flex items-center justify-center gap-2">
-                  <h2 className="text-2xl font-bold">{mockUser.username}</h2>
-                  <Badge variant="secondary">Lv. {mockUser.level}</Badge>
+              {isLoadingUser ? (
+                <div className="py-8">
+                  <p className="text-muted-foreground">Loading profile...</p>
                 </div>
-                
-                <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                  <Users className="w-4 h-4" />
-                  <span className="text-sm">{mockUser.friendCount} friends</span>
+              ) : isUserError ? (
+                <div className="py-8">
+                  <p className="text-destructive">Failed to load profile</p>
                 </div>
+              ) : (
+                <>
+                  <div className="relative">
+                    <Avatar className="w-24 h-24 border-4 border-primary/20">
+                      <AvatarImage src={currentUser.avatarUrl || mockUser.avatar} />
+                      <AvatarFallback>{currentUser.username.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <Button
+                      size="icon"
+                      className="absolute bottom-0 right-0 w-8 h-8 rounded-full"
+                      data-testid="button-edit-avatar"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  </div>
 
-                <p className="text-sm text-muted-foreground px-4">
-                  {mockUser.bio}
-                </p>
-              </div>
+                  <div className="space-y-2 w-full">
+                    <div className="flex items-center justify-center gap-2">
+                      <h2 className="text-2xl font-bold">{currentUser.username}</h2>
+                      <Badge variant="secondary">Lv. {currentUser.level ?? 1}</Badge>
+                    </div>
+                    
+                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                      <Users className="w-4 h-4" />
+                      <span className="text-sm">{currentUser.friendCount ?? 0} friends</span>
+                    </div>
+
+                    <p className="text-sm text-muted-foreground px-4">
+                      {currentUser.bio || "No bio yet"}
+                    </p>
+                  </div>
+                </>
+              )}
 
               {isOwnProfile ? (
                 <Button variant="outline" className="w-full" data-testid="button-edit-profile">
@@ -275,6 +325,15 @@ export default function PreviewAccount() {
             </Badge>
           </div>
 
+          {isLoadingAchievements ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Loading achievements...</p>
+            </div>
+          ) : isAchievementsError ? (
+            <div className="text-center py-8">
+              <p className="text-destructive">Failed to load achievements</p>
+            </div>
+          ) : (
           <div className="space-y-3">
             {earnedAchievements.map((achievement) => {
               const Icon = achievement.icon;
@@ -313,6 +372,7 @@ export default function PreviewAccount() {
               );
             })}
           </div>
+          )}
 
           <Card className="p-4">
             <div className="flex items-start gap-3">

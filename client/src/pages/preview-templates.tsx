@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useLocation } from "wouter";
+import type { PosterTemplate } from "@shared/schema";
 
 const mockTemplates = [
   {
@@ -71,11 +73,27 @@ export default function PreviewTemplates() {
   const [selectedTemplate, setSelectedTemplate] = useState<typeof mockTemplates[0] | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
 
-  const categories = ["All", "Valorant", "League of Legends", "CS:GO", "Apex Legends"];
+  const { data: templates, isLoading, isError } = useQuery<PosterTemplate[]>({
+    queryKey: ['/api/poster-templates'],
+  });
+
+  const templateCards = (templates || [])
+    .filter(t => t.isActive)
+    .map(t => ({
+      id: t.id,
+      name: t.name,
+      description: t.description || "No description",
+      backgroundImageUrl: t.backgroundImageUrl || "https://images.unsplash.com/photo-1542751110-97427bbecf20?w=800&h=1200&fit=crop",
+      category: t.category || "General",
+      tags: [], // Will be populated when we add tags support
+    }));
+
+  const allTemplates = templateCards.length > 0 ? templateCards : mockTemplates;
+  const categories = ["All", ...Array.from(new Set(allTemplates.map(t => t.category)))];
 
   const filteredTemplates = selectedCategory === "All" 
-    ? mockTemplates 
-    : mockTemplates.filter(t => t.category === selectedCategory);
+    ? allTemplates 
+    : allTemplates.filter(t => t.category === selectedCategory);
 
   const handleSelectTemplate = (template: typeof mockTemplates[0]) => {
     // In production, this would navigate to tournament creation with template pre-selected
@@ -126,38 +144,51 @@ export default function PreviewTemplates() {
 
       <main className="flex-1 px-4 py-4">
         <div className="container max-w-3xl mx-auto">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-            {filteredTemplates.map((template) => (
-              <Card
-                key={template.id}
-                className="overflow-hidden cursor-pointer hover-elevate"
-                onClick={() => setSelectedTemplate(template)}
-                data-testid={`template-card-${template.id}`}
-              >
-                <div className="relative aspect-[3/4]">
-                  <img
-                    src={template.backgroundImageUrl}
-                    alt={template.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/20" />
-                  <div className="absolute bottom-0 left-0 right-0 p-2.5 text-white">
-                    <h3 className="font-bold text-xs sm:text-sm mb-1 leading-tight">
-                      {template.name}
-                    </h3>
-                    <Badge className="bg-white/20 backdrop-blur-sm border-white/30 text-white text-xs px-2 py-0.5">
-                      {template.category}
-                    </Badge>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-
-          {filteredTemplates.length === 0 && (
+          {isLoading ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">No templates found in this category</p>
+              <p className="text-muted-foreground">Loading templates...</p>
             </div>
+          ) : isError ? (
+            <div className="text-center py-12">
+              <p className="text-destructive">Failed to load templates</p>
+              <p className="text-sm text-muted-foreground mt-2">Please try again later</p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                {filteredTemplates.map((template) => (
+                  <Card
+                    key={template.id}
+                    className="overflow-hidden cursor-pointer hover-elevate"
+                    onClick={() => setSelectedTemplate(template)}
+                    data-testid={`template-card-${template.id}`}
+                  >
+                    <div className="relative aspect-[3/4]">
+                      <img
+                        src={template.backgroundImageUrl}
+                        alt={template.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/20" />
+                      <div className="absolute bottom-0 left-0 right-0 p-2.5 text-white">
+                        <h3 className="font-bold text-xs sm:text-sm mb-1 leading-tight">
+                          {template.name}
+                        </h3>
+                        <Badge className="bg-white/20 backdrop-blur-sm border-white/30 text-white text-xs px-2 py-0.5">
+                          {template.category}
+                        </Badge>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+
+              {filteredTemplates.length === 0 && (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">No templates found in this category</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>
