@@ -201,10 +201,10 @@ export default function PreviewHome() {
                       <span className="text-white/80">Starts {poster.startDate}</span>
                     </div>
 
-                    <div className="flex items-center justify-center gap-3">
+                    <div className="flex items-center justify-center gap-6">
                       <Button 
                         size="lg" 
-                        className="bg-green-600 text-white hover:bg-green-700 font-bold px-12"
+                        className="bg-green-600 text-white hover:bg-green-700 font-bold text-xl px-16 py-6 h-auto"
                         onClick={() => setJoinModal(poster)}
                         data-testid={`button-join-${poster.id}`}
                       >
@@ -213,11 +213,11 @@ export default function PreviewHome() {
                       <Button 
                         size="icon"
                         variant="outline"
-                        className="bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20 rounded-full w-12 h-12"
+                        className="bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20 rounded-full w-9 h-9"
                         onClick={() => setDetailsModal(poster)}
                         data-testid={`button-details-${poster.id}`}
                       >
-                        <Info className="w-5 h-5" />
+                        <Info className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
