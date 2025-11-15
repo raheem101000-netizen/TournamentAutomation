@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Tournament } from "@shared/schema";
 import { format } from "date-fns";
 
@@ -89,11 +91,37 @@ const mockPosters = [
 ];
 
 export default function PreviewHome() {
+  const { toast } = useToast();
   const [detailsModal, setDetailsModal] = useState<typeof mockPosters[0] | null>(null);
   const [joinModal, setJoinModal] = useState<typeof mockPosters[0] | null>(null);
 
   const { data: tournaments, isLoading } = useQuery<Tournament[]>({
     queryKey: ['/api/tournaments'],
+  });
+
+  const registerTournamentMutation = useMutation({
+    mutationFn: async (tournamentId: string) => {
+      return await apiRequest('POST', `/api/tournaments/${tournamentId}/registrations`, {
+        teamName: "Demo Team", // Would come from user input
+        contactEmail: "demo@example.com",
+        participantNames: ["Player 1", "Player 2"],
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Successfully registered!",
+        description: "You've joined the tournament.",
+      });
+      setJoinModal(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Registration failed",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+    },
   });
 
   const tournamentPosters = (tournaments || []).map((t) => ({
@@ -385,6 +413,12 @@ export default function PreviewHome() {
               className="w-full justify-between h-auto py-4 px-4"
               variant="outline"
               data-testid="button-join-server"
+              onClick={() => {
+                if (joinModal?.id) {
+                  registerTournamentMutation.mutate(joinModal.id);
+                }
+              }}
+              disabled={registerTournamentMutation.isPending}
             >
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-md bg-primary/10">
@@ -404,13 +438,19 @@ export default function PreviewHome() {
               className="w-full justify-between h-auto py-4 px-4"
               variant="outline"
               data-testid="button-signup-page"
+              onClick={() => {
+                if (joinModal?.id) {
+                  registerTournamentMutation.mutate(joinModal.id);
+                }
+              }}
+              disabled={registerTournamentMutation.isPending}
             >
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-md bg-primary/10">
                   <Trophy className="w-5 h-5" />
                 </div>
                 <div className="text-left">
-                  <p className="font-semibold">Go to Sign-Up Page</p>
+                  <p className="font-semibold">{registerTournamentMutation.isPending ? "Registering..." : "Go to Sign-Up Page"}</p>
                   <p className="text-xs text-muted-foreground">
                     View full tournament details & register
                   </p>

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Search, SlidersHorizontal, Users, Trophy } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Server } from "@shared/schema";
 
 const mockServers = [
@@ -67,8 +69,32 @@ const mockServers = [
 ];
 
 export default function PreviewDiscovery() {
+  const { toast } = useToast();
   const { data: servers, isLoading } = useQuery<Server[]>({
     queryKey: ['/api/mobile-preview/servers'],
+  });
+
+  const joinServerMutation = useMutation({
+    mutationFn: async (serverId: string) => {
+      return await apiRequest('POST', `/api/servers/${serverId}/members`, {
+        userId: "user-demo-123", // Mock user ID - would come from auth
+        role: "member",
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Joined server!",
+        description: "You've successfully joined the server.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/mobile-preview/servers'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to join server",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+    },
   });
 
   const serverCards = (servers || []).map((s) => ({
@@ -199,8 +225,13 @@ export default function PreviewDiscovery() {
                   ))}
                 </div>
 
-                <Button className="w-full" data-testid={`button-join-${server.id}`}>
-                  Join Server
+                <Button 
+                  className="w-full" 
+                  data-testid={`button-join-${server.id}`}
+                  onClick={() => joinServerMutation.mutate(server.id)}
+                  disabled={joinServerMutation.isPending}
+                >
+                  {joinServerMutation.isPending ? "Joining..." : "Join Server"}
                 </Button>
               </CardContent>
             </Card>
