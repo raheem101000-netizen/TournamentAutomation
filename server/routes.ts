@@ -13,6 +13,7 @@ import {
   insertRegistrationFieldSchema,
   insertRegistrationSchema,
   insertRegistrationResponseSchema,
+  insertChannelSchema,
 } from "@shared/schema";
 import {
   generateRoundRobinBracket,
@@ -27,8 +28,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ws: true,
     pathRewrite: {
       '^/expo-app': ''
-    },
-    logLevel: 'debug'
+    }
   }));
   const httpServer = createServer(app);
   const wss = new WebSocketServer({ 
@@ -607,6 +607,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const notifications = await storage.getAllNotifications();
       res.json(notifications);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Server routes
+  app.get("/api/servers/:id", async (req, res) => {
+    try {
+      const server = await storage.getServer(req.params.id);
+      if (!server) {
+        return res.status(404).json({ error: "Server not found" });
+      }
+      res.json(server);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Channel routes
+  app.get("/api/servers/:serverId/channels", async (req, res) => {
+    try {
+      const channels = await storage.getChannelsByServer(req.params.serverId);
+      res.json(channels);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/servers/:serverId/channels", async (req, res) => {
+    try {
+      const validatedData = insertChannelSchema.parse({
+        ...req.body,
+        serverId: req.params.serverId,
+      });
+      const channel = await storage.createChannel(validatedData);
+      res.status(201).json(channel);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/channels/:id", async (req, res) => {
+    try {
+      const channel = await storage.getChannel(req.params.id);
+      if (!channel) {
+        return res.status(404).json({ error: "Channel not found" });
+      }
+      res.json(channel);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

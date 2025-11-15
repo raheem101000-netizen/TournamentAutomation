@@ -5,10 +5,11 @@ import { z } from "zod";
 
 export const tournaments = pgTable("tournaments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  serverId: varchar("server_id"),
   name: text("name").notNull(),
   game: text("game"),
   format: text("format", { enum: ["round_robin", "single_elimination", "swiss"] }).notNull(),
-  status: text("status", { enum: ["upcoming", "completed"] }).notNull().default("upcoming"),
+  status: text("status", { enum: ["upcoming", "in_progress", "completed"] }).notNull().default("upcoming"),
   totalTeams: integer("total_teams").notNull(),
   currentRound: integer("current_round").default(1),
   swissRounds: integer("swiss_rounds"),
@@ -173,8 +174,21 @@ export const servers = pgTable("servers", {
   description: text("description"),
   memberCount: integer("member_count").default(0),
   iconUrl: text("icon_url"),
+  backgroundUrl: text("background_url"),
   category: text("category"),
   isPublic: integer("is_public").default(1),
+  ownerId: varchar("owner_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const channels = pgTable("channels", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  serverId: varchar("server_id").notNull(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull(),
+  type: text("type", { enum: ["announcements", "chat", "tournament_dashboard"] }).notNull(),
+  isPrivate: integer("is_private").default(0),
+  position: integer("position").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -202,6 +216,11 @@ export const insertServerSchema = createInsertSchema(servers).omit({
   createdAt: true,
 });
 
+export const insertChannelSchema = createInsertSchema(channels).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertMessageThreadSchema = createInsertSchema(messageThreads).omit({
   id: true,
   lastMessageTime: true,
@@ -214,6 +233,8 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
 
 export type InsertServer = z.infer<typeof insertServerSchema>;
 export type Server = typeof servers.$inferSelect;
+export type InsertChannel = z.infer<typeof insertChannelSchema>;
+export type Channel = typeof channels.$inferSelect;
 export type InsertMessageThread = z.infer<typeof insertMessageThreadSchema>;
 export type MessageThread = typeof messageThreads.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;

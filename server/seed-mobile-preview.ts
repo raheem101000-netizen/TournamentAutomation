@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { servers, messageThreads, notifications, tournaments } from "@shared/schema";
+import { servers, channels, messageThreads, notifications, tournaments } from "@shared/schema";
 import { sql } from "drizzle-orm";
 
 async function seedMobilePreview() {
@@ -10,17 +10,20 @@ async function seedMobilePreview() {
   await db.delete(tournaments);
   await db.delete(notifications);
   await db.delete(messageThreads);
+  await db.delete(channels);
   await db.delete(servers);
 
   // Seed servers
-  await db.insert(servers).values([
+  const insertedServers = await db.insert(servers).values([
     {
       name: "Pro League Tournament",
       description: "Official tournament league for professional players",
       memberCount: 1247,
       category: "Competitive",
       isPublic: 1,
+      ownerId: "user-1",
       iconUrl: "/attached_assets/generated_images/Pro_League_Tournament_Branding_dcf9285c.png",
+      backgroundUrl: "/attached_assets/generated_images/Pro_League_Tournament_Branding_dcf9285c.png",
     },
     {
       name: "Casual Gaming Hub",
@@ -28,7 +31,9 @@ async function seedMobilePreview() {
       memberCount: 856,
       category: "Casual",
       isPublic: 1,
+      ownerId: "user-2",
       iconUrl: "/attached_assets/generated_images/Casual_Gaming_Hub_Branding_9f9396a6.png",
+      backgroundUrl: "/attached_assets/generated_images/Casual_Gaming_Hub_Branding_9f9396a6.png",
     },
     {
       name: "Esports Academy",
@@ -36,7 +41,9 @@ async function seedMobilePreview() {
       memberCount: 432,
       category: "Training",
       isPublic: 1,
+      ownerId: "user-1",
       iconUrl: "/attached_assets/generated_images/Esports_Academy_Branding_4a858f31.png",
+      backgroundUrl: "/attached_assets/generated_images/Esports_Academy_Branding_4a858f31.png",
     },
     {
       name: "Weekend Warriors",
@@ -44,7 +51,9 @@ async function seedMobilePreview() {
       memberCount: 623,
       category: "Community",
       isPublic: 1,
+      ownerId: "user-3",
       iconUrl: "/attached_assets/generated_images/Weekend_Warriors_Branding_82481fd5.png",
+      backgroundUrl: "/attached_assets/generated_images/Weekend_Warriors_Branding_82481fd5.png",
     },
     {
       name: "Championship Series",
@@ -52,9 +61,41 @@ async function seedMobilePreview() {
       memberCount: 2104,
       category: "Competitive",
       isPublic: 1,
+      ownerId: "user-1",
       iconUrl: "/attached_assets/generated_images/Championship_Series_Branding_02fa0528.png",
+      backgroundUrl: "/attached_assets/generated_images/Championship_Series_Branding_02fa0528.png",
     },
-  ]);
+  ]).returning();
+
+  // Seed channels for each server
+  for (const server of insertedServers) {
+    await db.insert(channels).values([
+      {
+        serverId: server.id,
+        name: "Announcements",
+        slug: "announcements",
+        type: "announcements",
+        isPrivate: 0,
+        position: 0,
+      },
+      {
+        serverId: server.id,
+        name: "General Chat",
+        slug: "general-chat",
+        type: "chat",
+        isPrivate: 0,
+        position: 1,
+      },
+      {
+        serverId: server.id,
+        name: "Tournament Dashboard",
+        slug: "tournament-dashboard",
+        type: "tournament_dashboard",
+        isPrivate: 1,
+        position: 2,
+      },
+    ]);
+  }
 
   // Seed message threads
   const now = new Date();
@@ -96,9 +137,12 @@ async function seedMobilePreview() {
     },
   ]);
 
-  // Seed tournaments
+  // Seed tournaments (first 5 tournaments linked to first server)
+  const firstServerId = insertedServers[0]?.id;
+  
   await db.insert(tournaments).values([
     {
+      serverId: firstServerId,
       name: "Valorant Champions Cup 2024",
       game: "Valorant",
       imageUrl: "/attached_assets/generated_images/Valorant_Championship_Tournament_Poster_f19f1be7.png",
@@ -111,6 +155,7 @@ async function seedMobilePreview() {
       status: "upcoming",
     },
     {
+      serverId: firstServerId,
       name: "CS:GO Pro League",
       game: "CS:GO",
       imageUrl: "/attached_assets/generated_images/CS:GO_Pro_League_Poster_405d1762.png",
@@ -123,6 +168,7 @@ async function seedMobilePreview() {
       status: "upcoming",
     },
     {
+      serverId: firstServerId,
       name: "League of Legends Spring Split",
       game: "League of Legends",
       imageUrl: "/attached_assets/generated_images/League_of_Legends_Tournament_Poster_3f50b053.png",
@@ -135,6 +181,7 @@ async function seedMobilePreview() {
       status: "upcoming",
     },
     {
+      serverId: firstServerId,
       name: "Apex Legends Battle Royale",
       game: "Apex Legends",
       imageUrl: "/attached_assets/generated_images/Apex_Legends_Battle_Royale_Poster_77713e93.png",
@@ -147,6 +194,7 @@ async function seedMobilePreview() {
       status: "upcoming",
     },
     {
+      serverId: firstServerId,
       name: "Fortnite Championship",
       game: "Fortnite",
       imageUrl: "/attached_assets/generated_images/Fortnite_Championship_Poster_a359f503.png",

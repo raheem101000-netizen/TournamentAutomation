@@ -284,7 +284,7 @@ export default function CreateTournamentDialog({
               <div className="border rounded-lg p-4">
                 <RegistrationFormBuilder
                   tournamentId="new"
-                  onChange={handleRegistrationChange}
+                  onSave={handleRegistrationChange}
                   initialConfig={registrationConfig}
                 />
               </div>

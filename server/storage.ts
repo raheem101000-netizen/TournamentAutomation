@@ -11,6 +11,7 @@ import {
   registrations,
   registrationResponses,
   servers,
+  channels,
   messageThreads,
   notifications,
   type Tournament,
@@ -23,6 +24,7 @@ import {
   type Registration,
   type RegistrationResponse,
   type Server,
+  type Channel,
   type MessageThread,
   type Notification,
   type InsertTournament,
@@ -34,6 +36,7 @@ import {
   type InsertRegistrationField,
   type InsertRegistration,
   type InsertRegistrationResponse,
+  type InsertChannel,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -79,8 +82,16 @@ export interface IStorage {
   createRegistrationResponse(data: InsertRegistrationResponse): Promise<RegistrationResponse>;
   getResponsesByRegistration(registrationId: string): Promise<RegistrationResponse[]>;
 
-  // Mobile preview operations
+  // Server operations
   getAllServers(): Promise<Server[]>;
+  getServer(id: string): Promise<Server | undefined>;
+  
+  // Channel operations
+  createChannel(data: InsertChannel): Promise<Channel>;
+  getChannelsByServer(serverId: string): Promise<Channel[]>;
+  getChannel(id: string): Promise<Channel | undefined>;
+  
+  // Mobile preview operations
   getAllMessageThreads(): Promise<MessageThread[]>;
   getAllNotifications(): Promise<Notification[]>;
 }
@@ -284,11 +295,32 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(registrationResponses).where(eq(registrationResponses.registrationId, registrationId));
   }
 
-  // Mobile preview operations
+  // Server operations
   async getAllServers(): Promise<Server[]> {
     return await db.select().from(servers).orderBy(servers.createdAt);
   }
 
+  async getServer(id: string): Promise<Server | undefined> {
+    const [server] = await db.select().from(servers).where(eq(servers.id, id));
+    return server || undefined;
+  }
+
+  // Channel operations
+  async createChannel(data: InsertChannel): Promise<Channel> {
+    const [channel] = await db.insert(channels).values(data).returning();
+    return channel;
+  }
+
+  async getChannelsByServer(serverId: string): Promise<Channel[]> {
+    return await db.select().from(channels).where(eq(channels.serverId, serverId)).orderBy(channels.position);
+  }
+
+  async getChannel(id: string): Promise<Channel | undefined> {
+    const [channel] = await db.select().from(channels).where(eq(channels.id, id));
+    return channel || undefined;
+  }
+
+  // Mobile preview operations
   async getAllMessageThreads(): Promise<MessageThread[]> {
     return await db.select().from(messageThreads).orderBy(messageThreads.lastMessageTime);
   }

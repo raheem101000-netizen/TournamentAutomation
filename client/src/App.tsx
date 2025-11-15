@@ -11,6 +11,7 @@ import MobilePreviewServers from "@/pages/mobile-preview-servers";
 import MobilePreviewMessages from "@/pages/mobile-preview-messages";
 import MobilePreviewNotifications from "@/pages/mobile-preview-notifications";
 import MobilePreviewMyServers from "@/pages/mobile-preview-myservers";
+import MobilePreviewServerDetail from "@/pages/mobile-preview-server-detail";
 import MobilePreviewAccount from "@/pages/mobile-preview-account";
 import { User, Search, Bell, Trophy, Server, MessageSquare } from "lucide-react";
 import { initializeApp } from "../../lib/initializeApp";
@@ -60,6 +61,7 @@ function Router() {
       <Route path="/messages" component={MobilePreviewMessages} />
       <Route path="/notifications" component={MobilePreviewNotifications} />
       <Route path="/myservers" component={MobilePreviewMyServers} />
+      <Route path="/server/:serverId" component={MobilePreviewServerDetail} />
       <Route path="/account" component={MobilePreviewAccount} />
       <Route component={NotFound} />
     </Switch>
