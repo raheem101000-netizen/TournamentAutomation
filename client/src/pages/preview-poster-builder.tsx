@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { useLocation } from "wouter";
+import { useMutation } from "@tanstack/react-query";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Upload, Trophy, Coins, Calendar, Users, Image as ImageIcon } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 const mockServer = {
   name: "ProGaming League",
@@ -24,18 +29,68 @@ const defaultPoster = {
 };
 
 export default function PreviewPosterBuilder() {
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const [posterData, setPosterData] = useState({
+    title: defaultPoster.title,
+    game: defaultPoster.game,
+    backgroundImage: defaultPoster.backgroundImage,
+    prize: defaultPoster.prize,
+    entryFee: defaultPoster.entryFee,
+    description: "",
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const templateData = {
+        name: posterData.title,
+        imageUrl: posterData.backgroundImage,
+        category: "tournament",
+        isActive: 1,
+      };
+      const res = await apiRequest('POST', '/api/poster-templates', templateData);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success!",
+        description: "Poster template saved successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/poster-templates"] });
+      setLocation("/templates");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save poster",
+        variant: "destructive",
+      });
+    },
+  });
+
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button size="icon" variant="ghost" data-testid="button-back">
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              data-testid="button-back"
+              onClick={() => setLocation("/")}
+            >
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <h1 className="text-xl font-bold">Create Tournament Poster</h1>
           </div>
-          <Button size="sm" className="bg-green-600 hover:bg-green-700" data-testid="button-post">
-            Post
+          <Button 
+            size="sm" 
+            className="bg-green-600 hover:bg-green-700" 
+            data-testid="button-post"
+            onClick={() => saveMutation.mutate()}
+            disabled={saveMutation.isPending}
+          >
+            {saveMutation.isPending ? "Saving..." : "Post"}
           </Button>
         </div>
       </header>
@@ -64,10 +119,10 @@ export default function PreviewPosterBuilder() {
 
                 <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                   <h3 className="text-2xl font-bold mb-1 drop-shadow-lg">
-                    {defaultPoster.title}
+                    {posterData.title}
                   </h3>
                   <p className="text-sm text-white/90 drop-shadow-lg mb-3">
-                    {defaultPoster.game}
+                    {posterData.game}
                   </p>
                   
                   <div className="flex items-center justify-between">
