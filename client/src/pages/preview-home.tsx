@@ -201,24 +201,23 @@ export default function PreviewHome() {
                       <span className="text-white/80">Starts {poster.startDate}</span>
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex items-center justify-center gap-3">
                       <Button 
                         size="lg" 
-                        variant="outline"
-                        className="flex-1 bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20"
-                        onClick={() => setDetailsModal(poster)}
-                        data-testid={`button-details-${poster.id}`}
-                      >
-                        <Info className="w-4 h-4 mr-2" />
-                        Details
-                      </Button>
-                      <Button 
-                        size="lg" 
-                        className="flex-1 bg-green-600 text-white hover:bg-green-700 font-bold"
+                        className="bg-green-600 text-white hover:bg-green-700 font-bold px-12"
                         onClick={() => setJoinModal(poster)}
                         data-testid={`button-join-${poster.id}`}
                       >
                         Join
+                      </Button>
+                      <Button 
+                        size="icon"
+                        variant="outline"
+                        className="bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20 rounded-full w-12 h-12"
+                        onClick={() => setDetailsModal(poster)}
+                        data-testid={`button-details-${poster.id}`}
+                      >
+                        <Info className="w-5 h-5" />
                       </Button>
                     </div>
                   </div>
