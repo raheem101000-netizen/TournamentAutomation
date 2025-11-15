@@ -104,72 +104,81 @@ export default function PreviewHome() {
       </header>
 
       <main className="container max-w-lg mx-auto px-4 py-4">
-        <div className="space-y-4">
+        <div className="space-y-6">
           {mockPosters.map((poster) => (
             <Card
               key={poster.id}
               className="overflow-hidden hover-elevate cursor-pointer"
               data-testid={`tournament-poster-${poster.id}`}
             >
-              <div className="relative h-48 overflow-hidden">
+              <div className="relative h-[450px] overflow-hidden">
                 <img
                   src={poster.backgroundImage}
                   alt={poster.title}
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30" />
                 
-                <div className="absolute top-3 left-3 flex items-center gap-2">
-                  <Avatar className="w-8 h-8 border-2 border-white/20">
-                    <AvatarFallback className="text-lg">{poster.serverLogo}</AvatarFallback>
-                  </Avatar>
-                  <div className="text-white text-sm font-medium drop-shadow-lg">
-                    {poster.serverName}
-                  </div>
-                </div>
-
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="absolute top-3 right-3 bg-black/20 backdrop-blur-sm border border-white/20 text-white hover:bg-black/40"
+                  className="absolute top-4 right-4 bg-black/30 backdrop-blur-sm border border-white/20 text-white hover:bg-black/50"
                   data-testid={`button-share-${poster.id}`}
                 >
                   <Share2 className="w-4 h-4" />
                 </Button>
 
-                <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                  <h3 className="text-xl font-bold mb-1 drop-shadow-lg">
-                    {poster.title}
-                  </h3>
-                  <p className="text-sm text-white/90 drop-shadow-lg mb-3">
-                    {poster.game}
-                  </p>
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-6">
+                  <div className="mb-4">
+                    <Avatar className="w-16 h-16 mx-auto border-4 border-white/30">
+                      <AvatarFallback className="text-3xl bg-black/40 backdrop-blur-sm text-white">
+                        {poster.serverLogo}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
                   
-                  <div className="flex items-center justify-between">
-                    <div className="flex gap-3">
-                      <div className="flex items-center gap-1">
-                        <Trophy className="w-4 h-4" />
-                        <span className="text-sm font-semibold">{poster.prize}</span>
+                  <div className="text-sm font-semibold text-white/80 mb-2 tracking-wider uppercase">
+                    {poster.serverName}
+                  </div>
+                  
+                  <h2 className="text-4xl font-black mb-3 drop-shadow-2xl leading-tight">
+                    {poster.title}
+                  </h2>
+                  
+                  <div className="text-lg font-semibold text-white/90 mb-6">
+                    {poster.game}
+                  </div>
+
+                  <div className="flex flex-col gap-4 w-full max-w-xs">
+                    <div className="flex items-center justify-center gap-6">
+                      <div className="flex flex-col items-center">
+                        <Trophy className="w-6 h-6 mb-1" />
+                        <span className="text-2xl font-bold">{poster.prize}</span>
+                        <span className="text-xs text-white/70">Prize Pool</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Coins className="w-4 h-4" />
-                        <span className="text-sm font-semibold">{poster.entryFee}</span>
+                      <div className="flex flex-col items-center">
+                        <Coins className="w-6 h-6 mb-1" />
+                        <span className="text-2xl font-bold">{poster.entryFee}</span>
+                        <span className="text-xs text-white/70">Entry Fee</span>
                       </div>
                     </div>
-                    <Badge className="bg-white/20 backdrop-blur-sm border border-white/30 text-white">
-                      {poster.participants}
-                    </Badge>
+
+                    <div className="flex items-center justify-center gap-4 text-sm">
+                      <Badge className="bg-white/20 backdrop-blur-sm border border-white/30 text-white px-4 py-1">
+                        {poster.participants} Players
+                      </Badge>
+                      <span className="text-white/80">Starts {poster.startDate}</span>
+                    </div>
+
+                    <Button 
+                      size="lg" 
+                      className="w-full bg-white text-black hover:bg-white/90 font-bold text-lg"
+                      data-testid={`button-register-${poster.id}`}
+                    >
+                      Register Now
+                    </Button>
                   </div>
                 </div>
-              </div>
-
-              <div className="p-3 border-t flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  Starts {poster.startDate}
-                </span>
-                <Button size="sm" data-testid={`button-register-${poster.id}`}>
-                  Register
-                </Button>
               </div>
             </Card>
           ))}
