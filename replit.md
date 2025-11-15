@@ -2,7 +2,15 @@
 
 ## Overview
 
-A web-based tournament management system that allows users to create and manage competitive tournaments across multiple formats (Round Robin, Single Elimination, and Swiss System). The platform features real-time match tracking, bracket visualization, team standings, match chat functionality, and score submission workflows.
+A dual-purpose web application combining:
+
+1. **Mobile Preview Pages** - Visual mockups of mobile app features (Discovery, Messages, Notifications, Profile)
+2. **Tournament Management Platform** - A Discord-style server system where users can create and manage gaming communities with channels. Each server contains:
+   - Public channels (Announcements, Chat)
+   - Private owner-only Tournament Dashboard channel with full tournament management capabilities
+   - Tournament creation, bracket visualization, team standings, match tracking, and score submission
+
+The platform enables server owners to organize competitive tournaments across multiple formats (Round Robin, Single Elimination, and Swiss System) through a centralized dashboard accessible only to them.
 
 ## User Preferences
 
@@ -28,6 +36,14 @@ Preferred communication style: Simple, everyday language.
 - Dark/light theme support with CSS custom properties
 
 **Key UI Components:**
+
+*Server & Channel Components:*
+- `ServerCard` - Display server with icon, name, and member count
+- `AnnouncementsChannel` - Static announcements display for servers
+- `ChatChannel` - Chat interface for general server communication
+- `TournamentDashboardChannel` - Owner-only tournament management interface
+
+*Tournament Components:*
 - `TournamentCard` - Display tournament overview with status badges
 - `BracketView` - Visualize tournament brackets based on format type
 - `MatchCard` - Individual match display with team info and status
@@ -37,8 +53,15 @@ Preferred communication style: Simple, everyday language.
 - `SubmitScoreDialog` - Match score submission interface
 
 **Routing Structure:**
-- `/` - Dashboard (tournament list and statistics)
-- `/tournament/:id` - Tournament detail view with tabs for overview, bracket, and standings
+- `/` - Home page
+- `/mobile-preview` - Mobile app preview landing
+- `/discovery` - Discovery feed preview
+- `/messages` - Messages preview
+- `/notifications` - Notifications preview
+- `/profile` - Profile preview
+- `/myservers` - My Servers page (displays owned and member servers)
+- `/server/:serverId` - Server detail view (Discord-style interface with channels)
+- `/tournament/:id` - Tournament detail view (legacy route)
 
 ### Backend Architecture
 
@@ -57,11 +80,20 @@ Preferred communication style: Simple, everyday language.
 - JSON body parsing with raw buffer preservation
 
 **Key API Endpoints:**
+
+*Server & Channel Endpoints:*
+- `GET /api/mobile-preview/servers` - List all servers for mobile preview
+- `GET /api/servers/:id` - Get server details
+- `GET /api/servers/:id/channels` - Get channels for a server
+- `POST /api/servers/:id/channels` - Create new channel in server
+
+*Tournament Endpoints:*
 - `POST /api/tournaments` - Create tournament
 - `GET /api/tournaments` - List all tournaments
 - `GET /api/tournaments/:id` - Get tournament details
 - `GET /api/tournaments/:id/teams` - Get tournament teams
 - `GET /api/tournaments/:id/matches` - Get tournament matches
+- `POST /api/matches/:id/score` - Submit match score
 - `PATCH /api/matches/:id` - Update match (scores, status, winner)
 - `POST /api/matches/:id/messages` - Send chat message
 - `GET /api/matches/:id/messages` - Get chat history
@@ -83,11 +115,24 @@ Preferred communication style: Simple, everyday language.
 
 **Schema Design:**
 
+**servers table:**
+- Server information (name, description, owner)
+- Optional icon and background URLs
+- Member count tracking
+- Owner ID for access control
+
+**channels table:**
+- Channel information linked to servers
+- Type enum: announcements, chat, tournament_dashboard
+- Privacy flag (isPrivate) for owner-only channels
+- Foreign key to server_id
+
 **tournaments table:**
 - Stores tournament metadata (name, format, status, current round)
 - Status enum: upcoming, in_progress, completed
 - Format enum: round_robin, single_elimination, swiss
 - Optional swiss_rounds field for Swiss format configuration
+- Foreign key to server_id to scope tournaments to servers
 
 **teams table:**
 - Team information linked to tournaments
@@ -110,6 +155,8 @@ Preferred communication style: Simple, everyday language.
 - Timestamp for message ordering
 
 **Data Relationships:**
+- One server has many channels (1:N)
+- One server has many tournaments (1:N)
 - One tournament has many teams (1:N)
 - One tournament has many matches (1:N)
 - One match references two teams (M:N)
