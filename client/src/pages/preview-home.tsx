@@ -159,68 +159,69 @@ export default function PreviewHome() {
                   <Share2 className="w-4 h-4" />
                 </Button>
 
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-4">
-                  <div className="mb-4">
-                    <Avatar className="w-16 h-16 mx-auto border-4 border-white/30">
-                      <AvatarFallback className="text-3xl bg-black/40 backdrop-blur-sm text-white">
-                        {poster.serverLogo}
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
-                  
-                  <div className="text-sm font-semibold text-white/80 mb-2 tracking-wider uppercase">
+                <button
+                  className="absolute top-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer hover-elevate active-elevate-2 p-3 rounded-lg"
+                  onClick={() => alert('Navigate to server')}
+                  data-testid={`button-server-${poster.id}`}
+                >
+                  <Avatar className="w-20 h-20 border-4 border-white/30">
+                    <AvatarFallback className="text-3xl bg-black/40 backdrop-blur-sm text-white">
+                      {poster.serverLogo}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="text-sm font-semibold text-white/90 tracking-wider uppercase">
                     {poster.serverName}
                   </div>
-                  
-                  <h2 className="text-3xl font-black mb-3 drop-shadow-2xl leading-tight">
+                </button>
+
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-white px-4 w-full">
+                  <h2 className="text-4xl font-black mb-3 drop-shadow-2xl leading-tight">
                     {poster.title}
                   </h2>
                   
-                  <div className="text-base font-semibold text-white/90 mb-6">
+                  <div className="text-lg font-semibold text-white/90 mb-8">
                     {poster.game}
                   </div>
 
-                  <div className="flex flex-col gap-4 w-full px-2">
-                    <div className="flex items-center justify-center gap-8">
-                      <div className="flex flex-col items-center">
-                        <Trophy className="w-5 h-5 mb-1" />
-                        <span className="text-xl font-bold">{poster.prize}</span>
-                        <span className="text-xs text-white/70">Prize</span>
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <Coins className="w-5 h-5 mb-1" />
-                        <span className="text-xl font-bold">{poster.entryFee}</span>
-                        <span className="text-xs text-white/70">Entry</span>
-                      </div>
+                  <div className="flex items-center justify-center gap-10 mb-6">
+                    <div className="flex flex-col items-center">
+                      <Trophy className="w-6 h-6 mb-1" />
+                      <span className="text-2xl font-bold">{poster.prize}</span>
+                      <span className="text-xs text-white/70">Prize Pool</span>
                     </div>
-
-                    <div className="flex flex-col gap-2 text-sm">
-                      <Badge className="bg-white/20 backdrop-blur-sm border border-white/30 text-white px-3 py-1 mx-auto">
-                        {poster.participants} Players
-                      </Badge>
-                      <span className="text-white/80 text-xs">Starts {poster.startDate}</span>
-                    </div>
-
-                    <div className="flex items-center justify-center gap-2 w-full">
-                      <Button 
-                        size="lg" 
-                        className="bg-green-600 text-white hover:bg-green-700 font-bold px-6 flex-1"
-                        onClick={() => setJoinModal(poster)}
-                        data-testid={`button-join-${poster.id}`}
-                      >
-                        Join
-                      </Button>
-                      <Button 
-                        size="icon"
-                        variant="outline"
-                        className="bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20 rounded-full shrink-0"
-                        onClick={() => setDetailsModal(poster)}
-                        data-testid={`button-details-${poster.id}`}
-                      >
-                        <Info className="w-4 h-4" />
-                      </Button>
+                    <div className="flex flex-col items-center">
+                      <Coins className="w-6 h-6 mb-1" />
+                      <span className="text-2xl font-bold">{poster.entryFee}</span>
+                      <span className="text-xs text-white/70">Entry Fee</span>
                     </div>
                   </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Badge className="bg-white/20 backdrop-blur-sm border border-white/30 text-white px-4 py-1 mx-auto">
+                      {poster.participants} Players
+                    </Badge>
+                    <span className="text-white/80 text-sm">Starts {poster.startDate}</span>
+                  </div>
+                </div>
+
+                <div className="absolute bottom-6 left-4 right-4 flex items-center gap-2">
+                  <Button 
+                    size="lg" 
+                    className="bg-green-600 text-white hover:bg-green-700 font-bold px-6 flex-1"
+                    onClick={() => setJoinModal(poster)}
+                    data-testid={`button-join-${poster.id}`}
+                  >
+                    Join Tournament
+                  </Button>
+                  <Button 
+                    size="icon"
+                    variant="outline"
+                    className="bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20 rounded-full shrink-0"
+                    onClick={() => setDetailsModal(poster)}
+                    data-testid={`button-details-${poster.id}`}
+                  >
+                    <Info className="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
             </Card>
