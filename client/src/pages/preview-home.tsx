@@ -204,7 +204,7 @@ export default function PreviewHome() {
                     <div className="flex items-center justify-center gap-6">
                       <Button 
                         size="lg" 
-                        className="bg-green-600 text-white hover:bg-green-700 font-bold text-xl px-16 py-6 h-auto"
+                        className="bg-green-600 text-white hover:bg-green-700 font-bold px-20"
                         onClick={() => setJoinModal(poster)}
                         data-testid={`button-join-${poster.id}`}
                       >
