@@ -13,6 +13,13 @@ import MobilePreviewNotifications from "@/pages/mobile-preview-notifications";
 import MobilePreviewMyServers from "@/pages/mobile-preview-myservers";
 import MobilePreviewServerDetail from "@/pages/mobile-preview-server-detail";
 import MobilePreviewAccount from "@/pages/mobile-preview-account";
+import PreviewHome from "@/pages/preview-home";
+import PreviewDiscovery from "@/pages/preview-discovery";
+import PreviewMessages from "@/pages/preview-messages";
+import PreviewMyServers from "@/pages/preview-my-servers";
+import PreviewServerDetail from "@/pages/preview-server-detail";
+import PreviewAccount from "@/pages/preview-account";
+import PreviewPosterBuilder from "@/pages/preview-poster-builder";
 import { User, Search, Bell, Trophy, Server, MessageSquare } from "lucide-react";
 import { initializeApp } from "../../lib/initializeApp";
 
@@ -63,6 +70,15 @@ function Router() {
       <Route path="/myservers" component={MobilePreviewMyServers} />
       <Route path="/server/:serverId" component={MobilePreviewServerDetail} />
       <Route path="/account" component={MobilePreviewAccount} />
+      
+      <Route path="/preview/home" component={PreviewHome} />
+      <Route path="/preview/discovery" component={PreviewDiscovery} />
+      <Route path="/preview/messages" component={PreviewMessages} />
+      <Route path="/preview/my-servers" component={PreviewMyServers} />
+      <Route path="/preview/server/:serverId" component={PreviewServerDetail} />
+      <Route path="/preview/account" component={PreviewAccount} />
+      <Route path="/preview/poster-builder" component={PreviewPosterBuilder} />
+      
       <Route component={NotFound} />
     </Switch>
   );
