@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Search, SlidersHorizontal, Share2, Trophy, Coins, Clock, Users, Monitor, MapPin, Shield, Info, ArrowRight } from "lucide-react";
+import { Search, Share2, Trophy, Coins, Clock, Users, Monitor, MapPin, Shield, Info, ArrowRight } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Dialog,
@@ -22,6 +23,7 @@ import { format } from "date-fns";
 const mockPosters = [
   {
     id: "1",
+    serverId: "mock-server-1",
     title: "Summer Championship 2024",
     game: "Valorant",
     serverName: "ProGaming League",
@@ -39,6 +41,7 @@ const mockPosters = [
   },
   {
     id: "2",
+    serverId: "mock-server-2",
     title: "Midnight Masters",
     game: "League of Legends",
     serverName: "Elite Esports",
@@ -56,6 +59,7 @@ const mockPosters = [
   },
   {
     id: "3",
+    serverId: "mock-server-3",
     title: "Winter Showdown",
     game: "CS:GO",
     serverName: "Competitive Arena",
@@ -73,6 +77,7 @@ const mockPosters = [
   },
   {
     id: "4",
+    serverId: "mock-server-4",
     title: "Apex Legends Cup",
     game: "Apex Legends",
     serverName: "Battle Royale Hub",
@@ -92,15 +97,25 @@ const mockPosters = [
 
 export default function PreviewHome() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [detailsModal, setDetailsModal] = useState<typeof mockPosters[0] | null>(null);
   const [joinModal, setJoinModal] = useState<typeof mockPosters[0] | null>(null);
+  const [serverModal, setServerModal] = useState<{ name: string; logo: string; id?: string } | null>(null);
 
   const { data: tournaments, isLoading } = useQuery<Tournament[]>({
     queryKey: ['/api/tournaments'],
   });
 
   const registerTournamentMutation = useMutation({
-    mutationFn: async (tournamentId: string) => {
+    mutationFn: async ({ tournamentId, serverId }: { tournamentId: string; serverId?: string }) => {
+      // First join the server if serverId is provided
+      if (serverId) {
+        await apiRequest('POST', `/api/servers/${serverId}/join`, {
+          userId: "user-demo-123", // Mock user ID - would come from auth
+        });
+      }
+      
+      // Then register for tournament
       return await apiRequest('POST', `/api/tournaments/${tournamentId}/registrations`, {
         teamName: "Demo Team", // Would come from user input
         contactEmail: "demo@example.com",
@@ -110,7 +125,7 @@ export default function PreviewHome() {
     onSuccess: () => {
       toast({
         title: "Successfully registered!",
-        description: "You've joined the tournament.",
+        description: "You've joined the server and tournament.",
       });
       setJoinModal(null);
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
@@ -126,6 +141,7 @@ export default function PreviewHome() {
 
   const tournamentPosters = (tournaments || []).map((t) => ({
     id: t.id,
+    serverId: t.serverId,
     title: t.name,
     game: t.game || "Tournament",
     serverName: t.organizerName || "Gaming Server",
@@ -155,35 +171,30 @@ export default function PreviewHome() {
             </Button>
           </div>
           
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search tournaments..."
-                className="pl-9"
-                data-testid="input-search-tournaments"
-              />
-            </div>
-            <Button size="icon" variant="outline" data-testid="button-filters">
-              <SlidersHorizontal className="w-4 h-4" />
-            </Button>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search tournaments..."
+              className="pl-9"
+              data-testid="input-search-tournaments"
+            />
           </div>
 
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4">
+          <div className="flex gap-2">
             <Badge variant="default" className="whitespace-nowrap text-xs px-3" data-testid="filter-all">
-              All Games
+              All
             </Badge>
-            <Badge variant="outline" className="whitespace-nowrap text-xs px-3" data-testid="filter-valorant">
-              Valorant
+            <Badge variant="outline" className="whitespace-nowrap text-xs px-3" data-testid="filter-prize">
+              Prize
             </Badge>
-            <Badge variant="outline" className="whitespace-nowrap text-xs px-3" data-testid="filter-lol">
-              League of Legends
+            <Badge variant="outline" className="whitespace-nowrap text-xs px-3" data-testid="filter-no-prize">
+              No Prize
             </Badge>
-            <Badge variant="outline" className="whitespace-nowrap text-xs px-3" data-testid="filter-csgo">
-              CS:GO
+            <Badge variant="outline" className="whitespace-nowrap text-xs px-3" data-testid="filter-free">
+              Free Entry
             </Badge>
-            <Badge variant="outline" className="whitespace-nowrap text-xs px-3" data-testid="filter-apex">
-              Apex Legends
+            <Badge variant="outline" className="whitespace-nowrap text-xs px-3" data-testid="filter-paid">
+              Paid Entry
             </Badge>
           </div>
         </div>
@@ -228,7 +239,7 @@ export default function PreviewHome() {
                 <div className="absolute inset-0 flex flex-col justify-between text-center text-white px-4 py-8">
                   <button
                     className="flex flex-col items-center gap-1.5 cursor-pointer hover-elevate active-elevate-2 p-2 rounded-lg mx-auto"
-                    onClick={() => alert('Navigate to server')}
+                    onClick={() => setServerModal({ name: poster.serverName, logo: poster.serverLogo, id: poster.id })}
                     data-testid={`button-server-${poster.id}`}
                   >
                     <Avatar className="w-16 h-16 border-4 border-white/30">
@@ -247,9 +258,11 @@ export default function PreviewHome() {
                         {poster.title}
                       </h2>
                       
-                      <div className="text-lg font-semibold text-white/90">
-                        {poster.game}
-                      </div>
+                      {poster.game && (
+                        <Badge className="bg-primary/90 text-primary-foreground border-0 text-sm font-semibold">
+                          {poster.game}
+                        </Badge>
+                      )}
                     </div>
 
                     <div className="flex items-center justify-center gap-10">
@@ -415,7 +428,10 @@ export default function PreviewHome() {
               data-testid="button-join-server"
               onClick={() => {
                 if (joinModal?.id) {
-                  registerTournamentMutation.mutate(joinModal.id);
+                  registerTournamentMutation.mutate({ 
+                    tournamentId: joinModal.id,
+                    serverId: joinModal.serverId 
+                  });
                 }
               }}
               disabled={registerTournamentMutation.isPending}
@@ -425,7 +441,7 @@ export default function PreviewHome() {
                   <Users className="w-5 h-5" />
                 </div>
                 <div className="text-left">
-                  <p className="font-semibold">Join Server & Tournament</p>
+                  <p className="font-semibold">{registerTournamentMutation.isPending ? "Joining..." : "Join Server & Tournament"}</p>
                   <p className="text-xs text-muted-foreground">
                     Join {joinModal?.serverName} and register
                   </p>
@@ -439,24 +455,63 @@ export default function PreviewHome() {
               variant="outline"
               data-testid="button-signup-page"
               onClick={() => {
-                if (joinModal?.id) {
-                  registerTournamentMutation.mutate(joinModal.id);
-                }
+                toast({
+                  title: "Feature in development",
+                  description: "Tournament registration page is being developed.",
+                  variant: "destructive",
+                });
               }}
-              disabled={registerTournamentMutation.isPending}
             >
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-md bg-primary/10">
                   <Trophy className="w-5 h-5" />
                 </div>
                 <div className="text-left">
-                  <p className="font-semibold">{registerTournamentMutation.isPending ? "Registering..." : "Go to Sign-Up Page"}</p>
+                  <p className="font-semibold">Go to Sign-Up Page</p>
                   <p className="text-xs text-muted-foreground">
                     View full tournament details & register
                   </p>
                 </div>
               </div>
               <ArrowRight className="w-5 h-5 text-muted-foreground" />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Server Details Modal */}
+      <Dialog open={!!serverModal} onOpenChange={() => setServerModal(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <Avatar className="w-12 h-12">
+                <AvatarFallback className="text-2xl">{serverModal?.logo}</AvatarFallback>
+              </Avatar>
+              <span>{serverModal?.name}</span>
+            </DialogTitle>
+            <DialogDescription>
+              Tournament Server
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              Join this server to participate in tournaments, connect with other players, and stay updated on upcoming events.
+            </div>
+
+            <Button 
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold"
+              onClick={() => {
+                toast({
+                  title: "Joined server!",
+                  description: `You've successfully joined ${serverModal?.name}`,
+                });
+                setServerModal(null);
+              }}
+              data-testid="button-join-server-from-modal"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Join Server
             </Button>
           </div>
         </DialogContent>
