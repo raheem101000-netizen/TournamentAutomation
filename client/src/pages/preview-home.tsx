@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Tournament } from "@shared/schema";
+import type { Tournament, Server } from "@shared/schema";
 import { format } from "date-fns";
 
 const mockPosters = [
@@ -106,39 +106,45 @@ export default function PreviewHome() {
     queryKey: ['/api/tournaments'],
   });
 
+  // Fetch servers to get real server names and icons
+  const { data: servers } = useQuery<Server[]>({
+    queryKey: ['/api/mobile-preview/servers'],
+  });
+
   // Helper function to join a server - shared by both mutations
   const joinServerAPI = async (serverId: string) => {
-    const result = await apiRequest(
+    const response = await apiRequest(
       'POST',
       `/api/servers/${serverId}/join`,
       { userId: "user-demo-123" }
     );
-    return result as unknown as { member: any; alreadyMember: boolean; serverId: string };
+    const data = await response.json();
+    return { ...data, serverId }; // Ensure serverId is included in response
   };
 
-  // Shared join server mutation used by server modal
+  // Shared join server mutation used by server modal (logo click path only)
   const joinServerMutation = useMutation({
     mutationFn: joinServerAPI,
     onSuccess: (data) => {
-      if (data.alreadyMember) {
-        // User is already a member - navigate to server
-        toast({
-          title: "Already a member",
-          description: "Taking you to the server...",
-        });
-        // Validate serverId before navigation
-        if (data.serverId) {
-          setLocation(`/server/${data.serverId}`);
-        }
-      } else {
-        // Newly joined
-        toast({
-          title: "Joined server!",
-          description: "You've successfully joined the server.",
-        });
-      }
-      setServerModal(null);
+      // Invalidate cache
       queryClient.invalidateQueries({ queryKey: ['/api/mobile-preview/servers'] });
+      setServerModal(null);
+      
+      // Navigate to server after joining (logo click path always navigates)
+      if (data.serverId) {
+        if (data.alreadyMember) {
+          toast({
+            title: "Already a member",
+            description: "Taking you to the server...",
+          });
+        } else {
+          toast({
+            title: "Joined server!",
+            description: "Taking you to the server...",
+          });
+        }
+        setLocation(`/server/${data.serverId}`);
+      }
     },
     onError: (error: any) => {
       toast({
@@ -162,44 +168,70 @@ export default function PreviewHome() {
         }
       }
       
-      // Always register for tournament regardless of server membership status
-      const registration = await apiRequest('POST', `/api/tournaments/${tournamentId}/registrations`, {
-        teamName: "Demo Team", // Would come from user input
-        contactEmail: "demo@example.com",
-        participantNames: ["Player 1", "Player 2"],
-      });
-      
-      return { joinResult, registration };
+      // Try to register for tournament
+      try {
+        const response = await apiRequest('POST', `/api/tournaments/${tournamentId}/registrations`, {
+          teamName: "Demo Team", // Would come from user input
+          contactEmail: "demo@example.com",
+          participantNames: ["Player 1", "Player 2"],
+        });
+        const registration = await response.json();
+        return { joinResult, registration, alreadyRegistered: false };
+      } catch (error: any) {
+        // Check if error is 409 (conflict) with team name already exists message
+        // apiRequest throws errors in format "STATUS_CODE: error message"
+        if (error.message?.includes("409") && error.message?.includes("Team name already exists")) {
+          return { joinResult, registration: null, alreadyRegistered: true, serverId };
+        }
+        throw error;
+      }
     },
     onSuccess: (data) => {
       // Invalidate cache for both tournaments and servers
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
       queryClient.invalidateQueries({ queryKey: ['/api/mobile-preview/servers'] });
       
-      if (data.joinResult) {
+      // Close modal
+      setJoinModal(null);
+      
+      // Determine serverId for navigation
+      const targetServerId = data.serverId || data.joinResult?.serverId;
+      
+      // Handle already registered case
+      if (data.alreadyRegistered) {
+        toast({
+          title: "Already registered!",
+          description: targetServerId ? "Taking you to the server..." : "You've already joined this tournament.",
+        });
+        if (targetServerId) {
+          setLocation(`/server/${targetServerId}`);
+        }
+      }
+      // Handle successful registration with server join
+      else if (data.joinResult) {
         if (data.joinResult.alreadyMember) {
           toast({
             title: "Tournament registration successful!",
             description: "You were already a server member. Taking you to the server...",
           });
-          // Validate serverId before navigation
-          if (data.joinResult.serverId) {
-            setLocation(`/server/${data.joinResult.serverId}`);
-          }
         } else {
           toast({
             title: "Successfully registered!",
-            description: "You've joined the server and tournament.",
+            description: "You've joined the server and tournament. Taking you to the server...",
           });
         }
-      } else {
-        // No server involved, just tournament registration
+        // Always navigate for green button flow
+        if (targetServerId) {
+          setLocation(`/server/${targetServerId}`);
+        }
+      } 
+      // No server involved, just tournament registration
+      else {
         toast({
           title: "Tournament registration successful!",
           description: "You've been registered for the tournament.",
         });
       }
-      setJoinModal(null);
     },
     onError: (error: any) => {
       toast({
@@ -211,24 +243,30 @@ export default function PreviewHome() {
     },
   });
 
-  const tournamentPosters = (tournaments || []).map((t) => ({
-    id: t.id,
-    serverId: t.serverId || undefined,
-    title: t.name,
-    game: t.game || "Tournament",
-    serverName: t.organizerName || "Gaming Server",
-    serverLogo: t.game?.charAt(0) || "🎮",
-    backgroundImage: t.imageUrl || "https://images.unsplash.com/photo-1542751110-97427bbecf20?w=800&h=1200&fit=crop",
-    prize: t.prizeReward || "TBD",
-    entryFee: t.entryFee ? `$${t.entryFee}` : "Free",
-    startDate: t.startDate ? format(new Date(t.startDate), "MMM dd, yyyy") : "TBD",
-    startTime: t.startDate ? format(new Date(t.startDate), "h:mm a") : "TBD",
-    participants: `${t.totalTeams || 0}/${t.totalTeams || 0}`,
-    format: t.format === "round_robin" ? "Round Robin" : t.format === "single_elimination" ? "Single Elimination" : "Swiss System",
-    platform: "PC",
-    region: "Global",
-    rankReq: "Any Rank",
-  }));
+  const tournamentPosters = (tournaments || []).map((t) => {
+    // Look up server data if serverId exists
+    const server = t.serverId ? servers?.find(s => s.id === t.serverId) : null;
+    
+    return {
+      id: t.id,
+      serverId: t.serverId || undefined,
+      title: t.name,
+      game: t.game || "Tournament",
+      serverName: server?.name || t.organizerName || "Gaming Server",
+      // Use real server icon if available, otherwise fall back to first character
+      serverLogo: server?.iconUrl || server?.name?.charAt(0) || t.game?.charAt(0) || "🎮",
+      backgroundImage: t.imageUrl || "https://images.unsplash.com/photo-1542751110-97427bbecf20?w=800&h=1200&fit=crop",
+      prize: t.prizeReward || "TBD",
+      entryFee: t.entryFee ? `$${t.entryFee}` : "Free",
+      startDate: t.startDate ? format(new Date(t.startDate), "MMM dd, yyyy") : "TBD",
+      startTime: t.startDate ? format(new Date(t.startDate), "h:mm a") : "TBD",
+      participants: `${t.totalTeams || 0}/${t.totalTeams || 0}`,
+      format: t.format === "round_robin" ? "Round Robin" : t.format === "single_elimination" ? "Single Elimination" : "Swiss System",
+      platform: "PC",
+      region: "Global",
+      rankReq: "Any Rank",
+    };
+  });
 
   const displayPosters = tournamentPosters.length > 0 ? tournamentPosters : mockPosters;
 
@@ -315,8 +353,11 @@ export default function PreviewHome() {
                     data-testid={`button-server-${poster.id}`}
                   >
                     <Avatar className="w-16 h-16 border-4 border-white/30">
+                      {poster.serverLogo && poster.serverLogo.startsWith('http') ? (
+                        <AvatarImage src={poster.serverLogo} alt={poster.serverName} />
+                      ) : null}
                       <AvatarFallback className="text-2xl bg-black/40 backdrop-blur-sm text-white">
-                        {poster.serverLogo}
+                        {poster.serverLogo && !poster.serverLogo.startsWith('http') ? poster.serverLogo : poster.serverName.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="text-xs font-semibold text-white/90 tracking-wider uppercase">
