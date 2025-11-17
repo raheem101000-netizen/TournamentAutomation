@@ -111,6 +111,7 @@ export interface IStorage {
   joinServer(serverId: string, userId: string): Promise<ServerMember>;
   getServersByUser(userId: string): Promise<Server[]>;
   isUserInServer(serverId: string, userId: string): Promise<boolean>;
+  getServerMember(serverId: string, userId: string): Promise<ServerMember | undefined>;
   
   // Channel operations
   createChannel(data: InsertChannel): Promise<Channel>;
@@ -410,6 +411,15 @@ export class DatabaseStorage implements IStorage {
       .where(sql`${serverMembers.serverId} = ${serverId} AND ${serverMembers.userId} = ${userId}`)
       .limit(1);
     return !!member;
+  }
+
+  async getServerMember(serverId: string, userId: string): Promise<ServerMember | undefined> {
+    const [member] = await db
+      .select()
+      .from(serverMembers)
+      .where(sql`${serverMembers.serverId} = ${serverId} AND ${serverMembers.userId} = ${userId}`)
+      .limit(1);
+    return member;
   }
 
   // Channel operations

@@ -98,37 +98,108 @@ const mockPosters = [
 export default function PreviewHome() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [detailsModal, setDetailsModal] = useState<typeof mockPosters[0] | null>(null);
-  const [joinModal, setJoinModal] = useState<typeof mockPosters[0] | null>(null);
+  const [detailsModal, setDetailsModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string; backgroundImage: string; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; rankReq: string; } | null>(null);
+  const [joinModal, setJoinModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string; backgroundImage: string; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; rankReq: string; } | null>(null);
   const [serverModal, setServerModal] = useState<{ name: string; logo: string; id?: string } | null>(null);
 
   const { data: tournaments, isLoading } = useQuery<Tournament[]>({
     queryKey: ['/api/tournaments'],
   });
 
-  const registerTournamentMutation = useMutation({
-    mutationFn: async ({ tournamentId, serverId }: { tournamentId: string; serverId?: string }) => {
-      // First join the server if serverId is provided
-      if (serverId) {
-        await apiRequest('POST', `/api/servers/${serverId}/join`, {
-          userId: "user-demo-123", // Mock user ID - would come from auth
+  // Helper function to join a server - shared by both mutations
+  const joinServerAPI = async (serverId: string) => {
+    const result = await apiRequest(
+      'POST',
+      `/api/servers/${serverId}/join`,
+      { userId: "user-demo-123" }
+    );
+    return result as unknown as { member: any; alreadyMember: boolean; serverId: string };
+  };
+
+  // Shared join server mutation used by server modal
+  const joinServerMutation = useMutation({
+    mutationFn: joinServerAPI,
+    onSuccess: (data) => {
+      if (data.alreadyMember) {
+        // User is already a member - navigate to server
+        toast({
+          title: "Already a member",
+          description: "Taking you to the server...",
+        });
+        // Validate serverId before navigation
+        if (data.serverId) {
+          setLocation(`/server/${data.serverId}`);
+        }
+      } else {
+        // Newly joined
+        toast({
+          title: "Joined server!",
+          description: "You've successfully joined the server.",
         });
       }
+      setServerModal(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/mobile-preview/servers'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to join server",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+      setServerModal(null); // Close modal on error
+    },
+  });
+
+  const registerTournamentMutation = useMutation({
+    mutationFn: async ({ tournamentId, serverId }: { tournamentId: string; serverId?: string | null }) => {
+      // First join the server if serverId is provided (reuse shared helper)
+      let joinResult: { member: any; alreadyMember: boolean; serverId: string } | undefined;
+      if (serverId) {
+        try {
+          joinResult = await joinServerAPI(serverId);
+        } catch (error: any) {
+          throw new Error(`Failed to join server: ${error.message || 'Unknown error'}`);
+        }
+      }
       
-      // Then register for tournament
-      return await apiRequest('POST', `/api/tournaments/${tournamentId}/registrations`, {
+      // Always register for tournament regardless of server membership status
+      const registration = await apiRequest('POST', `/api/tournaments/${tournamentId}/registrations`, {
         teamName: "Demo Team", // Would come from user input
         contactEmail: "demo@example.com",
         participantNames: ["Player 1", "Player 2"],
       });
+      
+      return { joinResult, registration };
     },
-    onSuccess: () => {
-      toast({
-        title: "Successfully registered!",
-        description: "You've joined the server and tournament.",
-      });
-      setJoinModal(null);
+    onSuccess: (data) => {
+      // Invalidate cache for both tournaments and servers
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/mobile-preview/servers'] });
+      
+      if (data.joinResult) {
+        if (data.joinResult.alreadyMember) {
+          toast({
+            title: "Tournament registration successful!",
+            description: "You were already a server member. Taking you to the server...",
+          });
+          // Validate serverId before navigation
+          if (data.joinResult.serverId) {
+            setLocation(`/server/${data.joinResult.serverId}`);
+          }
+        } else {
+          toast({
+            title: "Successfully registered!",
+            description: "You've joined the server and tournament.",
+          });
+        }
+      } else {
+        // No server involved, just tournament registration
+        toast({
+          title: "Tournament registration successful!",
+          description: "You've been registered for the tournament.",
+        });
+      }
+      setJoinModal(null);
     },
     onError: (error: any) => {
       toast({
@@ -136,12 +207,13 @@ export default function PreviewHome() {
         description: error.message || "Please try again later.",
         variant: "destructive",
       });
+      setJoinModal(null); // Close modal on error too
     },
   });
 
   const tournamentPosters = (tournaments || []).map((t) => ({
     id: t.id,
-    serverId: t.serverId,
+    serverId: t.serverId || undefined,
     title: t.name,
     game: t.game || "Tournament",
     serverName: t.organizerName || "Gaming Server",
@@ -239,7 +311,7 @@ export default function PreviewHome() {
                 <div className="absolute inset-0 flex flex-col justify-between text-center text-white px-4 py-8">
                   <button
                     className="flex flex-col items-center gap-1.5 cursor-pointer hover-elevate active-elevate-2 p-2 rounded-lg mx-auto"
-                    onClick={() => setServerModal({ name: poster.serverName, logo: poster.serverLogo, id: poster.id })}
+                    onClick={() => setServerModal({ name: poster.serverName, logo: poster.serverLogo, id: poster.serverId })}
                     data-testid={`button-server-${poster.id}`}
                   >
                     <Avatar className="w-16 h-16 border-4 border-white/30">
@@ -427,7 +499,7 @@ export default function PreviewHome() {
               variant="outline"
               data-testid="button-join-server"
               onClick={() => {
-                if (joinModal?.id) {
+                if (joinModal?.id && joinModal.serverId) {
                   registerTournamentMutation.mutate({ 
                     tournamentId: joinModal.id,
                     serverId: joinModal.serverId 
@@ -502,16 +574,15 @@ export default function PreviewHome() {
             <Button 
               className="w-full bg-green-600 hover:bg-green-700 text-white font-bold"
               onClick={() => {
-                toast({
-                  title: "Joined server!",
-                  description: `You've successfully joined ${serverModal?.name}`,
-                });
-                setServerModal(null);
+                if (serverModal?.id) {
+                  joinServerMutation.mutate(serverModal.id);
+                }
               }}
+              disabled={joinServerMutation.isPending}
               data-testid="button-join-server-from-modal"
             >
               <Users className="w-4 h-4 mr-2" />
-              Join Server
+              {joinServerMutation.isPending ? "Joining..." : "Join Server"}
             </Button>
           </div>
         </DialogContent>

@@ -691,13 +691,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if user is already in server
-      const alreadyMember = await storage.isUserInServer(req.params.serverId, userId);
-      if (alreadyMember) {
-        return res.status(400).json({ error: "Already a member of this server" });
+      const existingMember = await storage.getServerMember(req.params.serverId, userId);
+      if (existingMember) {
+        // Return success with alreadyMember flag - idempotent behavior
+        return res.status(200).json({ 
+          member: existingMember, 
+          alreadyMember: true,
+          serverId: req.params.serverId
+        });
       }
       
       const member = await storage.joinServer(req.params.serverId, userId);
-      res.status(201).json(member);
+      res.status(201).json({ 
+        member, 
+        alreadyMember: false,
+        serverId: req.params.serverId
+      });
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
