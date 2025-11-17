@@ -1,9 +1,20 @@
 # Tournament Management Platform
 
-## Recent Changes (Nov 15, 2025)
+## Recent Changes (Nov 17, 2025)
 
-### Backend Integration Complete
-- Added 6 new database tables: users, achievements, teamProfiles, teamMembers, serverMembers, posterTemplates + poster TemplateTags
+### Phase 1 Bug Fixes - Complete
+- **Game Tags**: Extended servers table with gameTags array field for search/discovery
+- **Server Memberships**: Added serverMembers table to track user-server relationships
+- **Join Server Functionality**: Implemented POST /api/servers/:serverId/join endpoint
+- **Discovery Page Updates**: 
+  - Shows game tags instead of single category
+  - Removed Popular/New/Most Active filter badges
+  - Fixed join button to use new endpoint
+- **Voice Channels Removed**: Cleaned up server detail page mock data and rendering
+- **Backend Storage**: Added joinServer(), getServersByUser(), isUserInServer() methods
+
+### Previous Backend Integration (Nov 15, 2025)
+- Added 6 new database tables: users, achievements, teamProfiles, teamMembers, serverMembers, posterTemplates + posterTemplateTags
 - Built complete storage layer with 40+ CRUD methods using Drizzle ORM
 - Created comprehensive REST API routes for all new features
 - Successfully migrated database schema
@@ -15,10 +26,6 @@
 4. **preview-account.tsx** - Fetches users and achievements from APIs
 
 All pages include proper loading/error states and fallback to mock data.
-
-### Known Limitations
-- Achievement schema lacks organizer/tournament fields - using placeholders
-- Recommended: Add tournamentId FK and organizerName to achievements
 
 ## Overview
 

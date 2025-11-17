@@ -176,6 +176,7 @@ export const servers = pgTable("servers", {
   iconUrl: text("icon_url"),
   backgroundUrl: text("background_url"),
   category: text("category"),
+  gameTags: text("game_tags").array(),
   isPublic: integer("is_public").default(1),
   ownerId: varchar("owner_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

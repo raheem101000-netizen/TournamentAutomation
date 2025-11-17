@@ -79,9 +79,8 @@ export default function PreviewDiscovery() {
 
   const joinServerMutation = useMutation({
     mutationFn: async (serverId: string) => {
-      return await apiRequest('POST', `/api/servers/${serverId}/members`, {
+      return await apiRequest('POST', `/api/servers/${serverId}/join`, {
         userId: "user-demo-123", // Mock user ID - would come from auth
-        role: "member",
       });
     },
     onSuccess: (_data, serverId) => {
@@ -111,7 +110,7 @@ export default function PreviewDiscovery() {
     backgroundImage: s.backgroundUrl || "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=200&fit=crop",
     members: s.memberCount ? `${(s.memberCount / 1000).toFixed(1)}K` : "0",
     activeTournaments: 0,
-    categories: s.category ? [s.category] : ["Gaming"],
+    categories: s.gameTags && s.gameTags.length > 0 ? s.gameTags : ["Gaming"],
   }));
 
   const displayServers = serverCards.length > 0 ? serverCards : mockServers;
@@ -144,15 +143,6 @@ export default function PreviewDiscovery() {
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             <Badge variant="default" className="whitespace-nowrap" data-testid="filter-all">
               All Servers
-            </Badge>
-            <Badge variant="outline" className="whitespace-nowrap" data-testid="filter-popular">
-              Popular
-            </Badge>
-            <Badge variant="outline" className="whitespace-nowrap" data-testid="filter-new">
-              New
-            </Badge>
-            <Badge variant="outline" className="whitespace-nowrap" data-testid="filter-active">
-              Most Active
             </Badge>
           </div>
         </div>

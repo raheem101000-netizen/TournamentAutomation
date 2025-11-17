@@ -75,14 +75,6 @@ const mockChannels = [
     ],
   },
   {
-    category: "Voice Channels",
-    channels: [
-      { id: "8", name: "General Voice", icon: channelIcons.voice, type: "voice", locked: false },
-      { id: "9", name: "Team 1", icon: channelIcons.voice, type: "voice", locked: false },
-      { id: "10", name: "Team 2", icon: channelIcons.voice, type: "voice", locked: false },
-    ],
-  },
-  {
     category: "Media",
     channels: [
       { id: "11", name: "highlights", icon: channelIcons.videos, type: "text", locked: false },
@@ -231,12 +223,6 @@ export default function PreviewServerDetail() {
                           </Badge>
                         )}
                       </div>
-                      {channel.type === "voice" && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Users className="w-3 h-3" />
-                          <span>0</span>
-                        </div>
-                      )}
                     </div>
                   </Card>
                 ))}

@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { db } from "./db";
 import {
   tournaments,
@@ -108,6 +108,9 @@ export interface IStorage {
   createServer(data: InsertServer): Promise<Server>;
   getAllServers(): Promise<Server[]>;
   getServer(id: string): Promise<Server | undefined>;
+  joinServer(serverId: string, userId: string): Promise<ServerMember>;
+  getServersByUser(userId: string): Promise<Server[]>;
+  isUserInServer(serverId: string, userId: string): Promise<boolean>;
   
   // Channel operations
   createChannel(data: InsertChannel): Promise<Channel>;
@@ -370,6 +373,43 @@ export class DatabaseStorage implements IStorage {
   async getServer(id: string): Promise<Server | undefined> {
     const [server] = await db.select().from(servers).where(eq(servers.id, id));
     return server || undefined;
+  }
+
+  async joinServer(serverId: string, userId: string): Promise<ServerMember> {
+    const [member] = await db.insert(serverMembers).values({
+      serverId,
+      userId,
+      role: "Member",
+    }).returning();
+    
+    // Increment member count
+    await db.update(servers)
+      .set({ memberCount: sql`${servers.memberCount} + 1` })
+      .where(eq(servers.id, serverId));
+    
+    return member;
+  }
+
+  async getServersByUser(userId: string): Promise<Server[]> {
+    const userServerIds = await db
+      .select({ serverId: serverMembers.serverId })
+      .from(serverMembers)
+      .where(eq(serverMembers.userId, userId));
+    
+    if (userServerIds.length === 0) return [];
+    
+    return await db.select()
+      .from(servers)
+      .where(sql`${servers.id} IN (${sql.join(userServerIds.map(s => sql`${s.serverId}`), sql`, `)})`);
+  }
+
+  async isUserInServer(serverId: string, userId: string): Promise<boolean> {
+    const [member] = await db
+      .select()
+      .from(serverMembers)
+      .where(sql`${serverMembers.serverId} = ${serverId} AND ${serverMembers.userId} = ${userId}`)
+      .limit(1);
+    return !!member;
   }
 
   // Channel operations

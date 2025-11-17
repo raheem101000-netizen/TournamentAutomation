@@ -683,6 +683,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/servers/:serverId/join", async (req, res) => {
+    try {
+      const { userId } = req.body;
+      if (!userId) {
+        return res.status(400).json({ error: "userId is required" });
+      }
+      
+      // Check if user is already in server
+      const alreadyMember = await storage.isUserInServer(req.params.serverId, userId);
+      if (alreadyMember) {
+        return res.status(400).json({ error: "Already a member of this server" });
+      }
+      
+      const member = await storage.joinServer(req.params.serverId, userId);
+      res.status(201).json(member);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/users/:userId/servers", async (req, res) => {
+    try {
+      const servers = await storage.getServersByUser(req.params.userId);
+      res.json(servers);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Channel routes
   app.get("/api/servers/:serverId/channels", async (req, res) => {
     try {
