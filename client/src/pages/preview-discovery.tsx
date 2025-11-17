@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, SlidersHorizontal, Users, Trophy } from "lucide-react";
+import { Search, Users, Trophy } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -126,24 +126,13 @@ export default function PreviewDiscovery() {
             </Button>
           </div>
           
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search servers..."
-                className="pl-9"
-                data-testid="input-search-servers"
-              />
-            </div>
-            <Button size="icon" variant="outline" data-testid="button-filters">
-              <SlidersHorizontal className="w-4 h-4" />
-            </Button>
-          </div>
-
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            <Badge variant="default" className="whitespace-nowrap" data-testid="filter-all">
-              All Servers
-            </Badge>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search servers..."
+              className="pl-9"
+              data-testid="input-search-servers"
+            />
           </div>
         </div>
       </header>
