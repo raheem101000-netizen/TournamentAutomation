@@ -2,100 +2,43 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronDown, Hash, Volume2, Settings, Users, Trophy, Bell } from "lucide-react";
+import { ChevronDown, Hash, Settings, Trophy, Megaphone, MessageSquare, Lock } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useQuery } from "@tanstack/react-query";
 import { useRoute } from "wouter";
-import type { Server, Tournament } from "@shared/schema";
+import { useState } from "react";
+import type { Server, Tournament, Channel } from "@shared/schema";
+import AnnouncementsChannel from "@/components/channels/AnnouncementsChannel";
+import ChatChannel from "@/components/channels/ChatChannel";
+import TournamentDashboardChannel from "@/components/channels/TournamentDashboardChannel";
 
-const channelIcons = {
-  "text-default": "📝",
-  "announcement": "📢",
-  "chat": "💬",
-  "threads": "🗂️",
-  "voice": "🔊",
-  "stage": "🎤",
-  "music": "🎧",
-  "folder": "📁",
-  "bot": "🤖",
-  "admin": "🛠️",
-  "settings": "⚙️",
-  "gaming": "🎮",
-  "controller": "🕹️",
-  "tournament": "🏆",
-  "art": "🎨",
-  "photos": "📸",
-  "videos": "🎥",
-  "music-media": "🎵",
-  "rules": "📌",
-  "guidelines": "📜",
-  "help": "❓",
-  "updates": "📣",
-  "money": "💰",
-  "coins": "🪙",
-  "stats": "📊",
-  "leaderboard": "📝",
-  "welcome": "👋",
-  "introductions": "🙋",
-  "discussion": "🗣️",
-  "events": "🎉",
-  "staff": "🔐",
-  "moderation": "🛡️",
-  "reports": "🚨",
-};
-
-const mockServer = {
-  name: "ProGaming League",
-  logo: "🎮",
-  members: "12.5K",
-  onlineMembers: "3.2K",
-};
-
-const mockChannels = [
-  {
-    category: "Tournament Dashboard",
-    channels: [
-      { id: "1", name: "tournament", icon: channelIcons.tournament, type: "tournament", isDefault: true, locked: false },
-    ],
-  },
-  {
-    category: "Information",
-    channels: [
-      { id: "2", name: "announcement", icon: channelIcons.announcement, type: "text", isDefault: true, locked: true },
-      { id: "3", name: "rules", icon: channelIcons.rules, type: "text", locked: true },
-      { id: "4", name: "updates", icon: channelIcons.updates, type: "text", locked: true },
-    ],
-  },
-  {
-    category: "General",
-    channels: [
-      { id: "5", name: "chat", icon: channelIcons.chat, type: "text", isDefault: true, locked: false },
-      { id: "6", name: "introductions", icon: channelIcons.introductions, type: "text", locked: false },
-      { id: "7", name: "discussion", icon: channelIcons.discussion, type: "text", locked: false },
-    ],
-  },
-  {
-    category: "Media",
-    channels: [
-      { id: "11", name: "highlights", icon: channelIcons.videos, type: "text", locked: false },
-      { id: "12", name: "screenshots", icon: channelIcons.photos, type: "text", locked: false },
-    ],
-  },
-];
-
-const activeTournament = {
-  title: "Summer Championship 2024",
-  participants: "64/128",
-  prize: "$5,000",
-  startDate: "Dec 20, 2024",
+const getChannelIcon = (type: string) => {
+  switch (type) {
+    case "announcements":
+      return <Megaphone className="h-4 w-4" />;
+    case "chat":
+      return <MessageSquare className="h-4 w-4" />;
+    case "tournament_dashboard":
+      return <Trophy className="h-4 w-4" />;
+    default:
+      return <Hash className="h-4 w-4" />;
+  }
 };
 
 export default function PreviewServerDetail() {
   const [match, params] = useRoute("/server/:serverId");
   const serverId = params?.serverId;
+  const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
+
+  const currentUserId = "user-demo-123"; // TODO: Replace with real auth
 
   const { data: server, isLoading: serverLoading } = useQuery<Server>({
-    queryKey: ['/api/servers', serverId],
+    queryKey: [`/api/servers/${serverId}`],
+    enabled: !!serverId,
+  });
+
+  const { data: channels = [], isLoading: channelsLoading } = useQuery<Channel[]>({
+    queryKey: [`/api/servers/${serverId}/channels`],
     enabled: !!serverId,
   });
 
@@ -107,7 +50,11 @@ export default function PreviewServerDetail() {
   const serverTournaments = tournaments?.filter(t => t.serverId === serverId) || [];
   const activeTournament = serverTournaments[0]; // Get first active tournament
 
-  if (serverLoading) {
+  const publicChannels = channels.filter(c => !c.isPrivate);
+  const privateChannels = channels.filter(c => c.isPrivate);
+  const selectedChannel = channels.find(c => c.id === selectedChannelId) || channels[0];
+
+  if (serverLoading || channelsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-muted-foreground">Loading server...</p>
@@ -119,6 +66,54 @@ export default function PreviewServerDetail() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-muted-foreground">Server not found</p>
+      </div>
+    );
+  }
+
+  // If a channel is selected, show channel content
+  if (selectedChannelId && selectedChannel) {
+    return (
+      <div className="flex flex-col min-h-screen bg-background pb-20">
+        <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="container max-w-lg mx-auto px-4 py-3">
+            <div className="flex items-center gap-3">
+              <Button 
+                size="icon" 
+                variant="ghost"
+                onClick={() => setSelectedChannelId(null)}
+                data-testid="button-back-to-channels"
+              >
+                <ChevronDown className="w-5 h-5 rotate-90" />
+              </Button>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  {getChannelIcon(selectedChannel.type)}
+                  <h1 className="text-lg font-bold truncate">{selectedChannel.name}</h1>
+                  {selectedChannel.isPrivate && (
+                    <Badge variant="secondary" className="text-xs">
+                      <Lock className="h-3 w-3 mr-1" />
+                      Private
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="container max-w-lg mx-auto px-4 py-4 flex-1">
+          {selectedChannel.type === "tournament_dashboard" && (
+            <TournamentDashboardChannel serverId={serverId!} />
+          )}
+          {selectedChannel.type === "announcements" && (
+            <AnnouncementsChannel />
+          )}
+          {selectedChannel.type === "chat" && (
+            <ChatChannel />
+          )}
+        </main>
+
+        <BottomNavigation />
       </div>
     );
   }
@@ -191,50 +186,68 @@ export default function PreviewServerDetail() {
         </div>
 
         <div className="space-y-4">
-          {mockChannels.map((category, idx) => (
-            <div key={idx} className="space-y-2">
+          {/* Public Channels */}
+          {publicChannels.length > 0 && (
+            <div className="space-y-2">
               <div className="flex items-center gap-2 px-2">
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  {category.category}
+                  Channels
                 </h3>
               </div>
-
               <div className="space-y-1">
-                {category.channels.map((channel) => (
+                {publicChannels.map((channel) => (
                   <Card
                     key={channel.id}
                     className="p-3 hover-elevate cursor-pointer border-0 shadow-none"
-                    data-testid={`channel-${channel.name}`}
+                    onClick={() => setSelectedChannelId(channel.id)}
+                    data-testid={`channel-${channel.slug}`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="text-xl">
-                        {channel.icon}
+                      <div className="text-muted-foreground">
+                        {getChannelIcon(channel.type)}
                       </div>
                       <div className="flex-1 min-w-0 flex items-center gap-2">
                         <span className="font-medium truncate">{channel.name}</span>
-                        {channel.isDefault && (
-                          <Badge variant="secondary" className="text-xs">
-                            Default
-                          </Badge>
-                        )}
-                        {channel.locked && (
-                          <Badge variant="outline" className="text-xs">
-                            Read-only
-                          </Badge>
-                        )}
                       </div>
                     </div>
                   </Card>
                 ))}
               </div>
             </div>
-          ))}
-        </div>
+          )}
 
-        <Button className="w-full" variant="outline" data-testid="button-create-channel">
-          <Hash className="w-4 h-4 mr-2" />
-          Create Channel
-        </Button>
+          {/* Private Channels (owner only) */}
+          {privateChannels.length > 0 && server.ownerId === currentUserId && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 px-2">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                  <Lock className="h-3 w-3" />
+                  Private
+                </h3>
+              </div>
+              <div className="space-y-1">
+                {privateChannels.map((channel) => (
+                  <Card
+                    key={channel.id}
+                    className="p-3 hover-elevate cursor-pointer border-0 shadow-none"
+                    onClick={() => setSelectedChannelId(channel.id)}
+                    data-testid={`channel-${channel.slug}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="text-muted-foreground">
+                        {getChannelIcon(channel.type)}
+                      </div>
+                      <div className="flex-1 min-w-0 flex items-center gap-2">
+                        <span className="font-medium truncate">{channel.name}</span>
+                        <Lock className="h-3 w-3 ml-auto text-muted-foreground" />
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </main>
 
       <BottomNavigation />
