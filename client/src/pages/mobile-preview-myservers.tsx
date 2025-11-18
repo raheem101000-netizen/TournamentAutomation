@@ -36,6 +36,15 @@ export default function MobilePreviewMyServers() {
 
   const ownedServers = allServers.filter(s => s.ownerId === currentUserId);
   
+  // Debug logging
+  console.log('My Servers - All servers count:', allServers.length);
+  console.log('My Servers - Owned servers:', ownedServers.length);
+  console.log('My Servers - Member servers:', memberServersList.length);
+  if (memberServersList.length > 0) {
+    console.log('My Servers - First member server iconUrl:', memberServersList[0].iconUrl);
+    console.log('My Servers - First member server data:', memberServersList[0]);
+  }
+  
   // Get all available game tags from all servers for filtering
   const allGameTags = Array.from(
     new Set(allServers.flatMap(s => s.gameTags || []))
