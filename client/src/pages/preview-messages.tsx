@@ -1,12 +1,33 @@
+import { useState } from "react";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Search, Plus, Users, Image as ImageIcon, Paperclip } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Search, Plus, Users, Send, ArrowLeft, Edit, Check, X, Image as ImageIcon, Paperclip, Smile } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useToast } from "@/hooks/use-toast";
 
-const mockChats = [
+interface Chat {
+  id: string;
+  name: string;
+  isGroup: boolean;
+  avatar?: string;
+  groupImage?: string;
+  lastMessage: string;
+  timestamp: string;
+  unread: number;
+  members: number;
+}
+
+const mockAcceptedChats: Chat[] = [
   {
     id: "1",
     name: "Team Alpha Squad",
@@ -47,19 +68,213 @@ const mockChats = [
     unread: 0,
     members: 4,
   },
+];
+
+const mockMessageRequests: Chat[] = [
   {
-    id: "5",
-    name: "Emma Wilson",
+    id: "req-1",
+    name: "Sarah Johnson",
     isGroup: false,
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=emma",
-    lastMessage: "Thanks for the tips!",
-    timestamp: "Yesterday",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=sarah",
+    lastMessage: "Hey! Want to join our tournament team?",
+    timestamp: "5m ago",
     unread: 0,
     members: 0,
+  },
+  {
+    id: "req-2",
+    name: "Elite Gamers Group",
+    isGroup: true,
+    groupImage: "⚡",
+    lastMessage: "Invitation to join Elite Gamers",
+    timestamp: "1h ago",
+    unread: 0,
+    members: 12,
+  },
+];
+
+const mockMessages = [
+  {
+    id: "msg-1",
+    sender: "Alex",
+    content: "Ready for tonight's match?",
+    timestamp: "2m ago",
+    isOwn: false,
+  },
+  {
+    id: "msg-2",
+    sender: "You",
+    content: "Yeah! What time are we starting?",
+    timestamp: "1m ago",
+    isOwn: true,
+  },
+  {
+    id: "msg-3",
+    sender: "Sarah",
+    content: "I think 8 PM EST",
+    timestamp: "30s ago",
+    isOwn: false,
   },
 ];
 
 export default function PreviewMessages() {
+  const { toast } = useToast();
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
+  const [messageInput, setMessageInput] = useState("");
+  const [editingAvatar, setEditingAvatar] = useState<Chat | null>(null);
+  const [newAvatarEmoji, setNewAvatarEmoji] = useState("");
+  const [acceptedChats, setAcceptedChats] = useState<Chat[]>(mockAcceptedChats);
+  const [messageRequests, setMessageRequests] = useState<Chat[]>(mockMessageRequests);
+
+  const handleSendMessage = () => {
+    if (!messageInput.trim()) return;
+    
+    toast({
+      title: "Message sent!",
+      description: `"${messageInput.substring(0, 30)}${messageInput.length > 30 ? '...' : ''}"`,
+    });
+    setMessageInput("");
+  };
+
+  const handleAcceptRequest = (request: Chat) => {
+    setMessageRequests(prev => prev.filter(r => r.id !== request.id));
+    setAcceptedChats(prev => [...prev, request]);
+    toast({
+      title: "Message request accepted",
+      description: `You can now chat with ${request.name}`,
+    });
+  };
+
+  const handleDeclineRequest = (request: Chat) => {
+    setMessageRequests(prev => prev.filter(r => r.id !== request.id));
+    toast({
+      title: "Message request declined",
+      variant: "destructive",
+    });
+  };
+
+  const handleUpdateAvatar = () => {
+    if (!editingAvatar || !newAvatarEmoji.trim()) return;
+    
+    setAcceptedChats(prev => prev.map(chat =>
+      chat.id === editingAvatar.id && chat.isGroup
+        ? { ...chat, groupImage: newAvatarEmoji }
+        : chat
+    ));
+    
+    if (selectedChat?.id === editingAvatar.id && selectedChat.isGroup) {
+      setSelectedChat(prev => prev && prev.isGroup ? { ...prev, groupImage: newAvatarEmoji } : prev);
+    }
+    
+    toast({
+      title: "Group avatar updated!",
+      description: `Changed to ${newAvatarEmoji}`,
+    });
+    
+    setEditingAvatar(null);
+    setNewAvatarEmoji("");
+  };
+
+  // Conversation view
+  if (selectedChat) {
+    return (
+      <div className="flex flex-col h-screen bg-background">
+        <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="container max-w-lg mx-auto px-4 py-3">
+            <div className="flex items-center gap-3">
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => setSelectedChat(null)}
+                data-testid="button-back-to-messages"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              
+              <div className="relative cursor-pointer" onClick={() => selectedChat.isGroup && setEditingAvatar(selectedChat)}>
+                <Avatar className="w-10 h-10">
+                  {selectedChat.isGroup ? (
+                    <AvatarFallback className="text-xl bg-primary/10">
+                      {selectedChat.groupImage}
+                    </AvatarFallback>
+                  ) : (
+                    <AvatarImage src={selectedChat.avatar} />
+                  )}
+                </Avatar>
+                {selectedChat.isGroup && (
+                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                    <Edit className="w-3 h-3 text-primary-foreground" />
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex-1">
+                <h2 className="font-semibold">{selectedChat.name}</h2>
+                {selectedChat.isGroup && (
+                  <p className="text-xs text-muted-foreground">{selectedChat.members} members</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-y-auto container max-w-lg mx-auto px-4 py-4">
+          <div className="space-y-4">
+            {mockMessages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}
+              >
+                <div className={`max-w-[75%] ${message.isOwn ? 'order-2' : 'order-1'}`}>
+                  {!message.isOwn && (
+                    <p className="text-xs text-muted-foreground mb-1 px-3">{message.sender}</p>
+                  )}
+                  <Card className={`p-3 ${message.isOwn ? 'bg-primary text-primary-foreground' : ''}`}>
+                    <p className="text-sm">{message.content}</p>
+                  </Card>
+                  <p className="text-xs text-muted-foreground mt-1 px-3">{message.timestamp}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </main>
+
+        <div className="sticky bottom-0 border-t bg-background">
+          <div className="container max-w-lg mx-auto px-4 py-3">
+            <div className="flex items-center gap-2">
+              <Button size="icon" variant="ghost" data-testid="button-attach-file">
+                <Paperclip className="w-5 h-5" />
+              </Button>
+              <Button size="icon" variant="ghost" data-testid="button-attach-image">
+                <ImageIcon className="w-5 h-5" />
+              </Button>
+              <Input
+                placeholder="Type a message..."
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                className="flex-1"
+                data-testid="input-message"
+              />
+              <Button size="icon" variant="ghost" data-testid="button-emoji">
+                <Smile className="w-5 h-5" />
+              </Button>
+              <Button
+                size="icon"
+                onClick={handleSendMessage}
+                disabled={!messageInput.trim()}
+                data-testid="button-send-message"
+              >
+                <Send className="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Main messages list view
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -83,59 +298,149 @@ export default function PreviewMessages() {
       </header>
 
       <main className="container max-w-lg mx-auto px-4 py-2">
-        <div className="space-y-1">
-          {mockChats.map((chat) => (
-            <Card
-              key={chat.id}
-              className="p-4 hover-elevate cursor-pointer border-0 shadow-none"
-              data-testid={`chat-${chat.id}`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <Avatar className="w-12 h-12">
-                    {chat.isGroup ? (
-                      <AvatarFallback className="text-2xl bg-primary/10">
-                        {chat.groupImage}
-                      </AvatarFallback>
-                    ) : (
-                      <AvatarImage src={chat.avatar} />
-                    )}
-                  </Avatar>
-                  {chat.unread > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full p-0 flex items-center justify-center text-xs"
-                    >
-                      {chat.unread}
-                    </Badge>
-                  )}
-                </div>
+        <Tabs defaultValue="accepted" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="accepted" data-testid="tab-accepted">
+              Accepted
+              {acceptedChats.filter(c => c.unread > 0).length > 0 && (
+                <Badge variant="destructive" className="ml-2">
+                  {acceptedChats.reduce((sum, c) => sum + c.unread, 0)}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="requests" data-testid="tab-requests">
+              Requests
+              {messageRequests.length > 0 && (
+                <Badge variant="secondary" className="ml-2">
+                  {messageRequests.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold truncate">
-                        {chat.name}
-                      </h3>
-                      {chat.isGroup && (
-                        <Badge variant="secondary" className="text-xs">
-                          <Users className="w-3 h-3 mr-1" />
-                          {chat.members}
-                        </Badge>
+          <TabsContent value="accepted" className="space-y-1">
+            {acceptedChats.map((chat) => (
+              <Card
+                key={chat.id}
+                className="p-4 hover-elevate cursor-pointer border-0 shadow-none"
+                onClick={() => setSelectedChat(chat)}
+                data-testid={`chat-${chat.id}`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <Avatar className="w-12 h-12">
+                      {chat.isGroup ? (
+                        <AvatarFallback className="text-2xl bg-primary/10">
+                          {chat.groupImage}
+                        </AvatarFallback>
+                      ) : (
+                        <AvatarImage src={chat.avatar} />
                       )}
-                    </div>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
-                      {chat.timestamp}
-                    </span>
+                    </Avatar>
+                    {chat.unread > 0 && (
+                      <Badge
+                        variant="destructive"
+                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full p-0 flex items-center justify-center text-xs"
+                      >
+                        {chat.unread}
+                      </Badge>
+                    )}
                   </div>
-                  <p className={`text-sm truncate ${chat.unread > 0 ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
-                    {chat.lastMessage}
-                  </p>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold truncate">
+                          {chat.name}
+                        </h3>
+                        {chat.isGroup && (
+                          <Badge variant="secondary" className="text-xs">
+                            <Users className="w-3 h-3 mr-1" />
+                            {chat.members}
+                          </Badge>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+                        {chat.timestamp}
+                      </span>
+                    </div>
+                    <p className={`text-sm truncate ${chat.unread > 0 ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                      {chat.lastMessage}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+              </Card>
+            ))}
+          </TabsContent>
+
+          <TabsContent value="requests" className="space-y-1">
+            {messageRequests.length === 0 ? (
+              <Card>
+                <div className="p-8 text-center">
+                  <p className="text-sm text-muted-foreground">No message requests</p>
+                </div>
+              </Card>
+            ) : (
+              messageRequests.map((request) => (
+                <Card
+                  key={request.id}
+                  className="p-4 border-0 shadow-none"
+                  data-testid={`request-${request.id}`}
+                >
+                  <div className="flex items-start gap-3">
+                    <Avatar className="w-12 h-12">
+                      {request.isGroup ? (
+                        <AvatarFallback className="text-2xl bg-primary/10">
+                          {request.groupImage}
+                        </AvatarFallback>
+                      ) : (
+                        <AvatarImage src={request.avatar} />
+                      )}
+                    </Avatar>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold truncate">
+                          {request.name}
+                        </h3>
+                        {request.isGroup && (
+                          <Badge variant="secondary" className="text-xs">
+                            <Users className="w-3 h-3 mr-1" />
+                            {request.members}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-3 truncate">
+                        {request.lastMessage}
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => handleAcceptRequest(request)}
+                          data-testid={`button-accept-${request.id}`}
+                        >
+                          <Check className="w-4 h-4 mr-1" />
+                          Accept
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => handleDeclineRequest(request)}
+                          data-testid={`button-decline-${request.id}`}
+                        >
+                          <X className="w-4 h-4 mr-1" />
+                          Decline
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            )}
+          </TabsContent>
+        </Tabs>
       </main>
 
       <div className="fixed bottom-16 right-4 z-40">
@@ -149,6 +454,63 @@ export default function PreviewMessages() {
       </div>
 
       <BottomNavigation />
+
+      {/* Edit Group Avatar Dialog */}
+      <Dialog open={!!editingAvatar} onOpenChange={() => {
+        setEditingAvatar(null);
+        setNewAvatarEmoji("");
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Group Avatar</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex flex-col items-center gap-3">
+              <Avatar className="w-24 h-24">
+                <AvatarFallback className="text-4xl bg-primary/10">
+                  {newAvatarEmoji || editingAvatar?.groupImage}
+                </AvatarFallback>
+              </Avatar>
+              <p className="text-sm text-muted-foreground">{editingAvatar?.name}</p>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Enter emoji</label>
+              <Input
+                placeholder="Enter an emoji (e.g., 🎮, ⚡, 👑)"
+                value={newAvatarEmoji}
+                onChange={(e) => setNewAvatarEmoji(e.target.value.slice(0, 2))}
+                maxLength={2}
+                className="text-center text-2xl"
+                data-testid="input-new-avatar"
+              />
+            </div>
+
+            <div className="grid grid-cols-4 gap-2">
+              {["🎮", "⚡", "👑", "🏆", "🔥", "💎", "⚔️", "🎯"].map((emoji) => (
+                <Button
+                  key={emoji}
+                  variant="outline"
+                  className="text-2xl h-12"
+                  onClick={() => setNewAvatarEmoji(emoji)}
+                  data-testid={`button-emoji-${emoji}`}
+                >
+                  {emoji}
+                </Button>
+              ))}
+            </div>
+
+            <Button
+              className="w-full"
+              onClick={handleUpdateAvatar}
+              disabled={!newAvatarEmoji.trim()}
+              data-testid="button-update-avatar"
+            >
+              Update Avatar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

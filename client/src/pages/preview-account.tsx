@@ -17,7 +17,7 @@ import type { User, Achievement } from "@shared/schema";
 
 const mockUser = {
   username: "ProGamer2024",
-  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=progamer",
+  avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=progamer",
   bio: "Competitive gamer | Tournament organizer | Always looking for new teammates",
   friendCount: 247,
   level: 42,
@@ -229,7 +229,7 @@ export default function PreviewAccount() {
                 <>
                   <div className="relative">
                     <Avatar className="w-24 h-24 border-4 border-primary/20">
-                      <AvatarImage src={currentUser.avatarUrl || mockUser.avatar} />
+                      <AvatarImage src={currentUser.avatarUrl || undefined} />
                       <AvatarFallback>{currentUser.username.substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <Button
