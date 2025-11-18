@@ -25,7 +25,7 @@ export default function PreviewHome() {
   const [, setLocation] = useLocation();
   const [detailsModal, setDetailsModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string | null; serverLogoFallback: string; backgroundImage: string; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; rankReq: string; } | null>(null);
   const [joinModal, setJoinModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string | null; serverLogoFallback: string; backgroundImage: string; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; rankReq: string; } | null>(null);
-  const [serverModal, setServerModal] = useState<{ name: string; logo: string; id?: string } | null>(null);
+  const [serverModal, setServerModal] = useState<{ name: string; logo: string | null; logoFallback: string; id?: string } | null>(null);
 
   const { data: tournaments, isLoading } = useQuery<Tournament[]>({
     queryKey: ['/api/tournaments'],
@@ -340,7 +340,7 @@ export default function PreviewHome() {
                 <div className="absolute inset-0 flex flex-col justify-between text-center text-white px-4 py-8">
                   <button
                     className="flex flex-col items-center gap-1.5 cursor-pointer hover-elevate active-elevate-2 p-2 rounded-lg mx-auto"
-                    onClick={() => setServerModal({ name: poster.serverName, logo: poster.serverLogo || poster.serverLogoFallback, id: poster.serverId })}
+                    onClick={() => setServerModal({ name: poster.serverName, logo: poster.serverLogo, logoFallback: poster.serverLogoFallback, id: poster.serverId })}
                     data-testid={`button-server-${poster.id}`}
                   >
                     <Avatar className="w-16 h-16 border-4 border-white/30">
@@ -429,7 +429,8 @@ export default function PreviewHome() {
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <Avatar className="w-12 h-12">
-                  <AvatarFallback className="text-2xl">{detailsModal.serverLogo}</AvatarFallback>
+                  {detailsModal.serverLogo && <AvatarImage src={detailsModal.serverLogo} alt={detailsModal.serverName} />}
+                  <AvatarFallback className="text-2xl">{detailsModal.serverLogoFallback}</AvatarFallback>
                 </Avatar>
                 <div>
                   <p className="font-semibold">{detailsModal.serverName}</p>
@@ -587,7 +588,8 @@ export default function PreviewHome() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
               <Avatar className="w-12 h-12">
-                <AvatarFallback className="text-2xl">{serverModal?.logo}</AvatarFallback>
+                {serverModal?.logo && <AvatarImage src={serverModal.logo} alt={serverModal.name} />}
+                <AvatarFallback className="text-2xl">{serverModal?.logoFallback}</AvatarFallback>
               </Avatar>
               <span>{serverModal?.name}</span>
             </DialogTitle>
