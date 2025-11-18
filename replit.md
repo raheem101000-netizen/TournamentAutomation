@@ -2,10 +2,15 @@
 
 ## Recent Changes (Nov 18, 2025)
 
-### Tournament Creation & Channel Fixes (Latest)
-- **Fixed channel order**: Tournament dashboard is now FIRST channel (position 0), followed by announcements (1) and general (2)
+### Tournament Creation & Channel Fixes (Latest - Nov 18, 2025)
+- **Fixed tournament creation API error**: Corrected apiRequest parameter order in TournamentDashboardChannel (was passing URL, method, data - now correctly passes method, URL, data)
+- **Fixed score submission**: Also corrected apiRequest parameter order for match score submission
+- **Fixed channel ordering**: Tournament dashboard now appears FIRST in all servers
+  - Updated default channel creation for new servers (tournament-dashboard: position 0, announcements: 1, general: 2)
+  - Migrated all existing channels in database to correct positions
+  - Added UI sorting by position field to ensure consistent display
 - **Added game field**: Tournament creation form now requires both tournament name and game in Step 1
-- **Form validation**: Both name and game must be filled before proceeding to next step
+- **Channel icons verified**: All channels display correct icons (Trophy for tournament-dashboard, Megaphone for announcements, MessageSquare for chat)
 
 ### New Features - COMPLETE ✅
 - **Homepage Search Filter**: Search bar now filters tournaments by title, game, or server name
