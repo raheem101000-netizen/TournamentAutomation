@@ -22,6 +22,15 @@ const CHANNEL_ICONS = [
     { emoji: "💬", label: "General chat" },
     { emoji: "🗂️", label: "Threads" },
   ]},
+  { category: "Voice Channels", icons: [
+    { emoji: "🔊", label: "Voice channel" },
+    { emoji: "🎤", label: "Stage channel" },
+    { emoji: "🎧", label: "Listening/music channel" },
+  ]},
+  { category: "Categories", icons: [
+    { emoji: "📁", label: "Folder/category" },
+    { emoji: "📂", label: "Sub-category" },
+  ]},
   { category: "Bots & Automations", icons: [
     { emoji: "🤖", label: "Bot channel" },
     { emoji: "🛠️", label: "Admin tools" },

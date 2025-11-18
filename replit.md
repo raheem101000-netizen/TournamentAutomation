@@ -24,7 +24,19 @@ Preferred communication style: Simple, everyday language.
 *   **Design System**: Gaming-inspired aesthetic drawing from Discord, Challonge/Battlefy, and Linear, featuring custom typography (Inter, Space Grotesk), responsive 12-column grid layouts, standardized spacing, and dark/light theme support.
 *   **Key Features**: Server and channel management (including a dedicated Tournament Dashboard), tournament creation and visualization (brackets, standings, match tracking), and real-time match chat.
 *   **Routing**: Structured to support mobile preview pages, server-specific views (`/server/:serverId`), and tournament details (`/tournament/:id`), alongside a home page and user account management.
-*   **Channel System**: Supports unlimited custom channels with selectable icons. Each new server automatically creates "Tournament Dashboard" (position 0, private), "Announcements" (position 1, public), and "General" (position 2, public) channels.
+*   **Channel System**: Supports unlimited custom channels with 35 selectable icons across 10 categories. Each new server automatically creates "Tournament Dashboard" (position 0, private, 🏆), "Announcements" (position 1, public, 📢), and "General Chat" (position 2, public, 💬) channels.
+
+**Channel Icons (All 35):**
+- Text Channels: 📝 (default), 📢 (announcements), 💬 (chat), 🗂️ (threads)
+- Voice Channels: 🔊 (voice), 🎤 (stage), 🎧 (music)
+- Categories: 📁 (folder), 📂 (sub-category)
+- Bots & Automations: 🤖 (bot), 🛠️ (admin), ⚙️ (settings)
+- Gaming: 🎮 (gaming), 🕹️ (controller), 🏆 (tournaments)
+- Media: 🎨 (art), 📸 (photos), 🎥 (videos), 🎵 (music)
+- Information: 📌 (rules), 📜 (guidelines), 📢 (announcements), ❓ (FAQ), 📣 (updates)
+- Economy/Points: 💰 (money), 🪙 (coins), 📊 (stats), 📝 (leaderboards)
+- Community: 👋 (welcome), 🙋 (introductions), 🗣️ (discussion), 🎉 (events)
+- Security/Staff: 🔐 (staff-only), 🛡️ (moderation), 🚨 (reports)
 
 ### Backend Architecture
 
