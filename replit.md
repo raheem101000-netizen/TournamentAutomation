@@ -2,6 +2,11 @@
 
 ## Recent Changes (Nov 18, 2025)
 
+### Tournament Creation & Channel Fixes (Latest)
+- **Fixed channel order**: Tournament dashboard is now FIRST channel (position 0), followed by announcements (1) and general (2)
+- **Added game field**: Tournament creation form now requires both tournament name and game in Step 1
+- **Form validation**: Both name and game must be filled before proceeding to next step
+
 ### New Features - COMPLETE ✅
 - **Homepage Search Filter**: Search bar now filters tournaments by title, game, or server name
   - Typing "valorant" shows only Valorant tournaments
