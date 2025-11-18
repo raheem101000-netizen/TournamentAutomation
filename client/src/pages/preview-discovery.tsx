@@ -93,7 +93,7 @@ export default function PreviewDiscovery() {
         gameTags: selectedGameTags,
         category: "Gaming",
         ownerId: "user-demo-123",
-        isPublic: true,
+        isPublic: 1,
       });
       return await response.json();
     },
