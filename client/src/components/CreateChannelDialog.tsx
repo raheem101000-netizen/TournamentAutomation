@@ -41,6 +41,7 @@ const CHANNEL_ICONS = [
   { category: "Information Channels", icons: [
     { emoji: "📌", label: "Rules" },
     { emoji: "📜", label: "Guidelines" },
+    { emoji: "📢", label: "Announcements" },
     { emoji: "❓", label: "Help / FAQ" },
     { emoji: "📣", label: "Updates" },
   ]},
@@ -48,6 +49,7 @@ const CHANNEL_ICONS = [
     { emoji: "💰", label: "Money / economy" },
     { emoji: "🪙", label: "Coins / credits" },
     { emoji: "📊", label: "Stats" },
+    { emoji: "📝", label: "Leaderboards" },
   ]},
   { category: "Community", icons: [
     { emoji: "👋", label: "Welcome" },
