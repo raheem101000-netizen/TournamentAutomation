@@ -50,8 +50,8 @@ export default function PreviewServerDetail() {
   const serverTournaments = tournaments?.filter(t => t.serverId === serverId) || [];
   const activeTournament = serverTournaments[0]; // Get first active tournament
 
-  const publicChannels = channels.filter(c => !c.isPrivate);
-  const privateChannels = channels.filter(c => c.isPrivate);
+  const publicChannels = channels.filter(c => !c.isPrivate).sort((a, b) => (a.position ?? 999) - (b.position ?? 999));
+  const privateChannels = channels.filter(c => c.isPrivate).sort((a, b) => (a.position ?? 999) - (b.position ?? 999));
   const selectedChannel = channels.find(c => c.id === selectedChannelId) || channels[0];
 
   if (serverLoading || channelsLoading) {
