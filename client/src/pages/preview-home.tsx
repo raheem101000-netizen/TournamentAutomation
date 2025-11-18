@@ -20,86 +20,11 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Tournament, Server } from "@shared/schema";
 import { format } from "date-fns";
 
-const mockPosters = [
-  {
-    id: "1",
-    serverId: "mock-server-1",
-    title: "Summer Championship 2024",
-    game: "Valorant",
-    serverName: "ProGaming League",
-    serverLogo: "🎮",
-    backgroundImage: "https://images.unsplash.com/photo-1542751110-97427bbecf20?w=800&h=1200&fit=crop",
-    prize: "$5,000",
-    entryFee: "$25",
-    startDate: "Dec 20, 2024",
-    startTime: "6:00 PM EST",
-    participants: "64/128",
-    format: "Single Elimination",
-    platform: "PC",
-    region: "North America",
-    rankReq: "Gold+",
-  },
-  {
-    id: "2",
-    serverId: "mock-server-2",
-    title: "Midnight Masters",
-    game: "League of Legends",
-    serverName: "Elite Esports",
-    serverLogo: "⚔️",
-    backgroundImage: "https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=800&h=1200&fit=crop",
-    prize: "$10,000",
-    entryFee: "Free",
-    startDate: "Dec 18, 2024",
-    startTime: "8:00 PM EST",
-    participants: "32/64",
-    format: "Best of 3",
-    platform: "PC",
-    region: "EU West",
-    rankReq: "Platinum+",
-  },
-  {
-    id: "3",
-    serverId: "mock-server-3",
-    title: "Winter Showdown",
-    game: "CS:GO",
-    serverName: "Competitive Arena",
-    serverLogo: "🔫",
-    backgroundImage: "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=800&h=1200&fit=crop",
-    prize: "$2,500",
-    entryFee: "$10",
-    startDate: "Dec 22, 2024",
-    startTime: "3:00 PM EST",
-    participants: "16/32",
-    format: "Swiss System",
-    platform: "PC",
-    region: "Global",
-    rankReq: "Any Rank",
-  },
-  {
-    id: "4",
-    serverId: "mock-server-4",
-    title: "Apex Legends Cup",
-    game: "Apex Legends",
-    serverName: "Battle Royale Hub",
-    serverLogo: "👑",
-    backgroundImage: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&h=1200&fit=crop",
-    prize: "$7,500",
-    entryFee: "$15",
-    startDate: "Dec 25, 2024",
-    startTime: "5:00 PM EST",
-    participants: "48/96",
-    format: "Battle Royale",
-    platform: "Cross-Platform",
-    region: "Americas",
-    rankReq: "Diamond+",
-  },
-];
-
 export default function PreviewHome() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [detailsModal, setDetailsModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string; backgroundImage: string; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; rankReq: string; } | null>(null);
-  const [joinModal, setJoinModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string; backgroundImage: string; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; rankReq: string; } | null>(null);
+  const [detailsModal, setDetailsModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string | null; serverLogoFallback: string; backgroundImage: string; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; rankReq: string; } | null>(null);
+  const [joinModal, setJoinModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string | null; serverLogoFallback: string; backgroundImage: string; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; rankReq: string; } | null>(null);
   const [serverModal, setServerModal] = useState<{ name: string; logo: string; id?: string } | null>(null);
 
   const { data: tournaments, isLoading } = useQuery<Tournament[]>({
@@ -287,7 +212,8 @@ export default function PreviewHome() {
       title: mockData.title,
       game: mockData.game,
       serverName: server.name,
-      serverLogo: server.iconUrl || server.name.charAt(0),
+      serverLogo: server.iconUrl || null,
+      serverLogoFallback: server.name.charAt(0),
       backgroundImage: mockData.backgroundImage,
       prize: mockData.prize,
       entryFee: mockData.entryFee,
@@ -317,8 +243,9 @@ export default function PreviewHome() {
         title: t.name,
         game: t.game || "Tournament",
         serverName: server.name,
-        // Use real server icon
-        serverLogo: server.iconUrl || server.name.charAt(0),
+        // Use real server icon (null if not set, for proper Avatar handling)
+        serverLogo: server.iconUrl || null,
+        serverLogoFallback: server.name.charAt(0),
         backgroundImage: t.imageUrl || "https://images.unsplash.com/photo-1542751110-97427bbecf20?w=800&h=1200&fit=crop",
         prize: t.prizeReward || "TBD",
         entryFee: t.entryFee ? `$${t.entryFee}` : "Free",
@@ -413,15 +340,13 @@ export default function PreviewHome() {
                 <div className="absolute inset-0 flex flex-col justify-between text-center text-white px-4 py-8">
                   <button
                     className="flex flex-col items-center gap-1.5 cursor-pointer hover-elevate active-elevate-2 p-2 rounded-lg mx-auto"
-                    onClick={() => setServerModal({ name: poster.serverName, logo: poster.serverLogo, id: poster.serverId })}
+                    onClick={() => setServerModal({ name: poster.serverName, logo: poster.serverLogo || poster.serverLogoFallback, id: poster.serverId })}
                     data-testid={`button-server-${poster.id}`}
                   >
                     <Avatar className="w-16 h-16 border-4 border-white/30">
-                      {poster.serverLogo && poster.serverLogo.startsWith('http') ? (
-                        <AvatarImage src={poster.serverLogo} alt={poster.serverName} />
-                      ) : null}
+                      {poster.serverLogo && <AvatarImage src={poster.serverLogo} alt={poster.serverName} />}
                       <AvatarFallback className="text-2xl bg-black/40 backdrop-blur-sm text-white">
-                        {poster.serverLogo && !poster.serverLogo.startsWith('http') ? poster.serverLogo : poster.serverName.charAt(0)}
+                        {poster.serverLogoFallback}
                       </AvatarFallback>
                     </Avatar>
                     <div className="text-xs font-semibold text-white/90 tracking-wider uppercase">
