@@ -187,7 +187,8 @@ export const channels = pgTable("channels", {
   serverId: varchar("server_id").notNull(),
   name: text("name").notNull(),
   slug: text("slug").notNull(),
-  type: text("type", { enum: ["announcements", "chat", "tournament_dashboard"] }).notNull(),
+  type: text("type").notNull(),
+  icon: text("icon").notNull().default("📝"),
   isPrivate: integer("is_private").default(0),
   position: integer("position").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -220,6 +221,9 @@ export const insertServerSchema = createInsertSchema(servers).omit({
 export const insertChannelSchema = createInsertSchema(channels).omit({
   id: true,
   createdAt: true,
+}).extend({
+  type: z.string().min(1, "Channel type is required"),
+  icon: z.string().min(1, "Channel icon is required"),
 });
 
 export const insertMessageThreadSchema = createInsertSchema(messageThreads).omit({

@@ -2,7 +2,7 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronDown, Hash, Settings, Trophy, Megaphone, MessageSquare, Lock } from "lucide-react";
+import { ChevronDown, Settings, Trophy, Lock, Plus } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useQuery } from "@tanstack/react-query";
 import { useRoute } from "wouter";
@@ -11,24 +11,13 @@ import type { Server, Tournament, Channel } from "@shared/schema";
 import AnnouncementsChannel from "@/components/channels/AnnouncementsChannel";
 import ChatChannel from "@/components/channels/ChatChannel";
 import TournamentDashboardChannel from "@/components/channels/TournamentDashboardChannel";
-
-const getChannelIcon = (type: string) => {
-  switch (type) {
-    case "announcements":
-      return <Megaphone className="h-4 w-4" />;
-    case "chat":
-      return <MessageSquare className="h-4 w-4" />;
-    case "tournament_dashboard":
-      return <Trophy className="h-4 w-4" />;
-    default:
-      return <Hash className="h-4 w-4" />;
-  }
-};
+import CreateChannelDialog from "@/components/CreateChannelDialog";
 
 export default function PreviewServerDetail() {
   const [match, params] = useRoute("/server/:serverId");
   const serverId = params?.serverId;
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
+  const [createChannelOpen, setCreateChannelOpen] = useState(false);
 
   const currentUserId = "user-demo-123"; // TODO: Replace with real auth
 
@@ -87,7 +76,7 @@ export default function PreviewServerDetail() {
               </Button>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  {getChannelIcon(selectedChannel.type)}
+                  <span className="text-xl">{selectedChannel.icon}</span>
                   <h1 className="text-lg font-bold truncate">{selectedChannel.name}</h1>
                   {selectedChannel.isPrivate && (
                     <Badge variant="secondary" className="text-xs">
@@ -189,10 +178,21 @@ export default function PreviewServerDetail() {
           {/* Public Channels */}
           {publicChannels.length > 0 && (
             <div className="space-y-2">
-              <div className="flex items-center gap-2 px-2">
+              <div className="flex items-center justify-between gap-2 px-2">
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Channels
                 </h3>
+                {server.ownerId === currentUserId && (
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    className="h-6 w-6"
+                    onClick={() => setCreateChannelOpen(true)}
+                    data-testid="button-create-channel"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
               <div className="space-y-1">
                 {publicChannels.map((channel) => (
@@ -203,9 +203,7 @@ export default function PreviewServerDetail() {
                     data-testid={`channel-${channel.slug}`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="text-muted-foreground">
-                        {getChannelIcon(channel.type)}
-                      </div>
+                      <span className="text-xl">{channel.icon}</span>
                       <div className="flex-1 min-w-0 flex items-center gap-2">
                         <span className="font-medium truncate">{channel.name}</span>
                       </div>
@@ -234,9 +232,7 @@ export default function PreviewServerDetail() {
                     data-testid={`channel-${channel.slug}`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="text-muted-foreground">
-                        {getChannelIcon(channel.type)}
-                      </div>
+                      <span className="text-xl">{channel.icon}</span>
                       <div className="flex-1 min-w-0 flex items-center gap-2">
                         <span className="font-medium truncate">{channel.name}</span>
                         <Lock className="h-3 w-3 ml-auto text-muted-foreground" />
@@ -249,6 +245,12 @@ export default function PreviewServerDetail() {
           )}
         </div>
       </main>
+
+      <CreateChannelDialog 
+        serverId={serverId!}
+        open={createChannelOpen}
+        onOpenChange={setCreateChannelOpen}
+      />
 
       <BottomNavigation />
     </div>

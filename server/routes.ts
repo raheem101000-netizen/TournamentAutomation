@@ -657,9 +657,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create default channels for the server
       const defaultChannels = [
-        { name: "tournament-dashboard", slug: "tournament-dashboard", type: "tournament_dashboard" as const, serverId: server.id, position: 0, isPrivate: 1 },
-        { name: "announcements", slug: "announcements", type: "announcements" as const, serverId: server.id, position: 1 },
-        { name: "general", slug: "general", type: "chat" as const, serverId: server.id, position: 2 },
+        { name: "tournament-dashboard", slug: "tournament-dashboard", type: "tournament_dashboard", icon: "🏆", serverId: server.id, position: 0, isPrivate: 1 },
+        { name: "announcements", slug: "announcements", type: "announcements", icon: "📢", serverId: server.id, position: 1 },
+        { name: "general", slug: "general", type: "chat", icon: "💬", serverId: server.id, position: 2 },
       ];
       
       for (const channelData of defaultChannels) {

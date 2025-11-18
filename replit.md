@@ -99,6 +99,73 @@ A dual-purpose web application combining:
 
 The platform enables server owners to organize competitive tournaments across multiple formats (Round Robin, Single Elimination, and Swiss System) through a centralized dashboard accessible only to them.
 
+## User Requirements & Specifications
+
+### CRITICAL: Channel System Requirements (Nov 18, 2025)
+
+**Core Requirements:**
+- **Unlimited channel creation** - Users can create as many custom channels as needed
+- **Channel icons** - Each channel MUST display an icon based on its type/purpose
+- **Default channels** - Every server MUST have these 3 channels created automatically:
+  1. **Tournament Dashboard** (🏆) - ALWAYS first/top position (position 0)
+  2. **Announcements** (📢) - Second position (position 1)  
+  3. **Chat/General** (💬) - Third position (position 2)
+
+**Channel Icon System:**
+Channels display icons based on their type/purpose from this comprehensive list:
+
+*Text Channels:*
+- 📝 → Text channel (default)
+- 📢 → Announcements
+- 💬 → General chat
+- 🗂️ → Threads
+
+*Bots & Automations:*
+- 🤖 → Bot channel
+- 🛠️ → Admin tools
+- ⚙️ → Settings
+
+*Gaming Channels:*
+- 🎮 → Gaming channel
+- 🕹️ → Controller
+- 🏆 → Tournaments / ranking
+
+*Media Channels:*
+- 🎨 → Art
+- 📸 → Photos
+- 🎥 → Videos
+- 🎵 → Music
+
+*Information Channels:*
+- 📌 → Rules
+- 📜 → Guidelines
+- 📢 → Announcements
+- ❓ → Help / FAQ
+- 📣 → Updates
+
+*Economy / Points / Tournament:*
+- 💰 → Money / economy
+- 🪙 → Coins / credits
+- 📊 → Stats
+- 📝 → Leaderboards
+
+*Community:*
+- 👋 → Welcome
+- 🙋 → Introductions
+- 🗣️ → Discussion
+- 🎉 → Events
+
+*Security / Staff:*
+- 🔐 → Staff-only
+- 🛡️ → Moderation
+- 🚨 → Reports
+
+**Implementation Notes:**
+- Users can create unlimited custom channels with any name
+- Each channel must have a selectable icon from the above list
+- Tournament dashboard is ALWAYS private (owner-only) and ALWAYS first
+- All other channels can be public or private based on user preference
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
