@@ -39,8 +39,11 @@ export default function PreviewServerDetail() {
   const serverTournaments = tournaments?.filter(t => t.serverId === serverId) || [];
   const activeTournament = serverTournaments[0]; // Get first active tournament
 
-  const publicChannels = channels.filter(c => !c.isPrivate).sort((a, b) => (a.position ?? 999) - (b.position ?? 999));
-  const privateChannels = channels.filter(c => c.isPrivate).sort((a, b) => (a.position ?? 999) - (b.position ?? 999));
+  // Tournament Dashboard should always be first (position 0)
+  const tournamentDashboard = channels.find(c => c.type === "tournament_dashboard");
+  const otherChannels = channels.filter(c => c.type !== "tournament_dashboard");
+  const publicChannels = otherChannels.filter(c => !c.isPrivate).sort((a, b) => (a.position ?? 999) - (b.position ?? 999));
+  const privateChannels = otherChannels.filter(c => c.isPrivate).sort((a, b) => (a.position ?? 999) - (b.position ?? 999));
   const selectedChannel = channels.find(c => c.id === selectedChannelId) || channels[0];
 
   if (serverLoading || channelsLoading) {
@@ -175,6 +178,33 @@ export default function PreviewServerDetail() {
         </div>
 
         <div className="space-y-4">
+          {/* Tournament Dashboard - Always at top */}
+          {tournamentDashboard && server.ownerId === currentUserId && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 px-2">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                  <Lock className="h-3 w-3" />
+                  Private
+                </h3>
+              </div>
+              <div className="space-y-1">
+                <Card
+                  className="p-3 hover-elevate cursor-pointer border-0 shadow-none"
+                  onClick={() => setSelectedChannelId(tournamentDashboard.id)}
+                  data-testid={`channel-${tournamentDashboard.slug}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">{tournamentDashboard.icon}</span>
+                    <div className="flex-1 min-w-0 flex items-center gap-2">
+                      <span className="font-medium truncate">{tournamentDashboard.name}</span>
+                      <Lock className="h-3 w-3 ml-auto text-muted-foreground" />
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          )}
+
           {/* Public Channels */}
           {publicChannels.length > 0 && (
             <div className="space-y-2">
