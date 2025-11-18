@@ -10,11 +10,22 @@
   - Form includes: server name (required), description, and clickable game tag selection
   - Creates server via POST /api/servers endpoint
   - Navigates to new server after creation
+  - **Automatically creates 3 default channels**:
+    1. Announcements (public)
+    2. General (public, chat)
+    3. Tournament Dashboard (private, owner-only) - **Full tournament management**
 - **Team Logo Upload**: Photo upload option added to team creation page (Account)
   - Users can upload images from camera roll/file system (5MB max)
   - File type and size validation with toast notifications
   - Works alongside existing emoji selection
   - Image preview with remove button
+- **Tournament Dashboard Integration**: Complete tournament management system accessible via private server channel
+  - Create tournaments with all 3 formats (Round Robin, Single Elimination, Swiss)
+  - Tournament list view (Upcoming, In Progress, Completed)
+  - Tournament detail view with 5 tabs: Overview, Bracket, Standings, Matches, Teams
+  - Automatic bracket generation based on format
+  - Match score submission with real-time updates
+  - Team standings tracking
 
 ### Mobile Preview Pages: Account & My Servers Fixes - COMPLETE ✅
 - **Account Page**: Fixed profile picture loading by using correct `/api/users/${userId}` endpoint
