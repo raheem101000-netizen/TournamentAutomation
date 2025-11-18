@@ -1,26 +1,39 @@
 # Tournament Management Platform
 
-## Recent Changes (Nov 17, 2025)
+## Recent Changes (Nov 18, 2025)
 
-### Phase 1 Bug Fixes - Complete
+### Phase 2 Homepage Improvements - COMPLETE ✅
+- **Tournament Type Filters**: Replaced game badges with Prize/Non-Prize and Free/Paid Entry filters
+- **Game Tags**: Added game tags to tournament schema, displayed as badges on posters for discovery
+- **Clickable Organizers**: Server names now open join modal with server details and navigation
+- **Server Integration**: All posters (real + mock) reference actual servers from Discovery page
+- **Avatar Pattern**: Unified AvatarImage + AvatarFallback pattern across all surfaces (cards, modals)
+- **Join Flow**: Unified server join logic using shared `joinServerAPI` helper
+- **Duplicate Registration**: 409 error detection for "Team name already exists" shows friendly toast
+- **Development Messaging**: Sign-up page button shows "feature in development" message
+
+### Data Architecture
+- Servers on Discovery page are the **publishers** of tournament posters on Homepage
+- Each tournament has `serverId` FK referencing the publishing server
+- Server logos, names, icons all pulled from `/api/mobile-preview/servers` endpoint
+- Mock posters generated from first 4 real servers when no tournaments exist
+
+### Phase 1 Bug Fixes - Complete (Nov 17, 2025)
 - **Game Tags**: Extended servers table with gameTags array field for search/discovery
 - **Server Memberships**: Added serverMembers table to track user-server relationships
 - **Join Server Functionality**: Implemented POST /api/servers/:serverId/join endpoint
-- **Discovery Page Updates**: 
-  - Shows game tags instead of single category
-  - Removed Popular/New/Most Active filter badges
-  - Fixed join button to use new endpoint
-- **Voice Channels Removed**: Cleaned up server detail page mock data and rendering
+- **Discovery Page Updates**: Shows game tags, removed filter badges, fixed join button
+- **Voice Channels Removed**: Cleaned up server detail page
 - **Backend Storage**: Added joinServer(), getServersByUser(), isUserInServer() methods
 
-### Previous Backend Integration (Nov 15, 2025)
+### Backend Integration (Nov 15, 2025)
 - Added 6 new database tables: users, achievements, teamProfiles, teamMembers, serverMembers, posterTemplates + posterTemplateTags
 - Built complete storage layer with 40+ CRUD methods using Drizzle ORM
 - Created comprehensive REST API routes for all new features
 - Successfully migrated database schema
 
 ### Frontend Integration (4 Pages Connected)
-1. **preview-home.tsx** - Fetches real tournaments from /api/tournaments
+1. **preview-home.tsx** - Fetches tournaments + servers, displays posters with real server data
 2. **preview-discovery.tsx** - Fetches servers from /api/mobile-preview/servers
 3. **preview-templates.tsx** - Fetches poster templates from /api/poster-templates
 4. **preview-account.tsx** - Fetches users and achievements from APIs
