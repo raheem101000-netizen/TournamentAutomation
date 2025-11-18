@@ -36,15 +36,6 @@ export default function MobilePreviewMyServers() {
 
   const ownedServers = allServers.filter(s => s.ownerId === currentUserId);
   
-  // Debug logging
-  console.log('My Servers - All servers count:', allServers.length);
-  console.log('My Servers - Owned servers:', ownedServers.length);
-  console.log('My Servers - Member servers:', memberServersList.length);
-  if (memberServersList.length > 0) {
-    console.log('My Servers - First member server iconUrl:', memberServersList[0].iconUrl);
-    console.log('My Servers - First member server data:', memberServersList[0]);
-  }
-  
   // Get all available game tags from all servers for filtering
   const allGameTags = Array.from(
     new Set(allServers.flatMap(s => s.gameTags || []))
@@ -128,7 +119,7 @@ export default function MobilePreviewMyServers() {
                   <CardHeader className="space-y-1 pb-3">
                     <div className="flex items-start justify-between gap-2">
                       <Avatar className="w-12 h-12 rounded-md">
-                        {server.iconUrl && <AvatarImage src={server.iconUrl} alt={server.name} />}
+                        <AvatarImage src={server.iconUrl} alt={server.name} />
                         <AvatarFallback className="rounded-md">
                           {server.name.charAt(0)}
                         </AvatarFallback>
@@ -171,7 +162,7 @@ export default function MobilePreviewMyServers() {
                   <CardHeader className="space-y-1 pb-3">
                     <div className="flex items-start justify-between gap-2">
                       <Avatar className="w-12 h-12 rounded-md">
-                        {server.iconUrl && <AvatarImage src={server.iconUrl} alt={server.name} />}
+                        <AvatarImage src={server.iconUrl} alt={server.name} />
                         <AvatarFallback className="rounded-md">
                           {server.name.charAt(0)}
                         </AvatarFallback>
