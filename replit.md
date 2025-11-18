@@ -1,5 +1,19 @@
 # Tournament Management Platform
 
+## Recent Changes (Nov 18, 2025)
+
+### Tournament Creation & Management Enhancements
+- Added comprehensive tournament metadata: startDate, endDate, platform, region, prizeReward, entryFee, imageUrl
+- Tournament creation form includes poster image URL, prize pool, entry fee, start/end date pickers
+- Implemented tournament editing: PATCH /api/tournaments/:id endpoint with EditTournamentDialog component
+- Server detail page displays upcoming tournaments in horizontally swipeable carousel with navigation arrows
+- Discovery page now includes search/filter functionality (filters servers by name, description, game tags)
+- Data consistency: tournaments on homepage only display if their parent server exists
+
+### Fixes Applied
+- Fixed carousel setup: moved Embla event binding to useEffect for proper navigation button state
+- Verified tournament metadata persists correctly through storage layer
+
 ## Overview
 
 This project is a dual-purpose web application comprising:

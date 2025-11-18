@@ -76,6 +76,7 @@ const mockServers = [
 export default function PreviewDiscovery() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const [searchQuery, setSearchQuery] = useState("");
   const [createServerOpen, setCreateServerOpen] = useState(false);
   const [serverName, setServerName] = useState("");
   const [serverDescription, setServerDescription] = useState("");
@@ -173,7 +174,18 @@ export default function PreviewDiscovery() {
     categories: s.gameTags && s.gameTags.length > 0 ? s.gameTags : ["Gaming"],
   }));
 
-  const displayServers = serverCards.length > 0 ? serverCards : mockServers;
+  const allServers = serverCards.length > 0 ? serverCards : mockServers;
+  
+  // Filter servers based on search query
+  const displayServers = allServers.filter(server => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      server.name.toLowerCase().includes(query) ||
+      server.description.toLowerCase().includes(query) ||
+      server.categories.some(cat => cat.toLowerCase().includes(query))
+    );
+  });
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
@@ -191,6 +203,8 @@ export default function PreviewDiscovery() {
             <Input
               placeholder="Search servers..."
               className="pl-9"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               data-testid="input-search-servers"
             />
           </div>

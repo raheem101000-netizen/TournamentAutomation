@@ -441,6 +441,7 @@ interface EditTournamentDialogProps {
 }
 
 function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: EditTournamentDialogProps) {
+  const { toast } = useToast();
   const [name, setName] = useState("");
   const [game, setGame] = useState("");
   const [imageUrl, setImageUrl] = useState("");
@@ -466,16 +467,26 @@ function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: Edit
   }, [tournament, open]);
 
   const handleSubmit = () => {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      toast({
+        title: "Name required",
+        description: "Tournament name cannot be empty",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     onSubmit({
-      name,
-      game,
-      imageUrl: imageUrl || null,
-      prizeReward: prizeReward || null,
-      entryFee: entryFee ? parseInt(entryFee) : null,
+      name: trimmedName,
+      game: game.trim() || null,
+      imageUrl: imageUrl.trim() || null,
+      prizeReward: prizeReward.trim() || null,
+      entryFee: entryFee.trim() !== "" ? parseInt(entryFee) : null,
       startDate: startDate ? new Date(startDate) : null,
       endDate: endDate ? new Date(endDate) : null,
-      platform: platform || null,
-      region: region || null,
+      platform: platform.trim() || null,
+      region: region.trim() || null,
     });
   };
 

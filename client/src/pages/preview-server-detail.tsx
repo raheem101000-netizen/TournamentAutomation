@@ -6,7 +6,7 @@ import { ChevronDown, Settings, Trophy, Lock, Plus, ChevronLeft, ChevronRight } 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useQuery } from "@tanstack/react-query";
 import { useRoute } from "wouter";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { Server, Tournament, Channel } from "@shared/schema";
 import AnnouncementsChannel from "@/components/channels/AnnouncementsChannel";
 import ChatChannel from "@/components/channels/ChatChannel";
@@ -51,12 +51,17 @@ export default function PreviewServerDetail() {
     setCanScrollNext(emblaApi.canScrollNext());
   }, [emblaApi]);
 
-  useState(() => {
+  useEffect(() => {
     if (!emblaApi) return;
     onSelect();
     emblaApi.on("select", onSelect);
     emblaApi.on("reInit", onSelect);
-  });
+    
+    return () => {
+      emblaApi.off("select", onSelect);
+      emblaApi.off("reInit", onSelect);
+    };
+  }, [emblaApi, onSelect]);
 
   // Tournament Dashboard should always be first (position 0)
   const tournamentDashboard = channels.find(c => c.type === "tournament_dashboard");
