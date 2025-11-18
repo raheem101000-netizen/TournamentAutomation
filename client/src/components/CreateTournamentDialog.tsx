@@ -33,6 +33,7 @@ export default function CreateTournamentDialog({
 }: CreateTournamentDialogProps) {
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
+  const [game, setGame] = useState("");
   const [format, setFormat] = useState<"round_robin" | "single_elimination" | "swiss">("single_elimination");
   const [swissRounds, setSwissRounds] = useState(3);
   const [teamInput, setTeamInput] = useState("");
@@ -82,6 +83,7 @@ export default function CreateTournamentDialog({
   const handleSubmit = () => {
     onSubmit({
       name,
+      game,
       format: format as any,
       totalTeams: teams.length,
       swissRounds: format === "swiss" ? swissRounds : null,
@@ -94,6 +96,7 @@ export default function CreateTournamentDialog({
   const handleReset = () => {
     setStep(1);
     setName("");
+    setGame("");
     setFormat("single_elimination");
     setSwissRounds(3);
     setTeamInput("");
@@ -103,7 +106,7 @@ export default function CreateTournamentDialog({
     onOpenChange(false);
   };
 
-  const canProceedStep1 = name.trim().length > 0;
+  const canProceedStep1 = name.trim().length > 0 && game.trim().length > 0;
   const canProceedStep2 = true;
   const canProceedStep3 = teams.length >= 2;
   const canProceedStep4 = !enableRegistration || (registrationConfig !== undefined);
@@ -140,6 +143,16 @@ export default function CreateTournamentDialog({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 data-testid="input-tournament-name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="game">Game</Label>
+              <Input
+                id="game"
+                placeholder="e.g., Valorant, CS:GO, League of Legends"
+                value={game}
+                onChange={(e) => setGame(e.target.value)}
+                data-testid="input-tournament-game"
               />
             </div>
           </div>
