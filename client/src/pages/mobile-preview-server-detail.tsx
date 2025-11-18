@@ -50,7 +50,7 @@ export default function MobilePreviewServerDetail() {
   }
 
   // TODO: Replace with real authentication context (e.g., useUser hook from auth provider)
-  const currentUserId = "user-1";
+  const currentUserId = "user-demo-123";
 
   const publicChannels = channels.filter(c => !c.isPrivate);
   const privateChannels = channels.filter(c => c.isPrivate);
