@@ -136,6 +136,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/tournaments/:id", async (req, res) => {
+    try {
+      const tournament = await storage.updateTournament(req.params.id, req.body);
+      if (!tournament) {
+        return res.status(404).json({ error: "Tournament not found" });
+      }
+      res.json(tournament);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post("/api/tournaments", async (req, res) => {
     try {
       const validatedData = insertTournamentSchema.parse(req.body);

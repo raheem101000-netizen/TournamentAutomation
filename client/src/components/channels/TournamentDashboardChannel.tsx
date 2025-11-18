@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import TournamentCard from "@/components/TournamentCard";
 import CreateTournamentDialog from "@/components/CreateTournamentDialog";
 import BracketView from "@/components/BracketView";
@@ -12,7 +15,7 @@ import MatchCard from "@/components/MatchCard";
 import SubmitScoreDialog from "@/components/SubmitScoreDialog";
 import type { Tournament, InsertTournament, Team, Match } from "@shared/schema";
 import type { RegistrationFormConfig } from "@/modules/registration/types";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 
@@ -22,6 +25,7 @@ interface TournamentDashboardChannelProps {
 
 export default function TournamentDashboardChannel({ serverId }: TournamentDashboardChannelProps) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const { toast} = useToast();
@@ -41,6 +45,27 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
         description: "Your tournament has been created successfully.",
       });
       setIsCreateDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateTournamentMutation = useMutation({
+    mutationFn: async (data: Partial<Tournament>) => {
+      return apiRequest('PATCH', `/api/tournaments/${selectedTournamentId}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
+      toast({
+        title: "Tournament updated",
+        description: "Your tournament has been updated successfully.",
+      });
+      setIsEditDialogOpen(false);
     },
     onError: (error: Error) => {
       toast({
@@ -144,6 +169,9 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
               </div>
             </div>
           </div>
+          <Button variant="outline" onClick={() => setIsEditDialogOpen(true)} data-testid="button-edit-tournament">
+            Edit
+          </Button>
         </div>
 
         <Tabs defaultValue="overview" className="w-full">
@@ -394,6 +422,178 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
         onOpenChange={setIsCreateDialogOpen}
         onSubmit={(data) => createTournamentMutation.mutate({ ...data, serverId })}
       />
+
+      <EditTournamentDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        tournament={selectedTournament}
+        onSubmit={(data) => updateTournamentMutation.mutate(data)}
+      />
     </div>
+  );
+}
+
+interface EditTournamentDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  tournament: Tournament | undefined;
+  onSubmit: (data: Partial<Tournament>) => void;
+}
+
+function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: EditTournamentDialogProps) {
+  const [name, setName] = useState("");
+  const [game, setGame] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [prizeReward, setPrizeReward] = useState("");
+  const [entryFee, setEntryFee] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [platform, setPlatform] = useState("");
+  const [region, setRegion] = useState("");
+
+  useEffect(() => {
+    if (tournament && open) {
+      setName(tournament.name || "");
+      setGame(tournament.game || "");
+      setImageUrl(tournament.imageUrl || "");
+      setPrizeReward(tournament.prizeReward || "");
+      setEntryFee(tournament.entryFee?.toString() || "");
+      setStartDate(tournament.startDate ? new Date(tournament.startDate).toISOString().slice(0, 16) : "");
+      setEndDate(tournament.endDate ? new Date(tournament.endDate).toISOString().slice(0, 16) : "");
+      setPlatform(tournament.platform || "");
+      setRegion(tournament.region || "");
+    }
+  }, [tournament, open]);
+
+  const handleSubmit = () => {
+    onSubmit({
+      name,
+      game,
+      imageUrl: imageUrl || null,
+      prizeReward: prizeReward || null,
+      entryFee: entryFee ? parseInt(entryFee) : null,
+      startDate: startDate ? new Date(startDate) : null,
+      endDate: endDate ? new Date(endDate) : null,
+      platform: platform || null,
+      region: region || null,
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Tournament</DialogTitle>
+          <DialogDescription>
+            Update tournament details
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="edit-name">Tournament Name</Label>
+            <Input
+              id="edit-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              data-testid="input-edit-tournament-name"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-game">Game</Label>
+            <Input
+              id="edit-game"
+              value={game}
+              onChange={(e) => setGame(e.target.value)}
+              data-testid="input-edit-tournament-game"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-imageUrl">Poster Image URL</Label>
+            <Input
+              id="edit-imageUrl"
+              placeholder="https://example.com/poster.jpg"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              data-testid="input-edit-tournament-image"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-prizeReward">Prize Pool</Label>
+              <Input
+                id="edit-prizeReward"
+                value={prizeReward}
+                onChange={(e) => setPrizeReward(e.target.value)}
+                data-testid="input-edit-tournament-prize"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-entryFee">Entry Fee</Label>
+              <Input
+                id="edit-entryFee"
+                type="number"
+                value={entryFee}
+                onChange={(e) => setEntryFee(e.target.value)}
+                data-testid="input-edit-tournament-entry-fee"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-startDate">Start Date & Time</Label>
+              <Input
+                id="edit-startDate"
+                type="datetime-local"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                data-testid="input-edit-tournament-start-date"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-endDate">End Date & Time</Label>
+              <Input
+                id="edit-endDate"
+                type="datetime-local"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                data-testid="input-edit-tournament-end-date"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-platform">Platform</Label>
+              <Input
+                id="edit-platform"
+                placeholder="e.g., PC, Xbox, PlayStation"
+                value={platform}
+                onChange={(e) => setPlatform(e.target.value)}
+                data-testid="input-edit-tournament-platform"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-region">Region</Label>
+              <Input
+                id="edit-region"
+                placeholder="e.g., NA, EU, APAC"
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
+                data-testid="input-edit-tournament-region"
+              />
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} data-testid="button-save-tournament">
+            Save Changes
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

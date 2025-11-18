@@ -37,6 +37,10 @@ export default function CreateTournamentDialog({
   const [imageUrl, setImageUrl] = useState("");
   const [prizeReward, setPrizeReward] = useState("");
   const [entryFee, setEntryFee] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [platform, setPlatform] = useState("");
+  const [region, setRegion] = useState("");
   const [format, setFormat] = useState<"round_robin" | "single_elimination" | "swiss">("single_elimination");
   const [swissRounds, setSwissRounds] = useState(3);
   const [teamInput, setTeamInput] = useState("");
@@ -90,6 +94,10 @@ export default function CreateTournamentDialog({
       imageUrl: imageUrl || null,
       prizeReward: prizeReward || null,
       entryFee: entryFee ? parseInt(entryFee) : null,
+      startDate: startDate ? new Date(startDate) : null,
+      endDate: endDate ? new Date(endDate) : null,
+      platform: platform || null,
+      region: region || null,
       format: format as any,
       totalTeams: teams.length,
       swissRounds: format === "swiss" ? swissRounds : null,
@@ -106,6 +114,10 @@ export default function CreateTournamentDialog({
     setImageUrl("");
     setPrizeReward("");
     setEntryFee("");
+    setStartDate("");
+    setEndDate("");
+    setPlatform("");
+    setRegion("");
     setFormat("single_elimination");
     setSwissRounds(3);
     setTeamInput("");
@@ -199,6 +211,50 @@ export default function CreateTournamentDialog({
                   data-testid="input-tournament-entry-fee"
                 />
                 <p className="text-xs text-muted-foreground">Amount in dollars</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="startDate">Start Date & Time</Label>
+                <Input
+                  id="startDate"
+                  type="datetime-local"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  data-testid="input-tournament-start-date"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="endDate">End Date & Time</Label>
+                <Input
+                  id="endDate"
+                  type="datetime-local"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  data-testid="input-tournament-end-date"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="platform">Platform</Label>
+                <Input
+                  id="platform"
+                  placeholder="e.g., PC, Xbox, PlayStation, Mobile"
+                  value={platform}
+                  onChange={(e) => setPlatform(e.target.value)}
+                  data-testid="input-tournament-platform"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="region">Region</Label>
+                <Input
+                  id="region"
+                  placeholder="e.g., NA, EU, APAC, Global"
+                  value={region}
+                  onChange={(e) => setRegion(e.target.value)}
+                  data-testid="input-tournament-region"
+                />
               </div>
             </div>
           </div>

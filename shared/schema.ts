@@ -19,6 +19,9 @@ export const tournaments = pgTable("tournaments", {
   organizerId: varchar("organizer_id"),
   organizerName: text("organizer_name"),
   startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  platform: text("platform"),
+  region: text("region"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

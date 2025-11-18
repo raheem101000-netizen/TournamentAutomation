@@ -2,16 +2,17 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronDown, Settings, Trophy, Lock, Plus } from "lucide-react";
+import { ChevronDown, Settings, Trophy, Lock, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useQuery } from "@tanstack/react-query";
 import { useRoute } from "wouter";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import type { Server, Tournament, Channel } from "@shared/schema";
 import AnnouncementsChannel from "@/components/channels/AnnouncementsChannel";
 import ChatChannel from "@/components/channels/ChatChannel";
 import TournamentDashboardChannel from "@/components/channels/TournamentDashboardChannel";
 import CreateChannelDialog from "@/components/CreateChannelDialog";
+import useEmblaCarousel from "embla-carousel-react";
 
 export default function PreviewServerDetail() {
   const [match, params] = useRoute("/server/:serverId");
@@ -35,9 +36,27 @@ export default function PreviewServerDetail() {
     queryKey: ['/api/tournaments'],
   });
 
-  // Filter tournaments for this server
-  const serverTournaments = tournaments?.filter(t => t.serverId === serverId) || [];
-  const activeTournament = serverTournaments[0]; // Get first active tournament
+  // Filter upcoming tournaments for this server
+  const serverTournaments = tournaments?.filter(t => t.serverId === serverId && t.status === "upcoming") || [];
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false, align: "start" });
+  const [canScrollPrev, setCanScrollPrev] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(false);
+
+  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setCanScrollPrev(emblaApi.canScrollPrev());
+    setCanScrollNext(emblaApi.canScrollNext());
+  }, [emblaApi]);
+
+  useState(() => {
+    if (!emblaApi) return;
+    onSelect();
+    emblaApi.on("select", onSelect);
+    emblaApi.on("reInit", onSelect);
+  });
 
   // Tournament Dashboard should always be first (position 0)
   const tournamentDashboard = channels.find(c => c.type === "tournament_dashboard");
@@ -138,37 +157,97 @@ export default function PreviewServerDetail() {
       </header>
 
       <main className="container max-w-lg mx-auto px-4 py-4 space-y-4">
-        {activeTournament && (
-          <Card className="overflow-hidden" data-testid="tournament-dashboard-preview">
-            <div className="relative h-32 bg-gradient-to-br from-primary/20 via-primary/10 to-background">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Trophy className="w-16 h-16 text-primary/40" />
+        {serverTournaments.length > 0 && (
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold">Upcoming Tournaments</h3>
+              {serverTournaments.length > 1 && (
+                <div className="flex gap-2">
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="h-8 w-8"
+                    onClick={scrollPrev}
+                    disabled={!canScrollPrev}
+                    data-testid="button-carousel-prev"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="h-8 w-8"
+                    onClick={scrollNext}
+                    disabled={!canScrollNext}
+                    data-testid="button-carousel-next"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+            <div className="overflow-hidden" ref={emblaRef}>
+              <div className="flex gap-4">
+                {serverTournaments.map((tournament) => (
+                  <div key={tournament.id} className="flex-[0_0_100%] min-w-0">
+                    <Card className="overflow-hidden" data-testid={`tournament-card-${tournament.id}`}>
+                      {tournament.imageUrl ? (
+                        <div className="relative h-32 overflow-hidden">
+                          <img
+                            src={tournament.imageUrl}
+                            alt={tournament.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="relative h-32 bg-gradient-to-br from-primary/20 via-primary/10 to-background">
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <Trophy className="w-16 h-16 text-primary/40" />
+                          </div>
+                        </div>
+                      )}
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <CardTitle className="text-lg mb-1">{tournament.name}</CardTitle>
+                            <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                              <Badge variant="secondary">
+                                {tournament.format.replace('_', ' ')}
+                              </Badge>
+                              {tournament.prizeReward && (
+                                <Badge variant="outline">
+                                  {tournament.prizeReward}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <Button size="sm" data-testid={`button-view-tournament-${tournament.id}`}>
+                            View
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0 space-y-2">
+                        <p className="text-sm text-muted-foreground">
+                          {tournament.game || "Gaming Tournament"}
+                        </p>
+                        {(tournament.platform || tournament.region) && (
+                          <div className="flex gap-2 text-xs text-muted-foreground">
+                            {tournament.platform && <span>• {tournament.platform}</span>}
+                            {tournament.region && <span>• {tournament.region}</span>}
+                          </div>
+                        )}
+                        {tournament.entryFee !== null && (
+                          <p className="text-xs text-muted-foreground">
+                            Entry Fee: ${tournament.entryFee}
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                ))}
               </div>
             </div>
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <CardTitle className="text-lg mb-1">{activeTournament.name}</CardTitle>
-                  <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-                    <Badge variant="secondary">
-                      {activeTournament.format}
-                    </Badge>
-                    <Badge variant="outline">
-                      {activeTournament.status}
-                    </Badge>
-                  </div>
-                </div>
-                <Button size="sm" data-testid="button-view-tournament">
-                  View
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <p className="text-sm text-muted-foreground">
-                {activeTournament.game || "Gaming Tournament"}
-              </p>
-            </CardContent>
-          </Card>
+          </div>
         )}
         
         <div className="text-center py-8">
