@@ -243,32 +243,96 @@ export default function PreviewHome() {
     },
   });
 
-  const tournamentPosters = (tournaments || []).map((t) => {
-    // Look up server data if serverId exists
-    const server = t.serverId ? servers?.find(s => s.id === t.serverId) : null;
+  // Generate mock posters using real server data
+  const mockPostersWithRealServers = (servers || []).slice(0, 4).map((server, index) => {
+    const mockTournaments = [
+      {
+        title: "Summer Championship 2024",
+        game: "Valorant",
+        backgroundImage: "https://images.unsplash.com/photo-1542751110-97427bbecf20?w=800&h=1200&fit=crop",
+        prize: "$5,000",
+        entryFee: "$25",
+        format: "Single Elimination",
+      },
+      {
+        title: "Midnight Masters",
+        game: "League of Legends",
+        backgroundImage: "https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=800&h=1200&fit=crop",
+        prize: "$10,000",
+        entryFee: "Free",
+        format: "Best of 3",
+      },
+      {
+        title: "Winter Showdown",
+        game: "CS:GO",
+        backgroundImage: "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=800&h=1200&fit=crop",
+        prize: "$2,500",
+        entryFee: "$10",
+        format: "Swiss System",
+      },
+      {
+        title: "Apex Legends Cup",
+        game: "Apex Legends",
+        backgroundImage: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&h=1200&fit=crop",
+        prize: "$7,500",
+        entryFee: "$15",
+        format: "Battle Royale",
+      },
+    ];
     
+    const mockData = mockTournaments[index];
     return {
-      id: t.id,
-      serverId: t.serverId || undefined,
-      title: t.name,
-      game: t.game || "Tournament",
-      serverName: server?.name || t.organizerName || "Gaming Server",
-      // Use real server icon if available, otherwise fall back to first character
-      serverLogo: server?.iconUrl || server?.name?.charAt(0) || t.game?.charAt(0) || "🎮",
-      backgroundImage: t.imageUrl || "https://images.unsplash.com/photo-1542751110-97427bbecf20?w=800&h=1200&fit=crop",
-      prize: t.prizeReward || "TBD",
-      entryFee: t.entryFee ? `$${t.entryFee}` : "Free",
-      startDate: t.startDate ? format(new Date(t.startDate), "MMM dd, yyyy") : "TBD",
-      startTime: t.startDate ? format(new Date(t.startDate), "h:mm a") : "TBD",
-      participants: `${t.totalTeams || 0}/${t.totalTeams || 0}`,
-      format: t.format === "round_robin" ? "Round Robin" : t.format === "single_elimination" ? "Single Elimination" : "Swiss System",
+      id: `mock-${server.id}-${index}`,
+      serverId: server.id,
+      title: mockData.title,
+      game: mockData.game,
+      serverName: server.name,
+      serverLogo: server.iconUrl || server.name.charAt(0),
+      backgroundImage: mockData.backgroundImage,
+      prize: mockData.prize,
+      entryFee: mockData.entryFee,
+      startDate: "Dec 20, 2024",
+      startTime: "6:00 PM EST",
+      participants: "64/128",
+      format: mockData.format,
       platform: "PC",
       region: "Global",
       rankReq: "Any Rank",
     };
   });
 
-  const displayPosters = tournamentPosters.length > 0 ? tournamentPosters : mockPosters;
+  const tournamentPosters = (tournaments || [])
+    .filter((t) => {
+      // Only include tournaments with valid server references
+      const server = t.serverId ? servers?.find(s => s.id === t.serverId) : null;
+      return !!server;
+    })
+    .map((t) => {
+      // Look up server data (we know it exists because of filter)
+      const server = servers?.find(s => s.id === t.serverId!)!;
+      
+      return {
+        id: t.id,
+        serverId: t.serverId || undefined,
+        title: t.name,
+        game: t.game || "Tournament",
+        serverName: server.name,
+        // Use real server icon
+        serverLogo: server.iconUrl || server.name.charAt(0),
+        backgroundImage: t.imageUrl || "https://images.unsplash.com/photo-1542751110-97427bbecf20?w=800&h=1200&fit=crop",
+        prize: t.prizeReward || "TBD",
+        entryFee: t.entryFee ? `$${t.entryFee}` : "Free",
+        startDate: t.startDate ? format(new Date(t.startDate), "MMM dd, yyyy") : "TBD",
+        startTime: t.startDate ? format(new Date(t.startDate), "h:mm a") : "TBD",
+        participants: `${t.totalTeams || 0}/${t.totalTeams || 0}`,
+        format: t.format === "round_robin" ? "Round Robin" : t.format === "single_elimination" ? "Single Elimination" : "Swiss System",
+        platform: "PC",
+        region: "Global",
+        rankReq: "Any Rank",
+      };
+    });
+
+  const displayPosters = tournamentPosters.length > 0 ? tournamentPosters : mockPostersWithRealServers;
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
