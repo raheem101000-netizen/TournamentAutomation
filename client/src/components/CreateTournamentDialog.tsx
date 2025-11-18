@@ -34,6 +34,9 @@ export default function CreateTournamentDialog({
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
   const [game, setGame] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [prizeReward, setPrizeReward] = useState("");
+  const [entryFee, setEntryFee] = useState("");
   const [format, setFormat] = useState<"round_robin" | "single_elimination" | "swiss">("single_elimination");
   const [swissRounds, setSwissRounds] = useState(3);
   const [teamInput, setTeamInput] = useState("");
@@ -84,6 +87,9 @@ export default function CreateTournamentDialog({
     onSubmit({
       name,
       game,
+      imageUrl: imageUrl || null,
+      prizeReward: prizeReward || null,
+      entryFee: entryFee ? parseInt(entryFee) : null,
       format: format as any,
       totalTeams: teams.length,
       swissRounds: format === "swiss" ? swissRounds : null,
@@ -97,6 +103,9 @@ export default function CreateTournamentDialog({
     setStep(1);
     setName("");
     setGame("");
+    setImageUrl("");
+    setPrizeReward("");
+    setEntryFee("");
     setFormat("single_elimination");
     setSwissRounds(3);
     setTeamInput("");
@@ -154,6 +163,43 @@ export default function CreateTournamentDialog({
                 onChange={(e) => setGame(e.target.value)}
                 data-testid="input-tournament-game"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="imageUrl">Poster Image URL</Label>
+              <Input
+                id="imageUrl"
+                placeholder="https://example.com/poster.jpg"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                data-testid="input-tournament-image"
+              />
+              <p className="text-xs text-muted-foreground">
+                This image will be displayed on the homepage
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="prizeReward">Prize Pool</Label>
+                <Input
+                  id="prizeReward"
+                  placeholder="e.g., $1,000 or Gaming Gear"
+                  value={prizeReward}
+                  onChange={(e) => setPrizeReward(e.target.value)}
+                  data-testid="input-tournament-prize"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="entryFee">Entry Fee</Label>
+                <Input
+                  id="entryFee"
+                  type="number"
+                  placeholder="e.g., 10"
+                  value={entryFee}
+                  onChange={(e) => setEntryFee(e.target.value)}
+                  data-testid="input-tournament-entry-fee"
+                />
+                <p className="text-xs text-muted-foreground">Amount in dollars</p>
+              </div>
             </div>
           </div>
         )}
