@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { BottomNavigation } from "@/components/BottomNavigation";
@@ -5,8 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Users, Trophy } from "lucide-react";
+import { Search, Users, Trophy, Plus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Server } from "@shared/schema";
@@ -72,9 +76,47 @@ const mockServers = [
 export default function PreviewDiscovery() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const [createServerOpen, setCreateServerOpen] = useState(false);
+  const [serverName, setServerName] = useState("");
+  const [serverDescription, setServerDescription] = useState("");
+  const [selectedGameTags, setSelectedGameTags] = useState<string[]>([]);
   
   const { data: servers, isLoading } = useQuery<Server[]>({
     queryKey: ['/api/mobile-preview/servers'],
+  });
+
+  const createServerMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', `/api/servers`, {
+        name: serverName,
+        description: serverDescription,
+        gameTags: selectedGameTags,
+        category: "Gaming",
+        ownerId: "user-demo-123",
+        isPublic: true,
+      });
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Server created!",
+        description: "Your server has been created successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/mobile-preview/servers'] });
+      setCreateServerOpen(false);
+      setServerName("");
+      setServerDescription("");
+      setSelectedGameTags([]);
+      // Navigate to the new server
+      setLocation(`/server/${data.id}`);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to create server",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+    },
   });
 
   const joinServerMutation = useMutation({
@@ -101,6 +143,24 @@ export default function PreviewDiscovery() {
     },
   });
 
+  const availableGameTags = [
+    "Valorant", "CS:GO", "League of Legends", "Dota 2", 
+    "Apex Legends", "Fortnite", "Rocket League", "Overwatch",
+    "Call of Duty", "Rainbow Six", "Warzone", "Smite"
+  ];
+
+  const handleCreateServer = () => {
+    if (!serverName.trim()) {
+      toast({
+        title: "Server name required",
+        description: "Please enter a name for your server.",
+        variant: "destructive",
+      });
+      return;
+    }
+    createServerMutation.mutate();
+  };
+
   const serverCards = (servers || []).map((s) => ({
     id: s.id,
     name: s.name,
@@ -121,7 +181,7 @@ export default function PreviewDiscovery() {
         <div className="container max-w-lg mx-auto px-4 py-3 space-y-3">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">Discovery</h1>
-            <Button size="sm" data-testid="button-create-server">
+            <Button size="sm" onClick={() => setCreateServerOpen(true)} data-testid="button-create-server">
               Create Server
             </Button>
           </div>
@@ -225,6 +285,86 @@ export default function PreviewDiscovery() {
       </main>
 
       <BottomNavigation />
+
+      {/* Create Server Dialog */}
+      <Dialog open={createServerOpen} onOpenChange={setCreateServerOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create Your Server</DialogTitle>
+            <DialogDescription>
+              Set up your gaming community in just a few steps
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="server-name">Server Name *</Label>
+              <Input
+                id="server-name"
+                placeholder="Enter server name..."
+                value={serverName}
+                onChange={(e) => setServerName(e.target.value)}
+                data-testid="input-server-name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="server-description">Description</Label>
+              <Textarea
+                id="server-description"
+                placeholder="Tell people what your server is about..."
+                value={serverDescription}
+                onChange={(e) => setServerDescription(e.target.value)}
+                rows={3}
+                data-testid="textarea-server-description"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Game Tags (optional)</Label>
+              <div className="flex flex-wrap gap-2">
+                {availableGameTags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant={selectedGameTags.includes(tag) ? "default" : "outline"}
+                    className="cursor-pointer hover-elevate active-elevate-2"
+                    onClick={() => {
+                      setSelectedGameTags(prev =>
+                        prev.includes(tag)
+                          ? prev.filter(t => t !== tag)
+                          : [...prev, tag]
+                      );
+                    }}
+                    data-testid={`tag-${tag.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setCreateServerOpen(false)}
+                disabled={createServerMutation.isPending}
+                data-testid="button-cancel-create"
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleCreateServer}
+                disabled={createServerMutation.isPending || !serverName.trim()}
+                data-testid="button-confirm-create"
+              >
+                {createServerMutation.isPending ? "Creating..." : "Create Server"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

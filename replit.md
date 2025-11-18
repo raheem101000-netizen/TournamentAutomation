@@ -2,6 +2,20 @@
 
 ## Recent Changes (Nov 18, 2025)
 
+### New Features - COMPLETE ✅
+- **Homepage Search Filter**: Search bar now filters tournaments by title, game, or server name
+  - Typing "valorant" shows only Valorant tournaments
+  - Real-time filtering as user types
+- **Create Server Flow**: Discord-style server creation dialog on Discovery page
+  - Form includes: server name (required), description, and clickable game tag selection
+  - Creates server via POST /api/servers endpoint
+  - Navigates to new server after creation
+- **Team Logo Upload**: Photo upload option added to team creation page (Account)
+  - Users can upload images from camera roll/file system (5MB max)
+  - File type and size validation with toast notifications
+  - Works alongside existing emoji selection
+  - Image preview with remove button
+
 ### Mobile Preview Pages: Account & My Servers Fixes - COMPLETE ✅
 - **Account Page**: Fixed profile picture loading by using correct `/api/users/${userId}` endpoint
   - Changed from fetching `/api/users` (returned HTML) to `/api/users/${userId}` (returns User object)

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Upload, X, Plus, Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -34,12 +35,42 @@ interface TeamPlayer {
 }
 
 export default function PreviewCreateTeam() {
+  const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [teamLogo, setTeamLogo] = useState("🐺");
+  const [teamLogoImage, setTeamLogoImage] = useState<string | null>(null);
   const [teamName, setTeamName] = useState("");
   const [teamBio, setTeamBio] = useState("");
   const [players, setPlayers] = useState<TeamPlayer[]>([]);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Image size should be less than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setTeamLogoImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const addPlayer = (username: string, avatar: string) => {
     if (!players.find(p => p.username === username)) {
@@ -82,19 +113,72 @@ export default function PreviewCreateTeam() {
             <div className="space-y-3">
               <Label>Team Logo</Label>
               <div className="flex flex-col items-center space-y-3">
-                <div className="text-8xl">{teamLogo}</div>
-                <div className="grid grid-cols-5 gap-2">
-                  {emojiOptions.map((emoji) => (
+                {teamLogoImage ? (
+                  <div className="relative">
+                    <Avatar className="w-32 h-32 rounded-md">
+                      <AvatarImage src={teamLogoImage} alt="Team logo" />
+                    </Avatar>
                     <Button
-                      key={emoji}
-                      variant={teamLogo === emoji ? "default" : "outline"}
-                      className="text-2xl h-12 w-12 p-0"
-                      onClick={() => setTeamLogo(emoji)}
-                      data-testid={`emoji-${emoji}`}
+                      size="icon"
+                      variant="destructive"
+                      className="absolute -top-2 -right-2 h-8 w-8 rounded-full"
+                      onClick={() => setTeamLogoImage(null)}
+                      data-testid="button-remove-image"
                     >
-                      {emoji}
+                      <X className="h-4 w-4" />
                     </Button>
-                  ))}
+                  </div>
+                ) : (
+                  <div className="text-8xl">{teamLogo}</div>
+                )}
+                
+                <div className="w-full space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-px bg-border" />
+                    <span className="text-xs text-muted-foreground">Choose an emoji</span>
+                    <div className="flex-1 h-px bg-border" />
+                  </div>
+                  <div className="grid grid-cols-5 gap-2">
+                    {emojiOptions.map((emoji) => (
+                      <Button
+                        key={emoji}
+                        variant={teamLogo === emoji && !teamLogoImage ? "default" : "outline"}
+                        className="text-2xl h-12 w-12 p-0"
+                        onClick={() => {
+                          setTeamLogo(emoji);
+                          setTeamLogoImage(null);
+                        }}
+                        data-testid={`emoji-${emoji}`}
+                      >
+                        {emoji}
+                      </Button>
+                    ))}
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-px bg-border" />
+                    <span className="text-xs text-muted-foreground">Or upload an image</span>
+                    <div className="flex-1 h-px bg-border" />
+                  </div>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => fileInputRef.current?.click()}
+                    data-testid="button-upload-logo"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Image
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageUpload}
+                    data-testid="input-upload-logo"
+                  />
                 </div>
               </div>
             </div>

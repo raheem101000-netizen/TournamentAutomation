@@ -23,6 +23,7 @@ import { format } from "date-fns";
 export default function PreviewHome() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const [searchQuery, setSearchQuery] = useState("");
   const [detailsModal, setDetailsModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string | null; serverLogoFallback: string; backgroundImage: string; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; rankReq: string; } | null>(null);
   const [joinModal, setJoinModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string | null; serverLogoFallback: string; backgroundImage: string; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; rankReq: string; } | null>(null);
   const [serverModal, setServerModal] = useState<{ name: string; logo: string | null; logoFallback: string; id?: string } | null>(null);
@@ -259,7 +260,18 @@ export default function PreviewHome() {
       };
     });
 
-  const displayPosters = tournamentPosters.length > 0 ? tournamentPosters : mockPostersWithRealServers;
+  const allPosters = tournamentPosters.length > 0 ? tournamentPosters : mockPostersWithRealServers;
+  
+  // Filter posters based on search query
+  const displayPosters = allPosters.filter(poster => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      poster.title.toLowerCase().includes(query) ||
+      poster.game.toLowerCase().includes(query) ||
+      poster.serverName.toLowerCase().includes(query)
+    );
+  });
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
@@ -277,6 +289,8 @@ export default function PreviewHome() {
             <Input
               placeholder="Search tournaments..."
               className="pl-9"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               data-testid="input-search-tournaments"
             />
           </div>
