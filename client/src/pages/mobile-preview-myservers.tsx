@@ -119,7 +119,10 @@ export default function MobilePreviewMyServers() {
                   <CardHeader className="space-y-1 pb-3">
                     <div className="flex items-start justify-between gap-2">
                       <Avatar className="w-12 h-12 rounded-md">
-                        <AvatarImage src={server.iconUrl} alt={server.name} />
+                        <AvatarImage 
+                          src={server.iconUrl ? `${window.location.origin}${server.iconUrl}` : ''} 
+                          alt={server.name} 
+                        />
                         <AvatarFallback className="rounded-md">
                           {server.name.charAt(0)}
                         </AvatarFallback>
@@ -162,7 +165,10 @@ export default function MobilePreviewMyServers() {
                   <CardHeader className="space-y-1 pb-3">
                     <div className="flex items-start justify-between gap-2">
                       <Avatar className="w-12 h-12 rounded-md">
-                        <AvatarImage src={server.iconUrl} alt={server.name} />
+                        <AvatarImage 
+                          src={server.iconUrl ? `${window.location.origin}${server.iconUrl}` : ''} 
+                          alt={server.name} 
+                        />
                         <AvatarFallback className="rounded-md">
                           {server.name.charAt(0)}
                         </AvatarFallback>
