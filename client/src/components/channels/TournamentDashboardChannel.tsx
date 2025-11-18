@@ -32,7 +32,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
 
   const createTournamentMutation = useMutation({
     mutationFn: async (data: InsertTournament & { teamNames: string[]; registrationConfig?: RegistrationFormConfig }) => {
-      return apiRequest('/api/tournaments', 'POST', data);
+      return apiRequest('POST', '/api/tournaments', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
@@ -71,7 +71,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
 
   const submitScoreMutation = useMutation({
     mutationFn: async ({ matchId, winnerId, team1Score, team2Score }: { matchId: string; winnerId: string; team1Score: number; team2Score: number }) => {
-      return apiRequest(`/api/matches/${matchId}/score`, 'POST', {
+      return apiRequest('POST', `/api/matches/${matchId}/score`, {
         winnerId,
         team1Score,
         team2Score
