@@ -2,6 +2,18 @@
 
 ## Recent Changes (Nov 18, 2025)
 
+### Mobile Preview Pages: Account & My Servers Fixes - COMPLETE ✅
+- **Account Page**: Fixed profile picture loading by using correct `/api/users/${userId}` endpoint
+  - Changed from fetching `/api/users` (returned HTML) to `/api/users/${userId}` (returns User object)
+  - Achievements fetch from `/api/users/${userId}/achievements`
+  - Removed fallback to mock achievements - shows real data or empty state
+- **My Servers Page**: Fixed to show ALL servers user is member of with proper filtering
+  - Fixed queryKey to `/api/users/${userId}/servers` for member servers
+  - Separated display into "Owned Servers" and "Member Servers" sections
+  - Added search filter and game tag filter badges
+  - Server logos display using Avatar with iconUrl
+- **Messages Page**: Enhanced UI with group avatar editing and message request flow (client-side only)
+
 ### Phase 2 Homepage Improvements - COMPLETE ✅
 - **Tournament Type Filters**: Replaced game badges with Prize/Non-Prize and Free/Paid Entry filters
 - **Game Tags**: Added game tags to tournament schema, displayed as badges on posters for discovery

@@ -136,25 +136,26 @@ export default function PreviewAccount() {
   const [viewingUser, setViewingUser] = useState<string | null>(null);
   const [selectedAchievement, setSelectedAchievement] = useState<typeof mockAchievements[0] | null>(null);
 
-  const { data: users, isLoading: isLoadingUser, isError: isUserError } = useQuery<User[]>({
-    queryKey: ['/api/users'],
+  const currentUserId = "user-demo-123"; // TODO: Replace with real auth
+
+  const { data: user, isLoading: isLoadingUser, isError: isUserError } = useQuery<User>({
+    queryKey: [`/api/users/${currentUserId}`],
   });
 
   const { data: achievements, isLoading: isLoadingAchievements, isError: isAchievementsError } = useQuery<Achievement[]>({
-    queryKey: ['/api/achievements'],
+    queryKey: [`/api/users/${currentUserId}/achievements`],
   });
 
-  const currentUser = users?.[0] ? {
-    username: users[0].username,
-    avatarUrl: users[0].avatarUrl,
-    bio: users[0].bio,
-    level: users[0].level,
+  const currentUser = user ? {
+    username: user.username,
+    avatarUrl: user.avatarUrl,
+    bio: user.bio,
+    level: user.level,
     friendCount: mockUser.friendCount, // Not in schema, use mock
-    displayName: users[0].displayName,
+    displayName: user.displayName,
   } : mockUser;
   
-  const userAchievements = achievements && achievements.length > 0
-    ? achievements.map(a => ({
+  const userAchievements = achievements?.map(a => ({
         id: a.id,
         title: a.title,
         description: a.description || "",
@@ -168,8 +169,7 @@ export default function PreviewAccount() {
         date: a.achievedAt 
           ? new Date(a.achievedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
           : "Unknown",
-      }))
-    : mockAchievements;
+      })) || [];
 
   const earnedAchievements = userAchievements.filter(a => a.earned);
   const lockedAchievements = userAchievements.filter(a => !a.earned);
