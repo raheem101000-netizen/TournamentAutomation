@@ -141,8 +141,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = registerSchema.parse(req.body);
 
       // Check if user with email already exists
-      const existingUsers = await storage.getAllUsers();
-      if (existingUsers.some(u => u.email === validatedData.email)) {
+      const existingUser = await storage.getUserByEmail(validatedData.email);
+      if (existingUser) {
         return res.status(400).json({ error: "Email already registered" });
       }
 
@@ -158,7 +158,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         displayName: validatedData.fullName,
         bio: null,
         avatarUrl: null,
-        level: 1,
         language: 'en',
         isDisabled: 0,
       });
@@ -189,8 +188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = loginSchema.parse(req.body);
 
       // Find user by email
-      const users = await storage.getAllUsers();
-      const user = users.find(u => u.email === validatedData.email);
+      const user = await storage.getUserByEmail(validatedData.email);
 
       if (!user) {
         return res.status(401).json({ error: "Invalid email or password" });

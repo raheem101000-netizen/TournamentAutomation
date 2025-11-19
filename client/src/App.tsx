@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
-import { Switch, Route, Link, useLocation } from "wouter";
+import { useEffect } from "react";
+import { Switch, Route, Link, useLocation, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger } from "@/components/ui/sidebar";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import NotFound from "@/pages/not-found";
 import MobilePreviewHome from "@/pages/mobile-preview-home";
 import MobilePreviewServers from "@/pages/mobile-preview-servers";
@@ -72,28 +73,47 @@ function AppSidebar() {
   );
 }
 
+function ProtectedRoute({ component: Component, ...rest }: { component: any; path: string }) {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Redirect to="/login" />;
+  }
+
+  return <Component {...rest} />;
+}
+
 function Router() {
   return (
     <Switch>
       <Route path="/register" component={Register} />
       <Route path="/login" component={Login} />
-      <Route path="/create-server" component={CreateServer} />
-      <Route path="/create-tournament" component={CreateTournament} />
-      <Route path="/chat/:matchId" component={ChatRoom} />
-      <Route path="/team-builder" component={TeamBuilder} />
-      <Route path="/" component={PreviewHome} />
-      <Route path="/discovery" component={PreviewDiscovery} />
-      <Route path="/messages" component={PreviewMessages} />
-      <Route path="/myservers" component={PreviewMyServers} />
-      <Route path="/server/:serverId" component={PreviewServerDetail} />
-      <Route path="/server/:serverId/settings" component={ServerSettings} />
-      <Route path="/account" component={PreviewAccount} />
-      <Route path="/account/settings" component={AccountSettings} />
-      <Route path="/poster-builder" component={PreviewPosterBuilder} />
-      <Route path="/create-team" component={PreviewCreateTeam} />
-      <Route path="/organizer-award" component={PreviewOrganizerAward} />
-      <Route path="/templates" component={PreviewTemplates} />
-      <Route path="/admin/templates" component={PreviewAdminTemplates} />
+      
+      <ProtectedRoute path="/create-server" component={CreateServer} />
+      <ProtectedRoute path="/create-tournament" component={CreateTournament} />
+      <ProtectedRoute path="/chat/:matchId" component={ChatRoom} />
+      <ProtectedRoute path="/team-builder" component={TeamBuilder} />
+      <ProtectedRoute path="/" component={PreviewHome} />
+      <ProtectedRoute path="/discovery" component={PreviewDiscovery} />
+      <ProtectedRoute path="/messages" component={PreviewMessages} />
+      <ProtectedRoute path="/myservers" component={PreviewMyServers} />
+      <ProtectedRoute path="/server/:serverId" component={PreviewServerDetail} />
+      <ProtectedRoute path="/server/:serverId/settings" component={ServerSettings} />
+      <ProtectedRoute path="/account" component={PreviewAccount} />
+      <ProtectedRoute path="/account/settings" component={AccountSettings} />
+      <ProtectedRoute path="/poster-builder" component={PreviewPosterBuilder} />
+      <ProtectedRoute path="/create-team" component={PreviewCreateTeam} />
+      <ProtectedRoute path="/organizer-award" component={PreviewOrganizerAward} />
+      <ProtectedRoute path="/templates" component={PreviewTemplates} />
+      <ProtectedRoute path="/admin/templates" component={PreviewAdminTemplates} />
       
       <Route path="/old" component={MobilePreviewHome} />
       <Route path="/old/discovery" component={MobilePreviewServers} />
@@ -124,24 +144,26 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <SidebarProvider style={style as React.CSSProperties}>
-          <div className="flex h-screen w-full">
-            <AppSidebar />
-            <div className="flex flex-col flex-1">
-              <header className="flex items-center justify-between p-2 border-b">
-                <SidebarTrigger data-testid="button-sidebar-toggle" />
-                <h1 className="text-lg font-semibold">10 on 10</h1>
-                <div className="w-9" />
-              </header>
-              <main className="flex-1 overflow-y-auto">
-                <Router />
-              </main>
+      <AuthProvider>
+        <TooltipProvider>
+          <SidebarProvider style={style as React.CSSProperties}>
+            <div className="flex h-screen w-full">
+              <AppSidebar />
+              <div className="flex flex-col flex-1">
+                <header className="flex items-center justify-between p-2 border-b">
+                  <SidebarTrigger data-testid="button-sidebar-toggle" />
+                  <h1 className="text-lg font-semibold">10 on 10</h1>
+                  <div className="w-9" />
+                </header>
+                <main className="flex-1 overflow-y-auto">
+                  <Router />
+                </main>
+              </div>
             </div>
-          </div>
-        </SidebarProvider>
-        <Toaster />
-      </TooltipProvider>
+          </SidebarProvider>
+          <Toaster />
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
