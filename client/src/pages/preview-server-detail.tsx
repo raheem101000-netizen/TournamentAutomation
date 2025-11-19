@@ -309,7 +309,8 @@ export default function PreviewServerDetail() {
 
         <div className="space-y-4">
           {/* Tournament Dashboard - Always at top */}
-          {tournamentDashboard && server.ownerId === currentUserId && (
+          {tournamentDashboard && (server.ownerId === currentUserId || 
+                                    (!permissionsError && userPermissions?.permissions?.includes("tournament_dashboard_access"))) && (
             <div className="space-y-2">
               <div className="flex items-center gap-2 px-2">
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
