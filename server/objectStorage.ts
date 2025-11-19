@@ -120,7 +120,7 @@ export class ObjectStorageService {
     }
   }
 
-  async getObjectEntityUploadURL(): Promise<string> {
+  async getObjectEntityUploadURL(): Promise<{ uploadURL: string; objectPath: string }> {
     const privateObjectDir = this.getPrivateObjectDir();
     if (!privateObjectDir) {
       throw new Error(
@@ -134,12 +134,17 @@ export class ObjectStorageService {
 
     const { bucketName, objectName } = parseObjectPath(fullPath);
 
-    return signObjectURL({
+    const uploadURL = await signObjectURL({
       bucketName,
       objectName,
       method: "PUT",
       ttlSec: 900,
     });
+
+    // Return both the upload URL and the object path
+    const objectPath = `/objects/uploads/${objectId}`;
+
+    return { uploadURL, objectPath };
   }
 
   async getObjectEntityFile(objectPath: string): Promise<File> {
@@ -152,12 +157,23 @@ export class ObjectStorageService {
       throw new ObjectNotFoundError();
     }
 
+    // entityId is everything after "/objects/" - e.g., "uploads/123"
     const entityId = parts.slice(1).join("/");
+    
     let entityDir = this.getPrivateObjectDir();
     if (!entityDir.endsWith("/")) {
       entityDir = `${entityDir}/`;
     }
-    const objectEntityPath = `${entityDir}${entityId}`;
+
+    // Avoid double-concat: if PRIVATE_OBJECT_DIR ends with "/uploads"
+    // and entityId starts with "uploads/", remove the duplicate
+    let finalEntityId = entityId;
+    if (entityDir.endsWith("/uploads/") && entityId.startsWith("uploads/")) {
+      // Remove the "uploads/" prefix from entityId to avoid duplication
+      finalEntityId = entityId.substring("uploads/".length);
+    }
+
+    const objectEntityPath = `${entityDir}${finalEntityId}`;
     const { bucketName, objectName } = parseObjectPath(objectEntityPath);
     const bucket = objectStorageClient.bucket(bucketName);
     const objectFile = bucket.file(objectName);
@@ -169,6 +185,18 @@ export class ObjectStorageService {
   }
 
   normalizeObjectEntityPath(rawPath: string): string {
+    // Handle already-normalized paths like "/objects/uploads/{id}"
+    if (rawPath.startsWith("/objects/uploads/")) {
+      // Validate and return canonical path
+      const parts = rawPath.split("/").filter(p => p);
+      if (parts.length < 2) {
+        throw new Error("Invalid normalized path");
+      }
+      // Return as-is if valid
+      return rawPath;
+    }
+
+    // Handle signed GCS URLs
     if (!rawPath.startsWith("https://storage.googleapis.com/")) {
       return rawPath;
     }

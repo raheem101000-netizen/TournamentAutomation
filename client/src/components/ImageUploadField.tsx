@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { X, Upload } from "lucide-react";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ObjectUploader } from "./ObjectUploader";
 import type { UploadResult } from "@uppy/core";
 import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface ImageUploadFieldProps {
   label?: string;
@@ -22,6 +23,8 @@ export default function ImageUploadField({
 }: ImageUploadFieldProps) {
   const [preview, setPreview] = useState<string | null>(value || null);
   const [isUploading, setIsUploading] = useState(false);
+  const { toast } = useToast();
+  const objectPathRef = useRef<string | null>(null);
 
   const handleUrlChange = (url: string) => {
     onChange(url);
@@ -36,6 +39,8 @@ export default function ImageUploadField({
   const handleGetUploadParameters = async () => {
     const response = await apiRequest("POST", "/api/objects/upload");
     const data = await response.json();
+    // Store the object path for use in handleUploadComplete
+    objectPathRef.current = data.objectPath;
     return {
       method: "PUT" as const,
       url: data.uploadURL,
@@ -46,22 +51,41 @@ export default function ImageUploadField({
     if (result.successful && result.successful.length > 0) {
       setIsUploading(true);
       try {
-        const uploadedFile = result.successful[0];
-        const uploadURL = uploadedFile.uploadURL;
+        const uploadedObjectPath = objectPathRef.current;
         
-        // Normalize the path
-        const response = await apiRequest("PUT", "/api/tournament-posters", {
-          posterURL: uploadURL
+        if (!uploadedObjectPath) {
+          throw new Error("No object path available");
+        }
+        
+        // Normalize the path to set ACL and get final path
+        const response = await apiRequest("POST", "/api/objects/normalize", {
+          objectPath: uploadedObjectPath
         });
+        
+        if (!response.ok) {
+          throw new Error("Failed to process uploaded image");
+        }
+        
         const data = await response.json();
         
         // Use the normalized path
         onChange(data.objectPath);
         setPreview(data.objectPath);
+        
+        toast({
+          title: "Image uploaded",
+          description: "Your image has been uploaded successfully.",
+        });
       } catch (error) {
         console.error("Error normalizing uploaded image:", error);
-        // Show error to user - don't update the value on error
-        alert("Failed to upload image. Please try again.");
+        // Clear any stale preview
+        setPreview(value || null);
+        
+        toast({
+          title: "Upload failed",
+          description: error instanceof Error ? error.message : "Failed to upload image. Please try again.",
+          variant: "destructive",
+        });
       } finally {
         setIsUploading(false);
       }

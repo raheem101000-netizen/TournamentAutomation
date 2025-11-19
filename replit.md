@@ -10,17 +10,24 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### November 19, 2025
+### November 19, 2025 (Latest)
+- **My Servers Filter Badges**: Added visible filter UI with "All Servers", "Owned" (crown icon), and "Member" (users icon) badges for easy server list filtering
+- **Image Upload System Overhaul**: Fixed critical image upload bugs affecting profile pictures, server icons/backgrounds, and tournament posters:
+  - Created secure `/api/objects/normalize` endpoint with authentication and path validation
+  - Fixed ImageUploadField component to properly save uploaded images
+  - Updated object storage service to return both upload URL and object path
+  - Fixed path handling to prevent "uploads/uploads" double-concatenation
+  - Added toast notifications for upload success/failure
+- **Tournament Poster Editor Enhancement**: Image editor now saves the actual cropped/positioned image instead of just the original:
+  - Canvas rendering matches preview for all three fit modes (Cover, Contain, Fill)
+  - Position and zoom settings are applied to the saved image
+  - Uploaded images persist correctly to object storage
+
+### November 19, 2025 (Earlier)
 - **Server List Fix**: Fixed critical bug where newly created servers didn't appear in the server list. Now automatically adds server owner to server_members table upon server creation.
 - **Game Tags Enhancement**: Replaced preset game tag selectors with flexible manual text input system. Users can now type any game name (e.g., "Dragon Ball Z", "Valorant", "Fortnite") and add them as tags by pressing Enter.
 - **Message Reply System**: Implemented Discord-style message reply functionality in chat channels. Users can tap/click any message to set it as a reply, with visual indication of the replied-to message displayed in the chat.
-- **Tournament Poster Image Editor**: Created comprehensive image editor component with:
-  - Zoom controls (50%-200% with slider and buttons)
-  - Three fit modes: Cover (fills area, may crop), Contain (entire image visible), Fill (stretched)
-  - 9-point position grid (Top Left/Center/Right, Middle Left/Center/Right, Bottom Left/Center/Right)
-  - Drag-to-reposition functionality
-  - Live preview of adjustments
-  - Integrated into tournament poster builder page
+- **Tournament Poster Image Editor**: Created comprehensive image editor component with zoom controls, fit modes, position grid, and drag-to-reposition functionality
 
 ## System Architecture
 

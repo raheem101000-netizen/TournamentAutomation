@@ -5,6 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { ZoomIn, ZoomOut, Maximize2, AlignCenter, Upload, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface ImageEditorProps {
   open: boolean;
@@ -18,9 +20,12 @@ export function ImageEditor({ open, onOpenChange, onSave, initialImage }: ImageE
   const [zoom, setZoom] = useState(100);
   const [fitMode, setFitMode] = useState<"cover" | "contain" | "fill">("cover");
   const [position, setPosition] = useState({ x: 50, y: 50 });
+  const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isDragging = useRef(false);
   const dragStart = useRef({ x: 0, y: 0 });
+  const { toast } = useToast();
+  const pendingObjectPathRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (initialImage) {
@@ -64,9 +69,155 @@ export function ImageEditor({ open, onOpenChange, onSave, initialImage }: ImageE
     isDragging.current = false;
   };
 
-  const handleSave = () => {
-    onSave(imageUrl);
-    onOpenChange(false);
+  const handleSave = async () => {
+    if (!imageUrl) return;
+    
+    setIsSaving(true);
+    try {
+      // Create canvas to render the edited image
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Could not get canvas context');
+
+      // Set canvas dimensions (16:9 aspect ratio for posters)
+      const canvasWidth = 800;
+      const canvasHeight = 450;
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+
+      // Load the image
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = imageUrl;
+      });
+
+      // Calculate scaling and positioning to match the preview
+      const zoomFactor = zoom / 100;
+
+      if (fitMode === 'cover') {
+        // Cover mode: image fills canvas, may be cropped
+        const scaleX = canvasWidth / img.width;
+        const scaleY = canvasHeight / img.height;
+        const baseScale = Math.max(scaleX, scaleY);
+        const scale = baseScale * zoomFactor;
+
+        const scaledWidth = img.width * scale;
+        const scaledHeight = img.height * scale;
+
+        // Calculate the excess (how much larger the scaled image is than canvas)
+        const excessWidth = scaledWidth - canvasWidth;
+        const excessHeight = scaledHeight - canvasHeight;
+
+        // Position based on position settings (0-100 maps to the excess)
+        const offsetX = -excessWidth * (position.x / 100);
+        const offsetY = -excessHeight * (position.y / 100);
+
+        ctx.drawImage(img, offsetX, offsetY, scaledWidth, scaledHeight);
+      } else if (fitMode === 'contain') {
+        // Contain mode: entire image visible, may have letterboxing
+        const scaleX = canvasWidth / img.width;
+        const scaleY = canvasHeight / img.height;
+        const baseScale = Math.min(scaleX, scaleY);
+        const scale = baseScale * zoomFactor;
+
+        const scaledWidth = img.width * scale;
+        const scaledHeight = img.height * scale;
+
+        // Center the image (or offset based on position if zoomed)
+        const excessWidth = scaledWidth - canvasWidth;
+        const excessHeight = scaledHeight - canvasHeight;
+        
+        let offsetX = (canvasWidth - scaledWidth) / 2;
+        let offsetY = (canvasHeight - scaledHeight) / 2;
+
+        // If zoomed in, apply position offsets to the excess
+        if (zoomFactor > 1) {
+          offsetX = -excessWidth * (position.x / 100);
+          offsetY = -excessHeight * (position.y / 100);
+        }
+
+        ctx.drawImage(img, offsetX, offsetY, scaledWidth, scaledHeight);
+      } else if (fitMode === 'fill') {
+        // Fill mode: stretch to fill canvas
+        // With zoom, we crop from the source image based on position
+        if (zoomFactor === 1) {
+          // No zoom: stretch entire image to canvas
+          ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+        } else {
+          // With zoom: crop from source image based on position settings
+          const sourceWidth = img.width / zoomFactor;
+          const sourceHeight = img.height / zoomFactor;
+          
+          // Calculate the excess that can be cropped (how much we can move)
+          const excessWidth = img.width - sourceWidth;
+          const excessHeight = img.height - sourceHeight;
+          
+          // Position the crop based on position settings (0-100 maps to the excess)
+          const sourceX = excessWidth * (position.x / 100);
+          const sourceY = excessHeight * (position.y / 100);
+          
+          ctx.drawImage(
+            img,
+            sourceX, sourceY, sourceWidth, sourceHeight,
+            0, 0, canvasWidth, canvasHeight
+          );
+        }
+      }
+
+      // Convert canvas to blob
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((b) => {
+          if (b) resolve(b);
+          else reject(new Error('Failed to create blob'));
+        }, 'image/jpeg', 0.9);
+      });
+
+      // Get upload URL and object path
+      const uploadResponse = await apiRequest("POST", "/api/objects/upload");
+      const uploadData = await uploadResponse.json();
+      
+      // Store the object path
+      const objectPath = uploadData.objectPath;
+      pendingObjectPathRef.current = objectPath;
+
+      // Upload the blob to the presigned URL
+      await fetch(uploadData.uploadURL, {
+        method: 'PUT',
+        body: blob,
+        headers: {
+          'Content-Type': 'image/jpeg',
+        },
+      });
+
+      // Normalize the path using the object path
+      const normalizeResponse = await apiRequest("POST", "/api/objects/normalize", {
+        objectPath: objectPath,
+      });
+      const normalizeData = await normalizeResponse.json();
+
+      // Save the new image path
+      onSave(normalizeData.objectPath);
+      onOpenChange(false);
+      
+      toast({
+        title: "Image saved",
+        description: "Your edited image has been saved successfully.",
+      });
+    } catch (error) {
+      console.error('Error saving edited image:', error);
+      
+      toast({
+        title: "Save failed",
+        description: error instanceof Error ? error.message : "Failed to save edited image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancel = () => {
@@ -322,11 +473,11 @@ export function ImageEditor({ open, onOpenChange, onSave, initialImage }: ImageE
           </Button>
           <Button
             onClick={handleSave}
-            disabled={!imageUrl}
+            disabled={!imageUrl || isSaving}
             data-testid="button-save-editor"
           >
             <Check className="w-4 h-4 mr-2" />
-            Save
+            {isSaving ? "Saving..." : "Save"}
           </Button>
         </DialogFooter>
       </DialogContent>

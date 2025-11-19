@@ -1467,10 +1467,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/objects/upload", async (req, res) => {
     const objectStorageService = new ObjectStorageService();
     try {
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-      res.json({ uploadURL });
+      const { uploadURL, objectPath } = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL, objectPath });
     } catch (error: any) {
       console.error("Error getting upload URL:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Generic endpoint to normalize uploaded object path and set ACL policy
+  app.post("/api/objects/normalize", async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    if (!req.body.objectPath) {
+      return res.status(400).json({ error: "objectPath is required" });
+    }
+
+    // Validate that the object path starts with /objects/uploads/ 
+    // to prevent users from changing ACLs on arbitrary objects
+    if (!req.body.objectPath.startsWith("/objects/uploads/")) {
+      return res.status(403).json({ error: "Invalid object path" });
+    }
+
+    try {
+      const objectStorageService = new ObjectStorageService();
+      // Set ACL policy for public access (most uploads are public)
+      const normalizedPath = await objectStorageService.trySetObjectEntityAclPolicy(
+        req.body.objectPath,
+        {
+          owner: req.session.userId,
+          visibility: "public",
+        },
+      );
+
+      res.status(200).json({
+        objectPath: normalizedPath,
+      });
+    } catch (error: any) {
+      console.error("Error normalizing uploaded object:", error);
       res.status(500).json({ error: error.message });
     }
   });
