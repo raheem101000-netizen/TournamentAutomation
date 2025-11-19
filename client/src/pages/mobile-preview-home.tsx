@@ -201,13 +201,27 @@ export default function MobilePreviewHome() {
                 </div>
               )}
 
-              {selectedTournament?.entryFee != null && selectedTournament.entryFee > 0 && (
+              {selectedTournament?.entryFee && (
                 <div className="flex items-center justify-between p-3 bg-card rounded-md border">
                   <div className="flex items-center gap-2">
                     <DollarSign className="h-5 w-5" />
                     <span className="font-semibold">Entry Fee</span>
                   </div>
-                  <span>${selectedTournament.entryFee}</span>
+                  <span>{selectedTournament.entryFee}</span>
+                </div>
+              )}
+
+              {selectedTournament?.platform && (
+                <div className="flex items-center justify-between p-3 bg-card rounded-md border">
+                  <span className="font-semibold">Platform</span>
+                  <span>{selectedTournament.platform}</span>
+                </div>
+              )}
+
+              {selectedTournament?.region && (
+                <div className="flex items-center justify-between p-3 bg-card rounded-md border">
+                  <span className="font-semibold">Region</span>
+                  <span>{selectedTournament.region}</span>
                 </div>
               )}
 

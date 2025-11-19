@@ -257,8 +257,8 @@ export default function PreviewHome() {
         startTime: t.startDate ? format(new Date(t.startDate), "h:mm a") : "TBD",
         participants: `${t.totalTeams || 0}/${t.totalTeams || 0}`,
         format: t.format === "round_robin" ? "Round Robin" : t.format === "single_elimination" ? "Single Elimination" : "Swiss System",
-        platform: "PC",
-        region: "Global",
+        platform: t.platform || "Any Platform",
+        region: t.region || "Global",
         rankReq: "Any Rank",
       };
     });
