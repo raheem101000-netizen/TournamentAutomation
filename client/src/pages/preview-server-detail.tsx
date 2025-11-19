@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronDown, Settings, Trophy, Lock, Plus, ChevronLeft, ChevronRight, FolderOpen } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useQuery } from "@tanstack/react-query";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { useState, useCallback, useEffect } from "react";
 import type { Server, Tournament, Channel, ChannelCategory } from "@shared/schema";
 import AnnouncementsChannel from "@/components/channels/AnnouncementsChannel";
@@ -17,6 +17,7 @@ import useEmblaCarousel from "embla-carousel-react";
 
 export default function PreviewServerDetail() {
   const [match, params] = useRoute("/server/:serverId");
+  const [, setLocation] = useLocation();
   const serverId = params?.serverId;
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
   const [createChannelOpen, setCreateChannelOpen] = useState(false);
@@ -161,7 +162,12 @@ export default function PreviewServerDetail() {
                 </div>
               </div>
             </div>
-            <Button size="icon" variant="ghost" data-testid="button-server-settings">
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              onClick={() => serverId && setLocation(`/server/${serverId}/settings`)}
+              data-testid="button-server-settings"
+            >
               <Settings className="w-5 h-5" />
             </Button>
           </div>

@@ -194,7 +194,12 @@ export default function PreviewAccount() {
                 >
                   View as Visitor
                 </Button>
-                <Button size="icon" variant="ghost" data-testid="button-settings">
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  onClick={() => setLocation("/account/settings")}
+                  data-testid="button-settings"
+                >
                   <Settings className="w-5 h-5" />
                 </Button>
               </>
