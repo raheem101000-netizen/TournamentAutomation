@@ -860,6 +860,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.createChannel(channelData);
       }
       
+      // Add the owner as a member of the server
+      await storage.joinServer(server.id, req.session.userId);
+      
       res.status(201).json(server);
     } catch (error: any) {
       res.status(400).json({ error: error.message });

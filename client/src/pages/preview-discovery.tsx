@@ -81,6 +81,7 @@ export default function PreviewDiscovery() {
   const [serverName, setServerName] = useState("");
   const [serverDescription, setServerDescription] = useState("");
   const [selectedGameTags, setSelectedGameTags] = useState<string[]>([]);
+  const [gameTagInput, setGameTagInput] = useState("");
   
   const { data: servers, isLoading } = useQuery<Server[]>({
     queryKey: ['/api/mobile-preview/servers'],
@@ -144,11 +145,6 @@ export default function PreviewDiscovery() {
     },
   });
 
-  const availableGameTags = [
-    "Valorant", "CS:GO", "League of Legends", "Dota 2", 
-    "Apex Legends", "Fortnite", "Rocket League", "Overwatch",
-    "Call of Duty", "Rainbow Six", "Warzone", "Smite"
-  ];
 
   const handleCreateServer = () => {
     if (!serverName.trim()) {
@@ -336,24 +332,43 @@ export default function PreviewDiscovery() {
 
             <div className="space-y-2">
               <Label>Game Tags (optional)</Label>
-              <div className="flex flex-wrap gap-2">
-                {availableGameTags.map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant={selectedGameTags.includes(tag) ? "default" : "outline"}
-                    className="cursor-pointer hover-elevate active-elevate-2"
-                    onClick={() => {
-                      setSelectedGameTags(prev =>
-                        prev.includes(tag)
-                          ? prev.filter(t => t !== tag)
-                          : [...prev, tag]
-                      );
-                    }}
-                    data-testid={`tag-${tag.toLowerCase().replace(/\s+/g, '-')}`}
-                  >
-                    {tag}
-                  </Badge>
-                ))}
+              <p className="text-xs text-muted-foreground">
+                Type game names and press Enter to add them as tags
+              </p>
+              <div className="space-y-2">
+                <Input
+                  placeholder="e.g. Valorant, Dragon Ball Z, Fortnite..."
+                  value={gameTagInput}
+                  onChange={(e) => setGameTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && gameTagInput.trim()) {
+                      e.preventDefault();
+                      const tag = gameTagInput.trim();
+                      if (!selectedGameTags.includes(tag)) {
+                        setSelectedGameTags(prev => [...prev, tag]);
+                      }
+                      setGameTagInput("");
+                    }
+                  }}
+                  data-testid="input-game-tags"
+                />
+                {selectedGameTags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedGameTags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="default"
+                        className="cursor-pointer"
+                        onClick={() => {
+                          setSelectedGameTags(prev => prev.filter(t => t !== tag));
+                        }}
+                        data-testid={`tag-${tag.toLowerCase().replace(/\s+/g, '-')}`}
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
