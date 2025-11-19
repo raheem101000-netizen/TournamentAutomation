@@ -60,6 +60,8 @@ export default function ImageUploadField({
         setPreview(data.objectPath);
       } catch (error) {
         console.error("Error normalizing uploaded image:", error);
+        // Show error to user - don't update the value on error
+        alert("Failed to upload image. Please try again.");
       } finally {
         setIsUploading(false);
       }

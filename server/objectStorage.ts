@@ -174,19 +174,52 @@ export class ObjectStorageService {
     }
   
     const url = new URL(rawPath);
+    // Pathname format: /bucket-name/.private/uploads/uuid or /bucket-name/uploads/uuid
     const rawObjectPath = url.pathname;
   
-    let objectEntityDir = this.getPrivateObjectDir();
-    if (!objectEntityDir.endsWith("/")) {
-      objectEntityDir = `${objectEntityDir}/`;
+    // Split path into segments
+    const pathSegments = rawObjectPath.split("/").filter(p => p);
+    if (pathSegments.length < 2) {
+      throw new Error("Invalid upload URL format");
     }
   
-    if (!rawObjectPath.startsWith(objectEntityDir)) {
-      return rawObjectPath;
-    }
+    // First segment is bucket name
+    const bucketName = pathSegments[0];
+    const objectSegments = pathSegments.slice(1);
   
-    const entityId = rawObjectPath.slice(objectEntityDir.length);
-    return `/objects/${entityId}`;
+    // Get private object directory and extract its segments without bucket
+    const privateObjectDir = this.getPrivateObjectDir();
+    const privateDirSegments = privateObjectDir.replace(/^\//, "").split("/").filter(p => p);
+    
+    // Remove bucket name from private dir segments to get the directory structure
+    const privateDirWithoutBucket = privateDirSegments.slice(1);
+    
+    // Expected: [...privateDirWithoutBucket, "uploads", uuid]
+    // Check if objectSegments starts with privateDirWithoutBucket
+    const expectedLength = privateDirWithoutBucket.length + 2; // dir + "uploads" + uuid
+    if (objectSegments.length < expectedLength) {
+      throw new Error(`Upload URL too short. Expected at least ${expectedLength} segments after bucket`);
+    }
+    
+    // Verify the directory structure matches
+    for (let i = 0; i < privateDirWithoutBucket.length; i++) {
+      if (objectSegments[i] !== privateDirWithoutBucket[i]) {
+        throw new Error(`Upload URL does not match expected directory structure at segment ${i}`);
+      }
+    }
+    
+    // Verify "uploads" follows the private directory
+    if (objectSegments[privateDirWithoutBucket.length] !== "uploads") {
+      throw new Error(`Expected "uploads" directory after private directory`);
+    }
+    
+    // Extract the UUID (everything after "uploads/")
+    const entityId = objectSegments.slice(privateDirWithoutBucket.length + 1).join("/");
+    if (!entityId) {
+      throw new Error("No entity ID found in upload URL");
+    }
+    
+    return `/objects/uploads/${entityId}`;
   }
 
   async trySetObjectEntityAclPolicy(

@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import { storage } from "./storage";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+import { ObjectPermission } from "./objectAcl";
 import {
   insertTournamentSchema,
   insertTeamSchema,
@@ -1129,13 +1130,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Object Storage Routes - Reference: blueprint:javascript_object_storage
-  // Serve uploaded objects (public access)
+  // Serve uploaded objects (with ACL check)
   app.get("/objects/:objectPath(*)", async (req, res) => {
     const objectStorageService = new ObjectStorageService();
     try {
       const objectFile = await objectStorageService.getObjectEntityFile(
         req.path,
       );
+      
+      // Check ACL policy - only serve public files
+      const canAccess = await objectStorageService.canAccessObjectEntity({
+        objectFile,
+        requestedPermission: ObjectPermission.READ,
+      });
+      
+      if (!canAccess) {
+        return res.sendStatus(403);
+      }
+      
       objectStorageService.downloadObject(objectFile, res);
     } catch (error) {
       console.error("Error checking object access:", error);
@@ -1158,7 +1170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Normalize tournament poster path after upload
+  // Normalize tournament poster path after upload and set ACL policy
   app.put("/api/tournament-posters", async (req, res) => {
     if (!req.body.posterURL) {
       return res.status(400).json({ error: "posterURL is required" });
@@ -1166,8 +1178,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const objectStorageService = new ObjectStorageService();
-      const objectPath = objectStorageService.normalizeObjectEntityPath(
+      // Set ACL policy for public access (tournament posters are public)
+      const objectPath = await objectStorageService.trySetObjectEntityAclPolicy(
         req.body.posterURL,
+        {
+          owner: "system",
+          visibility: "public",
+        },
       );
 
       res.status(200).json({
