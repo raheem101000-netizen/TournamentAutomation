@@ -27,12 +27,15 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Server } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import ImageUploadField from "@/components/ImageUploadField";
 
 const createServerSchema = z.object({
   name: z.string().min(1, "Server name is required"),
   description: z.string().optional(),
   category: z.string().optional(),
   isPublic: z.number().default(1),
+  iconUrl: z.string().optional(),
+  backgroundUrl: z.string().optional(),
 });
 
 type CreateServerForm = z.infer<typeof createServerSchema>;
@@ -49,15 +52,15 @@ export default function CreateServer() {
       description: "",
       category: "gaming",
       isPublic: 1,
+      iconUrl: "",
+      backgroundUrl: "",
     },
   });
 
   const createMutation = useMutation({
     mutationFn: async (data: CreateServerForm) => {
-      const res = await apiRequest('POST', '/api/servers', {
-        ...data,
-        ownerId: user?.id,
-      });
+      // ownerId is set on the backend from session, not sent from client
+      const res = await apiRequest('POST', '/api/servers', data);
       return res.json();
     },
     onSuccess: (data: any) => {
@@ -185,6 +188,38 @@ export default function CreateServer() {
                         <SelectItem value="0">Private</SelectItem>
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="iconUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <ImageUploadField
+                      label="Server Icon (Optional)"
+                      value={field.value || ""}
+                      onChange={field.onChange}
+                      placeholder="https://example.com/icon.jpg"
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="backgroundUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <ImageUploadField
+                      label="Server Background (Optional)"
+                      value={field.value || ""}
+                      onChange={field.onChange}
+                      placeholder="https://example.com/background.jpg"
+                    />
                     <FormMessage />
                   </FormItem>
                 )}

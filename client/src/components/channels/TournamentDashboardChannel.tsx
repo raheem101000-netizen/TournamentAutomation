@@ -217,6 +217,29 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
               </Card>
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {selectedTournament.platform && (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Platform</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-lg font-semibold">{selectedTournament.platform}</div>
+                  </CardContent>
+                </Card>
+              )}
+              {selectedTournament.region && (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Region</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-lg font-semibold">{selectedTournament.region}</div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
             {selectedTournament.startDate && (
               <Card>
                 <CardHeader>

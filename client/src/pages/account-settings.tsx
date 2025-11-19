@@ -41,8 +41,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import ImageUploadField from "@/components/ImageUploadField";
 import { User, Lock, Globe, HelpCircle, UserX, Trash2, Mail } from "lucide-react";
 import type { User as UserType } from "@shared/schema";
-
-const DEMO_USER_ID = "user-demo-123";
+import { useAuth } from "@/contexts/AuthContext";
 
 const profileSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
@@ -63,10 +62,12 @@ const passwordSchema = z.object({
 
 export default function AccountSettings() {
   const { toast } = useToast();
+  const { user: authUser } = useAuth();
   const [avatarUrl, setAvatarUrl] = useState<string>("");
 
   const { data: user, isLoading } = useQuery<UserType>({
-    queryKey: [`/api/users/${DEMO_USER_ID}`],
+    queryKey: [`/api/users/${authUser?.id}`],
+    enabled: !!authUser?.id,
   });
 
   const profileForm = useForm({
@@ -105,10 +106,14 @@ export default function AccountSettings() {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: z.infer<typeof profileSchema>) => {
-      return await apiRequest("PATCH", `/api/users/${DEMO_USER_ID}`, data);
+      if (!authUser?.id) {
+        throw new Error("Not authenticated");
+      }
+      return await apiRequest("PATCH", `/api/users/${authUser.id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/users/${DEMO_USER_ID}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${authUser?.id}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       toast({
         title: "Profile updated",
         description: "Your profile has been successfully updated.",
@@ -125,7 +130,10 @@ export default function AccountSettings() {
 
   const updatePasswordMutation = useMutation({
     mutationFn: async (data: z.infer<typeof passwordSchema>) => {
-      return await apiRequest("POST", `/api/users/${DEMO_USER_ID}/password`, {
+      if (!authUser?.id) {
+        throw new Error("Not authenticated");
+      }
+      return await apiRequest("POST", `/api/users/${authUser.id}/password`, {
         currentPassword: data.currentPassword,
         newPassword: data.newPassword,
       });
@@ -148,7 +156,10 @@ export default function AccountSettings() {
 
   const disableAccountMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("PATCH", `/api/users/${DEMO_USER_ID}`, { isDisabled: 1 });
+      if (!authUser?.id) {
+        throw new Error("Not authenticated");
+      }
+      return await apiRequest("PATCH", `/api/users/${authUser.id}`, { isDisabled: 1 });
     },
     onSuccess: () => {
       toast({
@@ -160,7 +171,10 @@ export default function AccountSettings() {
 
   const deleteAccountMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("DELETE", `/api/users/${DEMO_USER_ID}`);
+      if (!authUser?.id) {
+        throw new Error("Not authenticated");
+      }
+      return await apiRequest("DELETE", `/api/users/${authUser.id}`);
     },
     onSuccess: () => {
       toast({
@@ -177,6 +191,14 @@ export default function AccountSettings() {
   const onPasswordSubmit = (data: z.infer<typeof passwordSchema>) => {
     updatePasswordMutation.mutate(data);
   };
+
+  if (!authUser) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-lg">Please log in to access account settings</div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

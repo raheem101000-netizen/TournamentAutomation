@@ -826,8 +826,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Server routes
   app.post("/api/servers", async (req, res) => {
     try {
-      const validatedData = insertServerSchema.parse(req.body);
-      const server = await storage.createServer(validatedData);
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      // Explicitly extract only allowed fields to prevent prototype pollution
+      const allowedFields = {
+        name: req.body.name,
+        description: req.body.description,
+        memberCount: req.body.memberCount,
+        iconUrl: req.body.iconUrl,
+        backgroundUrl: req.body.backgroundUrl,
+        category: req.body.category,
+        gameTags: req.body.gameTags,
+        isPublic: req.body.isPublic,
+      };
+      
+      const validatedData = insertServerSchema.omit({ ownerId: true }).parse(allowedFields);
+      // Set ownerId from session, not from client
+      const server = await storage.createServer({
+        ...validatedData,
+        ownerId: req.session.userId,
+      });
       
       // Create default channels for the server
       const defaultChannels = [
