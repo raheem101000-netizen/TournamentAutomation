@@ -2,6 +2,40 @@
 
 ## Recent Changes (Nov 19, 2025)
 
+### Backend Enhancements & Bug Fixes ✅
+- **Added Zod validation to user update endpoint** (PATCH /api/users/:id):
+  - Validates username, email, displayName, bio, avatarUrl, language, isDisabled
+  - Uses z.coerce.number() for isDisabled field (database uses integer 0/1)
+- **Implemented password change endpoint** (POST /api/users/:id/password):
+  - Validates minimum 8-character password requirement
+  - Verifies current password with bcrypt before allowing change
+  - Hashes new password with bcrypt (salt rounds: 10)
+  - Fixed HTTP method mismatch (was PATCH, now correctly POST)
+- **Added account management endpoints**:
+  - POST /api/users/:id/disable - Sets isDisabled to 1
+  - DELETE /api/users/:id - Deletes user account
+- **Storage layer enhancements**:
+  - changeUserPassword() method with bcrypt verification
+  - deleteUser() method for account deletion
+  - All methods properly typed with Promise returns
+
+### Channel Category Management System ✅
+- **ManageCategoriesDialog component**:
+  - Create new categories with name and auto-position
+  - Delete categories (channels become uncategorized)
+  - Real-time updates via TanStack Query invalidation
+  - Toast notifications for success/error feedback
+- **Categorized channel display**:
+  - Channels grouped under their categories in server detail view
+  - Categories display in position order
+  - Uncategorized channels shown separately
+  - Folder icon button to access category management (owner only)
+- **Backend API routes**:
+  - All category CRUD endpoints already existed with proper validation
+  - Channel update route supports categoryId assignment
+
+## Recent Changes (Nov 19, 2025) - Earlier
+
 ### User Account & Server Management Features ✅
 - **Account Settings Page** (`/account/settings`):
   - Profile management: username, email, display name, bio
