@@ -13,6 +13,7 @@ import BracketView from "@/components/BracketView";
 import StandingsTable from "@/components/StandingsTable";
 import MatchCard from "@/components/MatchCard";
 import SubmitScoreDialog from "@/components/SubmitScoreDialog";
+import ImageUploadField from "@/components/ImageUploadField";
 import type { Tournament, InsertTournament, Team, Match } from "@shared/schema";
 import type { RegistrationFormConfig } from "@/modules/registration/types";
 import { useState, useEffect } from "react";
@@ -519,16 +520,12 @@ function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: Edit
               data-testid="input-edit-tournament-game"
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="edit-imageUrl">Poster Image URL</Label>
-            <Input
-              id="edit-imageUrl"
-              placeholder="https://example.com/poster.jpg"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              data-testid="input-edit-tournament-image"
-            />
-          </div>
+          <ImageUploadField
+            label="Tournament Poster"
+            value={imageUrl}
+            onChange={setImageUrl}
+            placeholder="https://example.com/poster.jpg"
+          />
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="edit-prizeReward">Prize Pool</Label>

@@ -19,6 +19,7 @@ import type { InsertTournament } from "@shared/schema";
 import RegistrationFormBuilder from "@/modules/registration/RegistrationFormBuilder";
 import { RegistrationPlatformProvider, defaultPlatformAdapter } from "@/modules/registration/platform-adapter";
 import type { RegistrationFormConfig } from "@/modules/registration/types";
+import ImageUploadField from "@/components/ImageUploadField";
 
 interface CreateTournamentDialogProps {
   open: boolean;
@@ -176,19 +177,12 @@ export default function CreateTournamentDialog({
                 data-testid="input-tournament-game"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="imageUrl">Poster Image URL</Label>
-              <Input
-                id="imageUrl"
-                placeholder="https://example.com/poster.jpg"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                data-testid="input-tournament-image"
-              />
-              <p className="text-xs text-muted-foreground">
-                This image will be displayed on the homepage
-              </p>
-            </div>
+            <ImageUploadField
+              label="Tournament Poster"
+              value={imageUrl}
+              onChange={setImageUrl}
+              placeholder="https://example.com/poster.jpg"
+            />
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="prizeReward">Prize Pool</Label>
