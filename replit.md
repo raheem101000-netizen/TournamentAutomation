@@ -9,11 +9,25 @@
 - Database schema migration completed successfully
 
 ### Tournament Poster Upload System ✅
-- **Created ImageUploadField component** for URL-based image uploads
-- Allows organizers to paste image URLs from any hosting service (Imgur, Google Drive, etc.)
-- Integrated into both CreateTournamentDialog and EditTournamentDialog
+- **Full file upload implementation using Replit Object Storage**
+- **ImageUploadField component** supports both URL paste AND file upload from camera/device
+- **ObjectUploader component** provides modal interface using Uppy for:
+  - Camera roll uploads (mobile)
+  - File system uploads (desktop)
+  - Drag-and-drop support
+  - Upload progress tracking
+- **Backend infrastructure**:
+  - `server/objectStorage.ts` - Object storage service with ACL support
+  - `server/objectAcl.ts` - ACL policy enforcement (public/private)
+  - Robust path normalization handles all PRIVATE_OBJECT_DIR configurations
+  - Presigned URL generation for direct-to-GCS uploads
+- **Security features**:
+  - ACL enforcement on file retrieval (GET /objects/:path)
+  - Public visibility for tournament posters
+  - Secure upload flow with validation
+- **Complete upload flow**: File selection → Presigned URL → GCS upload → Normalize path → Set ACL → Preview → Database save
+- Integrated into CreateTournamentDialog and EditTournamentDialog
 - Supports live preview and easy removal
-- Note: File upload and camera features require backend storage implementation (deferred)
 
 ### Homepage Filter Functionality ✅
 - **Made filter badges fully functional** with robust matching logic
@@ -97,9 +111,11 @@ Preferred communication style: Simple, everyday language.
 ## External Dependencies
 
 *   **Database**: Neon PostgreSQL.
+*   **Object Storage**: Replit Object Storage (Google Cloud Storage backend).
 *   **UI Libraries**: Radix UI, shadcn/ui, Lucide React, class-variance-authority, tailwind-merge, clsx.
 *   **Form Management**: React Hook Form, @hookform/resolvers.
 *   **Data Fetching**: TanStack Query.
+*   **File Upload**: Uppy Core, Uppy Dashboard, Uppy AWS S3 plugin, Uppy Drag Drop, Uppy React.
 *   **Date Utilities**: date-fns.
 *   **Development Tools**: tsx, esbuild, drizzle-kit, Vite plugins.
 *   **Fonts**: Google Fonts (Inter, Space Grotesk).
