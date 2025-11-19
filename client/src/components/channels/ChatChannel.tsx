@@ -56,6 +56,10 @@ export default function ChatChannel() {
     },
   ];
 
+  const handleMessageClick = (message: Message) => {
+    setReplyingTo(message);
+  };
+
   const handleTouchStart = (message: Message) => {
     longPressTimer.current = setTimeout(() => {
       setReplyingTo(message);
@@ -95,6 +99,7 @@ export default function ChatChannel() {
             key={message.id} 
             className="flex gap-3 cursor-pointer hover-elevate rounded-md p-2 -m-2" 
             data-testid={`message-${message.id}`}
+            onClick={() => handleMessageClick(message)}
             onTouchStart={() => handleTouchStart(message)}
             onTouchEnd={handleTouchEnd}
             onMouseDown={() => handleMouseDown(message)}

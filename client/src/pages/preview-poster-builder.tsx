@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { ImageEditor } from "@/components/ImageEditor";
 
 const mockServer = {
   name: "ProGaming League",
@@ -31,6 +32,7 @@ const defaultPoster = {
 export default function PreviewPosterBuilder() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [imageEditorOpen, setImageEditorOpen] = useState(false);
   const [posterData, setPosterData] = useState({
     title: defaultPoster.title,
     game: defaultPoster.game,
@@ -39,6 +41,10 @@ export default function PreviewPosterBuilder() {
     entryFee: defaultPoster.entryFee,
     description: "",
   });
+
+  const handleImageSave = (imageUrl: string) => {
+    setPosterData(prev => ({ ...prev, backgroundImage: imageUrl }));
+  };
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -102,7 +108,7 @@ export default function PreviewPosterBuilder() {
             <Card className="overflow-hidden">
               <div className="relative h-64">
                 <img
-                  src={defaultPoster.backgroundImage}
+                  src={posterData.backgroundImage}
                   alt="Poster background"
                   className="w-full h-full object-cover"
                 />
@@ -146,6 +152,7 @@ export default function PreviewPosterBuilder() {
                   size="sm"
                   variant="outline"
                   className="absolute top-3 right-3 bg-black/20 backdrop-blur-sm border border-white/20 text-white hover:bg-black/40"
+                  onClick={() => setImageEditorOpen(true)}
                   data-testid="button-upload-background"
                 >
                   <Upload className="w-4 h-4 mr-2" />
@@ -288,6 +295,13 @@ export default function PreviewPosterBuilder() {
           </Button>
         </div>
       </main>
+
+      <ImageEditor
+        open={imageEditorOpen}
+        onOpenChange={setImageEditorOpen}
+        onSave={handleImageSave}
+        initialImage={posterData.backgroundImage}
+      />
 
       <BottomNavigation />
     </div>

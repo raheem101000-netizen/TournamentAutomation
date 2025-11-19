@@ -8,6 +8,20 @@ This project is a dual-purpose web application consisting of mobile preview page
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### November 19, 2025
+- **Server List Fix**: Fixed critical bug where newly created servers didn't appear in the server list. Now automatically adds server owner to server_members table upon server creation.
+- **Game Tags Enhancement**: Replaced preset game tag selectors with flexible manual text input system. Users can now type any game name (e.g., "Dragon Ball Z", "Valorant", "Fortnite") and add them as tags by pressing Enter.
+- **Message Reply System**: Implemented Discord-style message reply functionality in chat channels. Users can tap/click any message to set it as a reply, with visual indication of the replied-to message displayed in the chat.
+- **Tournament Poster Image Editor**: Created comprehensive image editor component with:
+  - Zoom controls (50%-200% with slider and buttons)
+  - Three fit modes: Cover (fills area, may crop), Contain (entire image visible), Fill (stretched)
+  - 9-point position grid (Top Left/Center/Right, Middle Left/Center/Right, Bottom Left/Center/Right)
+  - Drag-to-reposition functionality
+  - Live preview of adjustments
+  - Integrated into tournament poster builder page
+
 ## System Architecture
 
 ### Frontend Architecture
