@@ -2,6 +2,52 @@
 
 ## Recent Changes (Nov 19, 2025)
 
+### Tournament Dashboard Access & Member Permissions System ✅
+- **Members Tab in Server Settings** (`/server/:serverId/settings`):
+  - Complete UI for managing server member permissions
+  - Form to add members with userId input, custom title field
+  - Permission checkboxes including **Tournament Dashboard Access** permission
+  - Member list displays userId, custom title badges, and assigned permissions
+  - Delete button to remove member permissions
+  - Real-time updates via TanStack Query mutations
+
+- **Tournament Dashboard Access Enforcement**:
+  - Secured Tournament Dashboard channel with permission checking
+  - Fetches effective permissions via GET /api/servers/:id/members/:userId/permissions
+  - **Fail-secure implementation**: Permission query errors → Access denied
+  - Server owner OR users with "tournament_dashboard_access" permission → Access granted
+  - Shows "Access Restricted" card with Lock icon for unauthorized users
+  - Loading state while permissions are being checked
+
+- **Backend Security & API**:
+  - Fixed LSP error: Added null check for passwordHash in login route
+  - PATCH /api/servers/:id/members/:userId - Update member permissions
+    - Authorization: Server owner OR user with manage_roles permission
+    - Returns 403 Forbidden if unauthorized
+  - GET /api/servers/:id/members/:userId/permissions - Get effective permissions
+    - Returns union of role permissions + explicit permissions
+    - Returns 404 if user is not a server member
+  - DELETE /api/servers/:id/members/:userId - Remove member permissions
+    - Proper authorization checks
+
+- **Database Schema**:
+  - Extended `serverMembers` table with hybrid permissions model:
+    - `roleId`: Optional link to serverRoles for inherited permissions
+    - `customTitle`: Optional custom title (e.g., "Tournament Manager")
+    - `explicitPermissions`: Text array of directly assigned permissions
+  - Effective permissions = role.permissions ∪ explicitPermissions
+
+- **Available Permissions** (9 total):
+  1. manage_server
+  2. manage_roles
+  3. manage_channels
+  4. kick_members
+  5. ban_members
+  6. manage_messages
+  7. mention_everyone
+  8. manage_tournaments
+  9. **tournament_dashboard_access** ← NEW: Grants access to Tournament Dashboard channel
+
 ### Backend Enhancements & Bug Fixes ✅
 - **Added Zod validation to user update endpoint** (PATCH /api/users/:id):
   - Validates username, email, displayName, bio, avatarUrl, language, isDisabled
