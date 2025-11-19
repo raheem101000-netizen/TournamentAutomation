@@ -152,6 +152,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/tournaments", async (req, res) => {
     try {
+      console.log('[DEBUG] Tournament creation request body:', JSON.stringify(req.body, null, 2));
       const validatedData = insertTournamentSchema.parse(req.body);
       const tournament = await storage.createTournament(validatedData);
 
@@ -235,6 +236,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(201).json(tournament);
     } catch (error: any) {
+      console.error('[DEBUG] Tournament creation error:', error);
+      if (error.errors) {
+        console.error('[DEBUG] Zod validation errors:', JSON.stringify(error.errors, null, 2));
+      }
       res.status(400).json({ error: error.message });
     }
   });
