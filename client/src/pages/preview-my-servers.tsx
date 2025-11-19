@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Plus, Users, Trophy, Server as ServerIcon, Search, Crown } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useQuery } from "@tanstack/react-query";
@@ -8,8 +10,11 @@ import { Link } from "wouter";
 import type { Server } from "@shared/schema";
 import { useAuth } from "@/contexts/AuthContext";
 
+type ServerFilter = "all" | "owned" | "member";
+
 export default function PreviewMyServers() {
   const { user } = useAuth();
+  const [filter, setFilter] = useState<ServerFilter>("all");
   
   // Fetch servers where user is a member
   const { data: memberServersData, isLoading: memberLoading } = useQuery<Server[]>({
@@ -23,17 +28,50 @@ export default function PreviewMyServers() {
   const ownedServers = myServers.filter(server => server.ownerId === user?.id);
   const memberServers = myServers.filter(server => server.ownerId !== user?.id);
   
+  // Filter servers based on selection
+  const displayedServers = filter === "owned" ? ownedServers : filter === "member" ? memberServers : myServers;
+  
   const isLoading = memberLoading;
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">My Servers</h1>
-          <Button size="sm" data-testid="button-create-server">
-            <Plus className="w-4 h-4 mr-2" />
-            Create
-          </Button>
+        <div className="container max-w-lg mx-auto px-4 py-3">
+          <div className="flex items-center justify-between mb-3">
+            <h1 className="text-2xl font-bold">My Servers</h1>
+            <Button size="sm" data-testid="button-create-server">
+              <Plus className="w-4 h-4 mr-2" />
+              Create
+            </Button>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            <Badge
+              variant={filter === "all" ? "default" : "outline"}
+              className="cursor-pointer hover-elevate px-3 py-1 whitespace-nowrap"
+              onClick={() => setFilter("all")}
+              data-testid="filter-all"
+            >
+              All Servers ({myServers.length})
+            </Badge>
+            <Badge
+              variant={filter === "owned" ? "default" : "outline"}
+              className="cursor-pointer hover-elevate px-3 py-1 whitespace-nowrap"
+              onClick={() => setFilter("owned")}
+              data-testid="filter-owned"
+            >
+              <Crown className="w-3 h-3 mr-1" />
+              Owned ({ownedServers.length})
+            </Badge>
+            <Badge
+              variant={filter === "member" ? "default" : "outline"}
+              className="cursor-pointer hover-elevate px-3 py-1 whitespace-nowrap"
+              onClick={() => setFilter("member")}
+              data-testid="filter-member"
+            >
+              <Users className="w-3 h-3 mr-1" />
+              Member ({memberServers.length})
+            </Badge>
+          </div>
         </div>
       </header>
 
@@ -42,95 +80,51 @@ export default function PreviewMyServers() {
           <div className="flex items-center justify-center py-12">
             <p className="text-muted-foreground">Loading servers...</p>
           </div>
-        ) : myServers.length > 0 ? (
-          <div className="space-y-6">
-            {/* Servers I Own */}
-            {ownedServers.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 px-1">
-                  <Crown className="w-4 h-4 text-primary" />
-                  <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                    Servers I Own ({ownedServers.length})
-                  </h2>
-                </div>
-                {ownedServers.map((server) => (
-                  <Link key={server.id} href={`/server/${server.id}`}>
-                    <Card
-                      className="p-4 hover-elevate cursor-pointer"
-                      data-testid={`server-owned-${server.id}`}
-                    >
-                      <div className="flex items-center gap-4">
-                        <Avatar className="w-14 h-14">
-                          <AvatarFallback className="text-2xl">{"🎮"}</AvatarFallback>
-                        </Avatar>
+        ) : displayedServers.length > 0 ? (
+          <div className="space-y-3">
+            {displayedServers.map((server) => {
+              const isOwned = server.ownerId === user?.id;
+              return (
+                <Link key={server.id} href={`/server/${server.id}`}>
+                  <Card
+                    className="p-4 hover-elevate cursor-pointer"
+                    data-testid={isOwned ? `server-owned-${server.id}` : `server-member-${server.id}`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <Avatar className="w-14 h-14">
+                        <AvatarFallback className="text-2xl">{"🎮"}</AvatarFallback>
+                      </Avatar>
 
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-lg truncate mb-1">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-lg truncate">
                             {server.name}
                           </h3>
-                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Users className="w-3 h-3" />
-                              <span>{server.memberCount || 0} members</span>
-                            </div>
+                          {isOwned && (
+                            <Badge variant="secondary" className="flex-shrink-0">
+                              <Crown className="w-3 h-3 mr-1" />
+                              Owner
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Users className="w-3 h-3" />
+                            <span>{server.memberCount || 0} members</span>
                           </div>
                         </div>
-
-                        <div className="text-right">
-                          <Button size="sm" variant="outline" data-testid={`button-manage-${server.id}`}>
-                            Manage
-                          </Button>
-                        </div>
                       </div>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
-            )}
 
-            {/* Servers I'm a Member Of */}
-            {memberServers.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 px-1">
-                  <Users className="w-4 h-4 text-primary" />
-                  <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                    Servers I'm a Member Of ({memberServers.length})
-                  </h2>
-                </div>
-                {memberServers.map((server) => (
-                  <Link key={server.id} href={`/server/${server.id}`}>
-                    <Card
-                      className="p-4 hover-elevate cursor-pointer"
-                      data-testid={`server-member-${server.id}`}
-                    >
-                      <div className="flex items-center gap-4">
-                        <Avatar className="w-14 h-14">
-                          <AvatarFallback className="text-2xl">{"🎮"}</AvatarFallback>
-                        </Avatar>
-
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-lg truncate mb-1">
-                            {server.name}
-                          </h3>
-                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Users className="w-3 h-3" />
-                              <span>{server.memberCount || 0} members</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="text-right">
-                          <Button size="sm" variant="outline" data-testid={`button-view-${server.id}`}>
-                            View
-                          </Button>
-                        </div>
+                      <div className="text-right">
+                        <Button size="sm" variant="outline" data-testid={isOwned ? `button-manage-${server.id}` : `button-view-${server.id}`}>
+                          {isOwned ? "Manage" : "View"}
+                        </Button>
                       </div>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
-            )}
+                    </div>
+                  </Card>
+                </Link>
+              );
+            })}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-center">
