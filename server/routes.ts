@@ -993,11 +993,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/users/:id", async (req, res) => {
     try {
-      const user = await storage.updateUser(req.params.id, req.body);
+      const updateSchema = z.object({
+        username: z.string().optional(),
+        email: z.string().email().optional(),
+        displayName: z.string().optional(),
+        bio: z.string().optional(),
+        avatarUrl: z.string().optional(),
+        language: z.enum(["en", "es", "fr", "de", "ja"]).optional(),
+        isDisabled: z.coerce.number().optional(),
+      });
+      const validatedData = updateSchema.parse(req.body);
+      const user = await storage.updateUser(req.params.id, validatedData);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
       res.json(user);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/users/:id/password", async (req, res) => {
+    try {
+      const passwordSchema = z.object({
+        currentPassword: z.string(),
+        newPassword: z.string().min(8),
+      });
+      const validatedData = passwordSchema.parse(req.body);
+      
+      const success = await storage.changeUserPassword(
+        req.params.id,
+        validatedData.currentPassword,
+        validatedData.newPassword
+      );
+      
+      if (!success) {
+        return res.status(400).json({ error: "Current password is incorrect" });
+      }
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/users/:id/disable", async (req, res) => {
+    try {
+      const user = await storage.updateUser(req.params.id, { isDisabled: 1 });
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/users/:id", async (req, res) => {
+    try {
+      await storage.deleteUser(req.params.id);
+      res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

@@ -1,5 +1,6 @@
 import { eq, and, sql } from "drizzle-orm";
 import { db } from "./db";
+import bcrypt from "bcrypt";
 import {
   tournaments,
   teams,
@@ -188,6 +189,8 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   updateUser(id: string, data: Partial<User>): Promise<User | undefined>;
+  changeUserPassword(id: string, currentPassword: string, newPassword: string): Promise<boolean>;
+  deleteUser(id: string): Promise<void>;
 
   // Achievement operations
   createAchievement(data: InsertAchievement): Promise<Achievement>;
@@ -566,6 +569,30 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return user || undefined;
+  }
+
+  async changeUserPassword(id: string, currentPassword: string, newPassword: string): Promise<boolean> {
+    const user = await this.getUser(id);
+    if (!user || !user.passwordHash) {
+      return false;
+    }
+    
+    const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isValid) {
+      return false;
+    }
+    
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+    await db
+      .update(users)
+      .set({ passwordHash: newPasswordHash })
+      .where(eq(users.id, id));
+    
+    return true;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
   }
 
   // Achievement operations
