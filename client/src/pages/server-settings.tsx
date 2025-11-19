@@ -53,12 +53,15 @@ import {
   Plus,
   X,
   ArrowLeft,
+  Users,
 } from "lucide-react";
 import type {
   Server,
   ServerRole,
   ServerBan,
   ServerInvite,
+  ServerMember,
+  User,
 } from "@shared/schema";
 
 const DEMO_USER_ID = "user-demo-123";
@@ -86,6 +89,12 @@ const inviteSchema = z.object({
   maxUses: z.coerce.number().int().positive().optional(),
 });
 
+const memberSchema = z.object({
+  userId: z.string().min(1, "User ID is required"),
+  customTitle: z.string().optional(),
+  explicitPermissions: z.array(z.string()).default([]),
+});
+
 const AVAILABLE_PERMISSIONS = [
   "manage_server",
   "manage_roles",
@@ -95,6 +104,7 @@ const AVAILABLE_PERMISSIONS = [
   "manage_messages",
   "mention_everyone",
   "manage_tournaments",
+  "tournament_dashboard_access",
 ];
 
 export default function ServerSettings() {
@@ -375,7 +385,7 @@ export default function ServerSettings() {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview" data-testid="tab-overview">
               <ServerIcon className="w-4 h-4 mr-2" />
               Overview
@@ -383,6 +393,10 @@ export default function ServerSettings() {
             <TabsTrigger value="roles" data-testid="tab-roles">
               <Shield className="w-4 h-4 mr-2" />
               Roles
+            </TabsTrigger>
+            <TabsTrigger value="members" data-testid="tab-members">
+              <Users className="w-4 h-4 mr-2" />
+              Members
             </TabsTrigger>
             <TabsTrigger value="bans" data-testid="tab-bans">
               <Ban className="w-4 h-4 mr-2" />

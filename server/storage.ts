@@ -212,6 +212,8 @@ export interface IStorage {
   // Server member operations
   createServerMember(data: InsertServerMember): Promise<ServerMember>;
   getMembersByServer(serverId: string): Promise<ServerMember[]>;
+  getServerMemberByUserId(serverId: string, userId: string): Promise<ServerMember | undefined>;
+  updateServerMember(serverId: string, userId: string, data: Partial<InsertServerMember>): Promise<ServerMember | undefined>;
   deleteMemberFromServer(serverId: string, userId: string): Promise<void>;
 }
 
@@ -668,6 +670,27 @@ export class DatabaseStorage implements IStorage {
 
   async getMembersByServer(serverId: string): Promise<ServerMember[]> {
     return await db.select().from(serverMembers).where(eq(serverMembers.serverId, serverId));
+  }
+
+  async getServerMemberByUserId(serverId: string, userId: string): Promise<ServerMember | undefined> {
+    const [member] = await db.select().from(serverMembers)
+      .where(and(
+        eq(serverMembers.serverId, serverId),
+        eq(serverMembers.userId, userId)
+      ));
+    return member || undefined;
+  }
+
+  async updateServerMember(serverId: string, userId: string, data: Partial<InsertServerMember>): Promise<ServerMember | undefined> {
+    const [member] = await db
+      .update(serverMembers)
+      .set(data)
+      .where(and(
+        eq(serverMembers.serverId, serverId),
+        eq(serverMembers.userId, userId)
+      ))
+      .returning();
+    return member || undefined;
   }
 
   async deleteMemberFromServer(serverId: string, userId: string): Promise<void> {

@@ -1332,6 +1332,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/servers/:serverId/members/:userId", async (req, res) => {
+    try {
+      const member = await storage.getServerMemberByUserId(req.params.serverId, req.params.userId);
+      if (!member) {
+        return res.status(404).json({ error: "Member not found" });
+      }
+      res.json(member);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/servers/:serverId/members/:userId", async (req, res) => {
+    try {
+      const updateSchema = z.object({
+        roleId: z.string().optional(),
+        customTitle: z.string().optional(),
+        explicitPermissions: z.array(z.string()).optional(),
+      });
+      const validatedData = updateSchema.parse(req.body);
+      const member = await storage.updateServerMember(
+        req.params.serverId,
+        req.params.userId,
+        validatedData
+      );
+      if (!member) {
+        return res.status(404).json({ error: "Member not found" });
+      }
+      res.json(member);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   app.delete("/api/servers/:serverId/members/:userId", async (req, res) => {
     try {
       await storage.deleteMemberFromServer(req.params.serverId, req.params.userId);

@@ -374,7 +374,10 @@ export const serverMembers = pgTable("server_members", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   serverId: varchar("server_id").notNull(),
   userId: varchar("user_id").notNull(),
+  roleId: varchar("role_id"),
   role: text("role").default("Member"),
+  customTitle: text("custom_title"),
+  explicitPermissions: text("explicit_permissions").array().default(sql`ARRAY[]::text[]`),
   joinedAt: timestamp("joined_at").defaultNow().notNull(),
 });
 
