@@ -125,7 +125,7 @@ export default function AccountSettings() {
 
   const updatePasswordMutation = useMutation({
     mutationFn: async (data: z.infer<typeof passwordSchema>) => {
-      return await apiRequest("PATCH", `/api/users/${DEMO_USER_ID}/password`, {
+      return await apiRequest("POST", `/api/users/${DEMO_USER_ID}/password`, {
         currentPassword: data.currentPassword,
         newPassword: data.newPassword,
       });
