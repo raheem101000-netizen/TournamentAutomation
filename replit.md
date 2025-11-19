@@ -2,6 +2,36 @@
 
 ## Recent Changes (Nov 19, 2025)
 
+### User Account & Server Management Features ✅
+- **Account Settings Page** (`/account/settings`):
+  - Profile management: username, email, display name, bio
+  - Avatar upload using ObjectUploader (camera roll & file system)
+  - Password change functionality
+  - Language preferences (EN, ES, FR, DE, JA)
+  - Contact support button
+  - Account disable/delete options with confirmation dialogs
+  - Organized in tabs: Profile, Security, Preferences, Danger Zone
+
+- **Database Schema Expansions**:
+  - Added `channelCategories` table for Discord-style channel organization
+  - Added `serverRoles` table for permission management
+  - Added `serverBans` table for user banning
+  - Added `serverInvites` table with expiration and usage limits
+  - Extended `users` table: email, language, isDisabled fields
+  - Extended `channels` table: categoryId for category assignment
+
+- **Backend API Routes** (with Zod validation):
+  - Channel categories: Create, read, update, delete
+  - Server roles: Full CRUD with permissions array
+  - Server bans: Ban/unban users with reason tracking
+  - Server invites: Generate codes with expiration & usage limits
+  - Channel management: Update channel properties, delete channels
+  - Channel messages: Create, read, delete messages
+  - Server updates: Modify server profile, icon, background
+  - Avatar uploads: Dedicated endpoint with ACL policy
+
+- **Storage Layer**: Complete implementations for all new tables with proper type safety
+
 ### Tournament Creation Enhancements ✅
 - **Changed entry fee and prize fields from numeric to text**: `entryFee` and `prizeReward` now accept any text input
 - Organizers can now enter: "FREE", "$5", "₦1000", "No Prize", "Gift Card", or any custom text

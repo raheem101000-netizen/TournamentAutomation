@@ -194,9 +194,18 @@ export const servers = pgTable("servers", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const channelCategories = pgTable("channel_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  serverId: varchar("server_id").notNull(),
+  name: text("name").notNull(),
+  position: integer("position").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const channels = pgTable("channels", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   serverId: varchar("server_id").notNull(),
+  categoryId: varchar("category_id"),
   name: text("name").notNull(),
   slug: text("slug").notNull(),
   type: text("type").notNull(),
@@ -313,11 +322,14 @@ export type PosterTemplateTag = typeof posterTemplateTags.$inferSelect;
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull(),
+  email: text("email"),
   fullName: text("full_name"),
   passwordHash: text("password_hash"),
   displayName: text("display_name"),
   avatarUrl: text("avatar_url"),
   bio: text("bio"),
+  language: text("language").default("en"),
+  isDisabled: integer("is_disabled").default(0),
   level: integer("level").default(1),
   xp: integer("xp").default(0),
   rankTitle: text("rank_title").default("Rookie"),
@@ -366,6 +378,36 @@ export const serverMembers = pgTable("server_members", {
   joinedAt: timestamp("joined_at").defaultNow().notNull(),
 });
 
+export const serverRoles = pgTable("server_roles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  serverId: varchar("server_id").notNull(),
+  name: text("name").notNull(),
+  color: text("color").default("#99AAB5"),
+  permissions: text("permissions").array().default(sql`ARRAY[]::text[]`),
+  position: integer("position").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const serverBans = pgTable("server_bans", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  serverId: varchar("server_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  reason: text("reason"),
+  bannedBy: varchar("banned_by").notNull(),
+  bannedAt: timestamp("banned_at").defaultNow().notNull(),
+});
+
+export const serverInvites = pgTable("server_invites", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  serverId: varchar("server_id").notNull(),
+  code: text("code").notNull().unique(),
+  createdBy: varchar("created_by").notNull(),
+  expiresAt: timestamp("expires_at"),
+  maxUses: integer("max_uses"),
+  currentUses: integer("current_uses").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -398,6 +440,27 @@ export const insertServerMemberSchema = createInsertSchema(serverMembers).omit({
   joinedAt: true,
 });
 
+export const insertChannelCategorySchema = createInsertSchema(channelCategories).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertServerRoleSchema = createInsertSchema(serverRoles).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertServerBanSchema = createInsertSchema(serverBans).omit({
+  id: true,
+  bannedAt: true,
+});
+
+export const insertServerInviteSchema = createInsertSchema(serverInvites).omit({
+  id: true,
+  createdAt: true,
+  currentUses: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertAchievement = z.infer<typeof insertAchievementSchema>;
@@ -408,3 +471,11 @@ export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
 export type TeamMember = typeof teamMembers.$inferSelect;
 export type InsertServerMember = z.infer<typeof insertServerMemberSchema>;
 export type ServerMember = typeof serverMembers.$inferSelect;
+export type InsertChannelCategory = z.infer<typeof insertChannelCategorySchema>;
+export type ChannelCategory = typeof channelCategories.$inferSelect;
+export type InsertServerRole = z.infer<typeof insertServerRoleSchema>;
+export type ServerRole = typeof serverRoles.$inferSelect;
+export type InsertServerBan = z.infer<typeof insertServerBanSchema>;
+export type ServerBan = typeof serverBans.$inferSelect;
+export type InsertServerInvite = z.infer<typeof insertServerInviteSchema>;
+export type ServerInvite = typeof serverInvites.$inferSelect;

@@ -17,6 +17,11 @@ import {
   insertRegistrationResponseSchema,
   insertServerSchema,
   insertChannelSchema,
+  insertChannelCategorySchema,
+  insertServerRoleSchema,
+  insertServerBanSchema,
+  insertServerInviteSchema,
+  insertChannelMessageSchema,
   insertPosterTemplateSchema,
   insertPosterTemplateTagSchema,
   insertUserSchema,
@@ -25,6 +30,7 @@ import {
   insertTeamMemberSchema,
   insertServerMemberSchema,
 } from "@shared/schema";
+import { z } from "zod";
 import {
   generateRoundRobinBracket,
   generateSingleEliminationBracket,
@@ -1198,6 +1204,353 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error setting tournament poster:", error);
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Normalize avatar path after upload and set ACL policy
+  app.put("/api/avatars", async (req, res) => {
+    if (!req.body.avatarURL) {
+      return res.status(400).json({ error: "avatarURL is required" });
+    }
+
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const objectPath = await objectStorageService.trySetObjectEntityAclPolicy(
+        req.body.avatarURL,
+        {
+          owner: req.body.userId || "system",
+          visibility: "public",
+        },
+      );
+
+      res.status(200).json({
+        objectPath: objectPath,
+      });
+    } catch (error: any) {
+      console.error("Error setting avatar:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Channel category routes
+  app.post("/api/servers/:serverId/categories", async (req, res) => {
+    try {
+      const validatedData = insertChannelCategorySchema.parse({
+        serverId: req.params.serverId,
+        name: req.body.name,
+        position: req.body.position,
+      });
+      const category = await storage.createChannelCategory(validatedData);
+      res.status(201).json(category);
+    } catch (error: any) {
+      console.error("Error creating category:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/servers/:serverId/categories", async (req, res) => {
+    try {
+      const categories = await storage.getCategoriesByServer(req.params.serverId);
+      res.status(200).json(categories);
+    } catch (error: any) {
+      console.error("Error fetching categories:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/categories/:id", async (req, res) => {
+    try {
+      const updateSchema = z.object({
+        name: z.string().optional(),
+        position: z.number().optional(),
+      });
+      const validatedData = updateSchema.parse(req.body);
+      const category = await storage.updateChannelCategory(req.params.id, validatedData);
+      if (!category) {
+        return res.status(404).json({ error: "Category not found" });
+      }
+      res.status(200).json(category);
+    } catch (error: any) {
+      console.error("Error updating category:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/categories/:id", async (req, res) => {
+    try {
+      await storage.deleteChannelCategory(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Error deleting category:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Channel update/delete routes
+  app.patch("/api/channels/:id", async (req, res) => {
+    try {
+      const updateSchema = z.object({
+        name: z.string().optional(),
+        categoryId: z.string().nullable().optional(),
+        position: z.number().optional(),
+        icon: z.string().optional(),
+      });
+      const validatedData = updateSchema.parse(req.body);
+      const channel = await storage.updateChannel(req.params.id, validatedData);
+      if (!channel) {
+        return res.status(404).json({ error: "Channel not found" });
+      }
+      res.status(200).json(channel);
+    } catch (error: any) {
+      console.error("Error updating channel:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/channels/:id", async (req, res) => {
+    try {
+      await storage.deleteChannel(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Error deleting channel:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Channel message routes
+  app.get("/api/channels/:channelId/messages", async (req, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 100;
+      const messages = await storage.getChannelMessages(req.params.channelId, limit);
+      res.status(200).json(messages);
+    } catch (error: any) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/channels/:channelId/messages", async (req, res) => {
+    try {
+      const validatedData = insertChannelMessageSchema.parse({
+        channelId: req.params.channelId,
+        userId: req.body.userId,
+        username: req.body.username,
+        message: req.body.message,
+        imageUrl: req.body.imageUrl,
+        fileUrl: req.body.fileUrl,
+        fileName: req.body.fileName,
+        replyToId: req.body.replyToId,
+      });
+      const message = await storage.createChannelMessage(validatedData);
+      res.status(201).json(message);
+    } catch (error: any) {
+      console.error("Error creating message:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/messages/:id", async (req, res) => {
+    try {
+      await storage.deleteChannelMessage(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Error deleting message:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Server role routes
+  app.post("/api/servers/:serverId/roles", async (req, res) => {
+    try {
+      const validatedData = insertServerRoleSchema.parse({
+        serverId: req.params.serverId,
+        name: req.body.name,
+        color: req.body.color,
+        permissions: req.body.permissions,
+        position: req.body.position,
+      });
+      const role = await storage.createServerRole(validatedData);
+      res.status(201).json(role);
+    } catch (error: any) {
+      console.error("Error creating role:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/servers/:serverId/roles", async (req, res) => {
+    try {
+      const roles = await storage.getRolesByServer(req.params.serverId);
+      res.status(200).json(roles);
+    } catch (error: any) {
+      console.error("Error fetching roles:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/roles/:id", async (req, res) => {
+    try {
+      const updateSchema = z.object({
+        name: z.string().optional(),
+        color: z.string().optional(),
+        permissions: z.array(z.string()).optional(),
+        position: z.number().optional(),
+      });
+      const validatedData = updateSchema.parse(req.body);
+      const role = await storage.updateServerRole(req.params.id, validatedData);
+      if (!role) {
+        return res.status(404).json({ error: "Role not found" });
+      }
+      res.status(200).json(role);
+    } catch (error: any) {
+      console.error("Error updating role:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/roles/:id", async (req, res) => {
+    try {
+      await storage.deleteServerRole(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Error deleting role:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Server ban routes
+  app.post("/api/servers/:serverId/bans", async (req, res) => {
+    try {
+      const validatedData = insertServerBanSchema.parse({
+        serverId: req.params.serverId,
+        userId: req.body.userId,
+        reason: req.body.reason,
+        bannedBy: req.body.bannedBy,
+      });
+      const ban = await storage.createServerBan(validatedData);
+      res.status(201).json(ban);
+    } catch (error: any) {
+      console.error("Error creating ban:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/servers/:serverId/bans", async (req, res) => {
+    try {
+      const bans = await storage.getBansByServer(req.params.serverId);
+      res.status(200).json(bans);
+    } catch (error: any) {
+      console.error("Error fetching bans:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/servers/:serverId/bans/:userId", async (req, res) => {
+    try {
+      await storage.deleteBan(req.params.serverId, req.params.userId);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Error deleting ban:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Server invite routes
+  app.post("/api/servers/:serverId/invites", async (req, res) => {
+    try {
+      const code = Math.random().toString(36).substring(2, 10);
+      const validatedData = insertServerInviteSchema.parse({
+        serverId: req.params.serverId,
+        code,
+        createdBy: req.body.createdBy,
+        expiresAt: req.body.expiresAt,
+        maxUses: req.body.maxUses,
+      });
+      const invite = await storage.createServerInvite(validatedData);
+      res.status(201).json(invite);
+    } catch (error: any) {
+      console.error("Error creating invite:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/servers/:serverId/invites", async (req, res) => {
+    try {
+      const invites = await storage.getInvitesByServer(req.params.serverId);
+      res.status(200).json(invites);
+    } catch (error: any) {
+      console.error("Error fetching invites:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/invites/:code", async (req, res) => {
+    try {
+      const invite = await storage.getInviteByCode(req.params.code);
+      if (!invite) {
+        return res.status(404).json({ error: "Invite not found" });
+      }
+      res.status(200).json(invite);
+    } catch (error: any) {
+      console.error("Error fetching invite:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/invites/:code/use", async (req, res) => {
+    try {
+      const invite = await storage.getInviteByCode(req.params.code);
+      if (!invite) {
+        return res.status(404).json({ error: "Invite not found" });
+      }
+      
+      if (invite.maxUses && (invite.currentUses || 0) >= invite.maxUses) {
+        return res.status(400).json({ error: "Invite has reached maximum uses" });
+      }
+      
+      if (invite.expiresAt && new Date(invite.expiresAt) < new Date()) {
+        return res.status(400).json({ error: "Invite has expired" });
+      }
+
+      await storage.incrementInviteUse(req.params.code);
+      await storage.joinServer(invite.serverId, req.body.userId);
+      res.status(200).json({ success: true, serverId: invite.serverId });
+    } catch (error: any) {
+      console.error("Error using invite:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/invites/:id", async (req, res) => {
+    try {
+      await storage.deleteInvite(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Error deleting invite:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Server update route
+  app.patch("/api/servers/:id", async (req, res) => {
+    try {
+      const updateSchema = z.object({
+        name: z.string().optional(),
+        description: z.string().optional(),
+        iconUrl: z.string().optional(),
+        backgroundUrl: z.string().optional(),
+        category: z.string().optional(),
+        gameTags: z.array(z.string()).optional(),
+        isPublic: z.number().optional(),
+      });
+      const validatedData = updateSchema.parse(req.body);
+      const server = await storage.updateServer(req.params.id, validatedData);
+      if (!server) {
+        return res.status(404).json({ error: "Server not found" });
+      }
+      res.status(200).json(server);
+    } catch (error: any) {
+      console.error("Error updating server:", error);
+      res.status(400).json({ error: error.message });
     }
   });
 

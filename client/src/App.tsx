@@ -24,6 +24,7 @@ import PreviewCreateTeam from "@/pages/preview-create-team";
 import PreviewOrganizerAward from "@/pages/preview-organizer-award";
 import PreviewTemplates from "@/pages/preview-templates";
 import PreviewAdminTemplates from "@/pages/preview-admin-templates";
+import AccountSettings from "@/pages/account-settings";
 import Register from "@/pages/register";
 import Login from "@/pages/login";
 import CreateServer from "@/pages/create-server";
@@ -85,6 +86,7 @@ function Router() {
       <Route path="/myservers" component={PreviewMyServers} />
       <Route path="/server/:serverId" component={PreviewServerDetail} />
       <Route path="/account" component={PreviewAccount} />
+      <Route path="/account/settings" component={AccountSettings} />
       <Route path="/poster-builder" component={PreviewPosterBuilder} />
       <Route path="/create-team" component={PreviewCreateTeam} />
       <Route path="/organizer-award" component={PreviewOrganizerAward} />

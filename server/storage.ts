@@ -12,6 +12,7 @@ import {
   registrationResponses,
   servers,
   channels,
+  channelCategories,
   messageThreads,
   notifications,
   posterTemplates,
@@ -21,6 +22,10 @@ import {
   teamProfiles,
   teamMembers,
   serverMembers,
+  serverRoles,
+  serverBans,
+  serverInvites,
+  channelMessages,
   type Tournament,
   type Team,
   type Match,
@@ -32,6 +37,7 @@ import {
   type RegistrationResponse,
   type Server,
   type Channel,
+  type ChannelCategory,
   type MessageThread,
   type Notification,
   type PosterTemplate,
@@ -41,6 +47,10 @@ import {
   type TeamProfile,
   type TeamMember,
   type ServerMember,
+  type ServerRole,
+  type ServerBan,
+  type ServerInvite,
+  type ChannelMessage,
   type InsertTournament,
   type InsertTeam,
   type InsertMatch,
@@ -52,6 +62,7 @@ import {
   type InsertRegistrationResponse,
   type InsertServer,
   type InsertChannel,
+  type InsertChannelCategory,
   type InsertPosterTemplate,
   type InsertPosterTemplateTag,
   type InsertUser,
@@ -59,6 +70,10 @@ import {
   type InsertTeamProfile,
   type InsertTeamMember,
   type InsertServerMember,
+  type InsertServerRole,
+  type InsertServerBan,
+  type InsertServerInvite,
+  type InsertChannelMessage,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -117,6 +132,40 @@ export interface IStorage {
   createChannel(data: InsertChannel): Promise<Channel>;
   getChannelsByServer(serverId: string): Promise<Channel[]>;
   getChannel(id: string): Promise<Channel | undefined>;
+  updateChannel(id: string, data: Partial<Channel>): Promise<Channel | undefined>;
+  deleteChannel(id: string): Promise<void>;
+  
+  // Channel category operations
+  createChannelCategory(data: InsertChannelCategory): Promise<ChannelCategory>;
+  getCategoriesByServer(serverId: string): Promise<ChannelCategory[]>;
+  updateChannelCategory(id: string, data: Partial<ChannelCategory>): Promise<ChannelCategory | undefined>;
+  deleteChannelCategory(id: string): Promise<void>;
+  
+  // Channel message operations
+  createChannelMessage(data: InsertChannelMessage): Promise<ChannelMessage>;
+  getChannelMessages(channelId: string, limit?: number): Promise<ChannelMessage[]>;
+  deleteChannelMessage(id: string): Promise<void>;
+  
+  // Server role operations
+  createServerRole(data: InsertServerRole): Promise<ServerRole>;
+  getRolesByServer(serverId: string): Promise<ServerRole[]>;
+  updateServerRole(id: string, data: Partial<ServerRole>): Promise<ServerRole | undefined>;
+  deleteServerRole(id: string): Promise<void>;
+  
+  // Server ban operations
+  createServerBan(data: InsertServerBan): Promise<ServerBan>;
+  getBansByServer(serverId: string): Promise<ServerBan[]>;
+  deleteBan(serverId: string, userId: string): Promise<void>;
+  
+  // Server invite operations
+  createServerInvite(data: InsertServerInvite): Promise<ServerInvite>;
+  getInvitesByServer(serverId: string): Promise<ServerInvite[]>;
+  getInviteByCode(code: string): Promise<ServerInvite | undefined>;
+  incrementInviteUse(code: string): Promise<void>;
+  deleteInvite(id: string): Promise<void>;
+  
+  // Server update operations
+  updateServer(id: string, data: Partial<Server>): Promise<Server | undefined>;
   
   // Mobile preview operations
   getAllMessageThreads(): Promise<MessageThread[]>;
@@ -594,6 +643,151 @@ export class DatabaseStorage implements IStorage {
         eq(serverMembers.serverId, serverId),
         eq(serverMembers.userId, userId)
       ));
+  }
+
+  // Channel update/delete operations
+  async updateChannel(id: string, data: Partial<Channel>): Promise<Channel | undefined> {
+    const [channel] = await db
+      .update(channels)
+      .set(data)
+      .where(eq(channels.id, id))
+      .returning();
+    return channel || undefined;
+  }
+
+  async deleteChannel(id: string): Promise<void> {
+    await db.delete(channelMessages).where(eq(channelMessages.channelId, id));
+    await db.delete(channels).where(eq(channels.id, id));
+  }
+
+  // Channel category operations
+  async createChannelCategory(data: InsertChannelCategory): Promise<ChannelCategory> {
+    const [category] = await db.insert(channelCategories).values(data).returning();
+    return category;
+  }
+
+  async getCategoriesByServer(serverId: string): Promise<ChannelCategory[]> {
+    return await db.select().from(channelCategories)
+      .where(eq(channelCategories.serverId, serverId))
+      .orderBy(channelCategories.position);
+  }
+
+  async updateChannelCategory(id: string, data: Partial<ChannelCategory>): Promise<ChannelCategory | undefined> {
+    const [category] = await db
+      .update(channelCategories)
+      .set(data)
+      .where(eq(channelCategories.id, id))
+      .returning();
+    return category || undefined;
+  }
+
+  async deleteChannelCategory(id: string): Promise<void> {
+    await db.update(channels)
+      .set({ categoryId: null })
+      .where(eq(channels.categoryId, id));
+    await db.delete(channelCategories).where(eq(channelCategories.id, id));
+  }
+
+  // Channel message operations
+  async createChannelMessage(data: InsertChannelMessage): Promise<ChannelMessage> {
+    const [message] = await db.insert(channelMessages).values(data).returning();
+    return message;
+  }
+
+  async getChannelMessages(channelId: string, limit: number = 100): Promise<ChannelMessage[]> {
+    return await db.select().from(channelMessages)
+      .where(eq(channelMessages.channelId, channelId))
+      .orderBy(channelMessages.createdAt)
+      .limit(limit);
+  }
+
+  async deleteChannelMessage(id: string): Promise<void> {
+    await db.delete(channelMessages).where(eq(channelMessages.id, id));
+  }
+
+  // Server role operations
+  async createServerRole(data: InsertServerRole): Promise<ServerRole> {
+    const [role] = await db.insert(serverRoles).values(data).returning();
+    return role;
+  }
+
+  async getRolesByServer(serverId: string): Promise<ServerRole[]> {
+    return await db.select().from(serverRoles)
+      .where(eq(serverRoles.serverId, serverId))
+      .orderBy(serverRoles.position);
+  }
+
+  async updateServerRole(id: string, data: Partial<ServerRole>): Promise<ServerRole | undefined> {
+    const [role] = await db
+      .update(serverRoles)
+      .set(data)
+      .where(eq(serverRoles.id, id))
+      .returning();
+    return role || undefined;
+  }
+
+  async deleteServerRole(id: string): Promise<void> {
+    await db.delete(serverRoles).where(eq(serverRoles.id, id));
+  }
+
+  // Server ban operations
+  async createServerBan(data: InsertServerBan): Promise<ServerBan> {
+    const [ban] = await db.insert(serverBans).values(data).returning();
+    await this.deleteMemberFromServer(data.serverId, data.userId);
+    return ban;
+  }
+
+  async getBansByServer(serverId: string): Promise<ServerBan[]> {
+    return await db.select().from(serverBans)
+      .where(eq(serverBans.serverId, serverId))
+      .orderBy(serverBans.bannedAt);
+  }
+
+  async deleteBan(serverId: string, userId: string): Promise<void> {
+    await db.delete(serverBans)
+      .where(and(
+        eq(serverBans.serverId, serverId),
+        eq(serverBans.userId, userId)
+      ));
+  }
+
+  // Server invite operations
+  async createServerInvite(data: InsertServerInvite): Promise<ServerInvite> {
+    const [invite] = await db.insert(serverInvites).values(data).returning();
+    return invite;
+  }
+
+  async getInvitesByServer(serverId: string): Promise<ServerInvite[]> {
+    return await db.select().from(serverInvites)
+      .where(eq(serverInvites.serverId, serverId))
+      .orderBy(serverInvites.createdAt);
+  }
+
+  async getInviteByCode(code: string): Promise<ServerInvite | undefined> {
+    const [invite] = await db.select().from(serverInvites)
+      .where(eq(serverInvites.code, code));
+    return invite || undefined;
+  }
+
+  async incrementInviteUse(code: string): Promise<void> {
+    await db
+      .update(serverInvites)
+      .set({ currentUses: sql`${serverInvites.currentUses} + 1` })
+      .where(eq(serverInvites.code, code));
+  }
+
+  async deleteInvite(id: string): Promise<void> {
+    await db.delete(serverInvites).where(eq(serverInvites.id, id));
+  }
+
+  // Server update operations
+  async updateServer(id: string, data: Partial<Server>): Promise<Server | undefined> {
+    const [server] = await db
+      .update(servers)
+      .set(data)
+      .where(eq(servers.id, id))
+      .returning();
+    return server || undefined;
   }
 }
 
