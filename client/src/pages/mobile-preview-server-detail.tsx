@@ -131,8 +131,8 @@ export default function MobilePreviewServerDetail() {
         {/* Channels Sidebar */}
         <div className="w-60 border-r flex-shrink-0 overflow-y-auto bg-muted/30">
           <div className="p-3 space-y-4">
-            {/* Tournament Dashboard (owner or authorized users only) */}
-            {canSeeTournamentDashboard && (
+            {/* Tournament Dashboard - Always visible, access controlled by content */}
+            {tournamentDashboard && (
               <div>
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2 px-2 flex items-center gap-1">
                   <Lock className="h-3 w-3" />
