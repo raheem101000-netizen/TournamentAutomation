@@ -73,7 +73,7 @@ function AppSidebar() {
   );
 }
 
-function ProtectedRoute({ component: Component, ...rest }: { component: any; path: string }) {
+function ProtectedRoute({ component: Component, ...rest }: { component: any }) {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
@@ -97,23 +97,57 @@ function Router() {
       <Route path="/register" component={Register} />
       <Route path="/login" component={Login} />
       
-      <ProtectedRoute path="/create-server" component={CreateServer} />
-      <ProtectedRoute path="/create-tournament" component={CreateTournament} />
-      <ProtectedRoute path="/chat/:matchId" component={ChatRoom} />
-      <ProtectedRoute path="/team-builder" component={TeamBuilder} />
-      <ProtectedRoute path="/" component={PreviewHome} />
-      <ProtectedRoute path="/discovery" component={PreviewDiscovery} />
-      <ProtectedRoute path="/messages" component={PreviewMessages} />
-      <ProtectedRoute path="/myservers" component={PreviewMyServers} />
-      <ProtectedRoute path="/server/:serverId" component={PreviewServerDetail} />
-      <ProtectedRoute path="/server/:serverId/settings" component={ServerSettings} />
-      <ProtectedRoute path="/account" component={PreviewAccount} />
-      <ProtectedRoute path="/account/settings" component={AccountSettings} />
-      <ProtectedRoute path="/poster-builder" component={PreviewPosterBuilder} />
-      <ProtectedRoute path="/create-team" component={PreviewCreateTeam} />
-      <ProtectedRoute path="/organizer-award" component={PreviewOrganizerAward} />
-      <ProtectedRoute path="/templates" component={PreviewTemplates} />
-      <ProtectedRoute path="/admin/templates" component={PreviewAdminTemplates} />
+      <Route path="/create-server">
+        {() => <ProtectedRoute component={CreateServer} />}
+      </Route>
+      <Route path="/create-tournament">
+        {() => <ProtectedRoute component={CreateTournament} />}
+      </Route>
+      <Route path="/chat/:matchId">
+        {() => <ProtectedRoute component={ChatRoom} />}
+      </Route>
+      <Route path="/team-builder">
+        {() => <ProtectedRoute component={TeamBuilder} />}
+      </Route>
+      <Route path="/">
+        {() => <ProtectedRoute component={PreviewHome} />}
+      </Route>
+      <Route path="/discovery">
+        {() => <ProtectedRoute component={PreviewDiscovery} />}
+      </Route>
+      <Route path="/messages">
+        {() => <ProtectedRoute component={PreviewMessages} />}
+      </Route>
+      <Route path="/myservers">
+        {() => <ProtectedRoute component={PreviewMyServers} />}
+      </Route>
+      <Route path="/server/:serverId">
+        {() => <ProtectedRoute component={PreviewServerDetail} />}
+      </Route>
+      <Route path="/server/:serverId/settings">
+        {() => <ProtectedRoute component={ServerSettings} />}
+      </Route>
+      <Route path="/account">
+        {() => <ProtectedRoute component={PreviewAccount} />}
+      </Route>
+      <Route path="/account/settings">
+        {() => <ProtectedRoute component={AccountSettings} />}
+      </Route>
+      <Route path="/poster-builder">
+        {() => <ProtectedRoute component={PreviewPosterBuilder} />}
+      </Route>
+      <Route path="/create-team">
+        {() => <ProtectedRoute component={PreviewCreateTeam} />}
+      </Route>
+      <Route path="/organizer-award">
+        {() => <ProtectedRoute component={PreviewOrganizerAward} />}
+      </Route>
+      <Route path="/templates">
+        {() => <ProtectedRoute component={PreviewTemplates} />}
+      </Route>
+      <Route path="/admin/templates">
+        {() => <ProtectedRoute component={PreviewAdminTemplates} />}
+      </Route>
       
       <Route path="/old" component={MobilePreviewHome} />
       <Route path="/old/discovery" component={MobilePreviewServers} />

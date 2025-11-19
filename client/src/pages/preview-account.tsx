@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useLocation } from "wouter";
+import { useAuth } from "@/contexts/AuthContext";
 import type { User, Achievement } from "@shared/schema";
 
 const mockUser = {
@@ -136,23 +137,20 @@ export default function PreviewAccount() {
   const [viewingUser, setViewingUser] = useState<string | null>(null);
   const [selectedAchievement, setSelectedAchievement] = useState<typeof mockAchievements[0] | null>(null);
 
-  const currentUserId = "user-demo-123"; // TODO: Replace with real auth
-
-  const { data: user, isLoading: isLoadingUser, isError: isUserError } = useQuery<User>({
-    queryKey: [`/api/users/${currentUserId}`],
-  });
+  const { user: authUser } = useAuth();
 
   const { data: achievements, isLoading: isLoadingAchievements, isError: isAchievementsError } = useQuery<Achievement[]>({
-    queryKey: [`/api/users/${currentUserId}/achievements`],
+    queryKey: [`/api/users/${authUser?.id}/achievements`],
+    enabled: !!authUser?.id,
   });
 
-  const currentUser = user ? {
-    username: user.username,
-    avatarUrl: user.avatarUrl,
-    bio: user.bio,
-    level: user.level,
+  const currentUser = authUser ? {
+    username: authUser.username,
+    avatarUrl: authUser.avatarUrl || undefined,
+    bio: authUser.bio || "No bio yet",
+    level: authUser.level || 1,
     friendCount: mockUser.friendCount, // Not in schema, use mock
-    displayName: user.displayName,
+    displayName: authUser.displayName || authUser.username,
   } : mockUser;
   
   const userAchievements = achievements?.map(a => ({
@@ -222,13 +220,9 @@ export default function PreviewAccount() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex flex-col items-center text-center space-y-4">
-              {isLoadingUser ? (
+              {!authUser ? (
                 <div className="py-8">
                   <p className="text-muted-foreground">Loading profile...</p>
-                </div>
-              ) : isUserError ? (
-                <div className="py-8">
-                  <p className="text-destructive">Failed to load profile</p>
                 </div>
               ) : (
                 <>

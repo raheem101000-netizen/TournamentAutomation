@@ -18,6 +18,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Trophy } from "lucide-react";
+import { PasswordInput } from "@/components/PasswordInput";
 
 const registerSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
@@ -133,11 +134,10 @@ export default function Register() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="password"
+                      <PasswordInput 
                         placeholder="••••••" 
                         {...field} 
-                        data-testid="input-password"
+                        testid="input-password"
                       />
                     </FormControl>
                     <FormMessage />
@@ -152,11 +152,10 @@ export default function Register() {
                   <FormItem>
                     <FormLabel>Confirm Password</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="password"
+                      <PasswordInput 
                         placeholder="••••••" 
                         {...field} 
-                        data-testid="input-confirm-password"
+                        testid="input-confirm-password"
                       />
                     </FormControl>
                     <FormMessage />

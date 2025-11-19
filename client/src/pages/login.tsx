@@ -17,6 +17,8 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Trophy } from "lucide-react";
+import { PasswordInput } from "@/components/PasswordInput";
+import { useAuth } from "@/contexts/AuthContext";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -28,6 +30,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function Login() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { refetchUser } = useAuth();
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -45,19 +48,16 @@ export default function Login() {
       });
       return res.json();
     },
-    onSuccess: (data) => {
-      // Store user data in localStorage (in production, use proper auth context)
-      localStorage.setItem('user', JSON.stringify(data.user));
-      localStorage.setItem('token', data.token);
-      
+    onSuccess: async () => {
       toast({
         title: "Welcome back!",
         description: "You've successfully logged in.",
       });
       
-      // Invalidate all queries to refetch with new auth
-      queryClient.invalidateQueries();
+      // Refetch user to update auth context before navigating
+      await refetchUser();
       
+      // Navigate to home page
       setLocation("/");
     },
     onError: (error: any) => {
@@ -114,11 +114,10 @@ export default function Login() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="password"
+                      <PasswordInput 
                         placeholder="••••••" 
                         {...field} 
-                        data-testid="input-password"
+                        testid="input-password"
                       />
                     </FormControl>
                     <FormMessage />
