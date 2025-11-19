@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Hash, Lock, Megaphone, MessageSquare, Trophy, ArrowLeft, Users } from "lucide-react";
 import type { Server, Channel } from "@shared/schema";
@@ -8,11 +8,15 @@ import { useState } from "react";
 import AnnouncementsChannel from "@/components/channels/AnnouncementsChannel";
 import ChatChannel from "@/components/channels/ChatChannel";
 import TournamentDashboardChannel from "@/components/channels/TournamentDashboardChannel";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function MobilePreviewServerDetail() {
   const [, params] = useRoute("/server/:serverId");
   const serverId = params?.serverId;
   
+  const { user } = useAuth();
+  const currentUserId = user?.id;
+
   const { data: server, isLoading: serverLoading } = useQuery<Server>({
     queryKey: [`/api/servers/${serverId}`],
     enabled: !!serverId,
@@ -21,6 +25,11 @@ export default function MobilePreviewServerDetail() {
   const { data: channels = [], isLoading: channelsLoading } = useQuery<Channel[]>({
     queryKey: [`/api/servers/${serverId}/channels`],
     enabled: !!serverId,
+  });
+
+  const { data: userPermissions, isError: permissionsError, isLoading: permissionsLoading } = useQuery<{ permissions: string[] }>({
+    queryKey: [`/api/servers/${serverId}/members/${currentUserId}/permissions`],
+    enabled: !!serverId && !!currentUserId,
   });
 
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
@@ -49,11 +58,16 @@ export default function MobilePreviewServerDetail() {
     );
   }
 
-  // TODO: Replace with real authentication context (e.g., useUser hook from auth provider)
-  const currentUserId = "user-demo-123";
-
-  const publicChannels = channels.filter(c => !c.isPrivate);
-  const privateChannels = channels.filter(c => c.isPrivate);
+  // Separate channels by type and privacy
+  const tournamentDashboard = channels.find(c => c.type === "tournament_dashboard");
+  const otherChannels = channels.filter(c => c.type !== "tournament_dashboard");
+  const publicChannels = otherChannels.filter(c => !c.isPrivate);
+  const privateChannels = otherChannels.filter(c => c.isPrivate);
+  
+  // Check if user can see Tournament Dashboard
+  const canSeeTournamentDashboard = tournamentDashboard && currentUserId && !permissionsLoading && 
+    (server.ownerId === currentUserId || 
+     (!permissionsError && userPermissions?.permissions?.includes("tournament_dashboard_access")));
 
   const getChannelIcon = (type: string) => {
     switch (type) {
@@ -117,6 +131,31 @@ export default function MobilePreviewServerDetail() {
         {/* Channels Sidebar */}
         <div className="w-60 border-r flex-shrink-0 overflow-y-auto bg-muted/30">
           <div className="p-3 space-y-4">
+            {/* Tournament Dashboard (owner or authorized users only) */}
+            {canSeeTournamentDashboard && (
+              <div>
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2 px-2 flex items-center gap-1">
+                  <Lock className="h-3 w-3" />
+                  Private
+                </h3>
+                <div className="space-y-0.5">
+                  <button
+                    onClick={() => setSelectedChannelId(tournamentDashboard.id)}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors ${
+                      selectedChannel?.id === tournamentDashboard.id
+                        ? "bg-accent text-accent-foreground"
+                        : "hover-elevate text-muted-foreground hover:text-foreground"
+                    }`}
+                    data-testid={`button-channel-${tournamentDashboard.slug}`}
+                  >
+                    {getChannelIcon(tournamentDashboard.type)}
+                    <span className="truncate">{tournamentDashboard.name}</span>
+                    <Lock className="h-3 w-3 ml-auto" />
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Public Channels */}
             {publicChannels.length > 0 && (
               <div>
@@ -191,7 +230,32 @@ export default function MobilePreviewServerDetail() {
 
               {/* Channel content based on type */}
               {selectedChannel.type === "tournament_dashboard" && (
-                <TournamentDashboardChannel serverId={serverId!} />
+                <>
+                  {permissionsLoading ? (
+                    <Card>
+                      <CardContent className="py-8">
+                        <p className="text-muted-foreground text-center">Loading permissions...</p>
+                      </CardContent>
+                    </Card>
+                  ) : canSeeTournamentDashboard ? (
+                    <TournamentDashboardChannel serverId={serverId!} />
+                  ) : (
+                    <Card>
+                      <CardContent className="py-8">
+                        <div className="flex flex-col items-center gap-4">
+                          <Lock className="w-10 h-10 text-muted-foreground" />
+                          <div className="text-center space-y-2">
+                            <h3 className="font-semibold">Access Restricted</h3>
+                            <p className="text-sm text-muted-foreground">
+                              You don't have permission to access the Tournament Dashboard.
+                              Only the server owner or users with "Tournament Dashboard Access" permission can view this channel.
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </>
               )}
               {selectedChannel.type === "announcements" && (
                 <AnnouncementsChannel />
