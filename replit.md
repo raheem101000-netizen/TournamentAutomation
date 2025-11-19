@@ -1,18 +1,45 @@
 # Tournament Management Platform
 
-## Recent Changes (Nov 18, 2025)
+## Recent Changes (Nov 19, 2025)
 
-### Tournament Creation & Management Enhancements
-- Added comprehensive tournament metadata: startDate, endDate, platform, region, prizeReward, entryFee, imageUrl
-- Tournament creation form includes poster image URL, prize pool, entry fee, start/end date pickers
-- Implemented tournament editing: PATCH /api/tournaments/:id endpoint with EditTournamentDialog component
-- Server detail page displays upcoming tournaments in horizontally swipeable carousel with navigation arrows
-- Discovery page now includes search/filter functionality (filters servers by name, description, game tags)
-- Data consistency: tournaments on homepage only display if their parent server exists
+### Tournament Creation Enhancements (Task #1)
+- **Changed entry fee and prize fields from numeric to text**: `entryFee` and `prizeReward` now accept any text input
+- Organizers can now enter: "FREE", "$5", "₦1000", "No Prize", "Gift Card", or any custom text
+- Updated CreateTournamentDialog and EditTournamentDialog with text inputs and helpful placeholders
+- Database schema migration completed successfully
 
-### Fixes Applied
-- Fixed carousel setup: moved Embla event binding to useEffect for proper navigation button state
-- Verified tournament metadata persists correctly through storage layer
+### Tournament Poster Upload System (Task #2)
+- **Created ImageUploadField component** for URL-based image uploads
+- Allows organizers to paste image URLs from any hosting service (Imgur, Google Drive, etc.)
+- Integrated into both CreateTournamentDialog and EditTournamentDialog
+- Supports live preview and easy removal
+- Note: File upload and camera features require backend storage implementation (deferred)
+
+### Homepage Filter Functionality (Task #4)
+- **Made filter badges fully functional** with click handlers
+- Active filters: All, Prize, No Prize, Free Entry, Paid Entry
+- Visual indication of active filter (variant switches between default/outline)
+- Smart filtering logic:
+  - "Prize": Shows tournaments with prize rewards (excludes TBD, No Prize)
+  - "No Prize": Shows tournaments without prizes
+  - "Free": Shows free entry tournaments (FREE, empty, or TBD entry fee)
+  - "Paid": Shows paid tournaments (has entry fee amount)
+- Filters combine with search functionality
+
+### Channel Messages Schema (Task #3 - Partial)
+- Added `channelMessages` table to database with support for:
+  - Image uploads (`imageUrl`)
+  - File attachments (`fileUrl`, `fileName`)
+  - Reply threading (`replyToId`)
+  - Message editing (`editedAt`)
+  - Soft deletes (`deletedAt`)
+- Full chat UI implementation pending
+
+### Previous Changes (Nov 18, 2025)
+- Tournament metadata fields: startDate, endDate, platform, region
+- Horizontally swipeable carousel on server detail page
+- Discovery page search functionality
+- Data consistency validation for tournaments
 
 ## Overview
 

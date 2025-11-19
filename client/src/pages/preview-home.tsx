@@ -252,7 +252,7 @@ export default function PreviewHome() {
         serverLogoFallback: server.name.charAt(0),
         backgroundImage: t.imageUrl || "https://images.unsplash.com/photo-1542751110-97427bbecf20?w=800&h=1200&fit=crop",
         prize: t.prizeReward || "TBD",
-        entryFee: t.entryFee ? `$${t.entryFee}` : "Free",
+        entryFee: t.entryFee || "Free",
         startDate: t.startDate ? format(new Date(t.startDate), "MMM dd, yyyy") : "TBD",
         startTime: t.startDate ? format(new Date(t.startDate), "h:mm a") : "TBD",
         participants: `${t.totalTeams || 0}/${t.totalTeams || 0}`,
@@ -269,7 +269,7 @@ export default function PreviewHome() {
   const displayPosters = allPosters.filter(poster => {
     // Search filter
     if (searchQuery) {
-      const query = searchQuery.toLowerCase();
+      const query = searchQuery.toLowerCase().trim();
       const matchesSearch = (
         poster.title.toLowerCase().includes(query) ||
         poster.game.toLowerCase().includes(query) ||
@@ -281,35 +281,57 @@ export default function PreviewHome() {
     // Type filter
     if (activeFilter === "all") return true;
     
+    // Normalize values for filtering
+    const prizeNormalized = (poster.prize || "").toLowerCase().trim();
+    const entryFeeNormalized = (poster.entryFee || "").toLowerCase().trim();
+    
+    // Helper to check if value matches "no prize" keywords (exact words only)
+    const isNoPrizeKeyword = (value: string) => {
+      const words = value.split(/[\s,;]+/);
+      const noPrizeTerms = ["no", "none", "n/a", "tbd", "na"];
+      return words.some(word => noPrizeTerms.includes(word));
+    };
+    
+    // Helper to check if value matches "free" keywords
+    const isFreeKeyword = (value: string) => {
+      // Check for keyword matches
+      const words = value.split(/[\s,;$]+/);
+      const freeTerms = ["free", "none", "n/a", "tbd", "na", "no"];
+      if (words.some(word => freeTerms.includes(word))) {
+        return true;
+      }
+      
+      // Check if value is numeric zero (handles 0, 0.00, 0,00, 0€, etc.)
+      const numericValue = value.replace(/[^0-9.,-]/g, '').replace(',', '.');
+      const parsed = parseFloat(numericValue);
+      if (!isNaN(parsed) && parsed === 0) {
+        return true;
+      }
+      
+      return false;
+    };
+    
     if (activeFilter === "prize") {
-      // Has prize (not "TBD", "No Prize", or empty)
-      const hasPrize = poster.prize && 
-        poster.prize !== "TBD" && 
-        !poster.prize.toLowerCase().includes("no prize");
+      // Has prize (not empty and doesn't contain no-prize keywords)
+      const hasPrize = prizeNormalized && !isNoPrizeKeyword(prizeNormalized);
       return hasPrize;
     }
     
     if (activeFilter === "no-prize") {
-      // No prize or explicitly "No Prize" or "TBD"
-      const noPrize = !poster.prize || 
-        poster.prize === "TBD" || 
-        poster.prize.toLowerCase().includes("no prize");
+      // No prize or explicitly states no prize
+      const noPrize = !prizeNormalized || isNoPrizeKeyword(prizeNormalized);
       return noPrize;
     }
     
     if (activeFilter === "free") {
-      // Free entry (includes "Free", "FREE", or empty/TBD entry fee)
-      const isFree = !poster.entryFee || 
-        poster.entryFee === "TBD" ||
-        poster.entryFee.toLowerCase().includes("free");
+      // Free entry
+      const isFree = !entryFeeNormalized || isFreeKeyword(entryFeeNormalized);
       return isFree;
     }
     
     if (activeFilter === "paid") {
-      // Paid entry (has a fee and not free/TBD)
-      const isPaid = poster.entryFee && 
-        poster.entryFee !== "TBD" &&
-        !poster.entryFee.toLowerCase().includes("free");
+      // Paid entry (has a fee and not free)
+      const isPaid = entryFeeNormalized && !isFreeKeyword(entryFeeNormalized);
       return isPaid;
     }
     
