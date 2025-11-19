@@ -20,10 +20,13 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Tournament, Server } from "@shared/schema";
 import { format } from "date-fns";
 
+type FilterType = "all" | "prize" | "no-prize" | "free" | "paid";
+
 export default function PreviewHome() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [detailsModal, setDetailsModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string | null; serverLogoFallback: string; backgroundImage: string; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; rankReq: string; } | null>(null);
   const [joinModal, setJoinModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string | null; serverLogoFallback: string; backgroundImage: string; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; rankReq: string; } | null>(null);
   const [serverModal, setServerModal] = useState<{ name: string; logo: string | null; logoFallback: string; id?: string } | null>(null);
@@ -262,15 +265,55 @@ export default function PreviewHome() {
 
   const allPosters = tournamentPosters.length > 0 ? tournamentPosters : mockPostersWithRealServers;
   
-  // Filter posters based on search query
+  // Filter posters based on search query and active filter
   const displayPosters = allPosters.filter(poster => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      poster.title.toLowerCase().includes(query) ||
-      poster.game.toLowerCase().includes(query) ||
-      poster.serverName.toLowerCase().includes(query)
-    );
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = (
+        poster.title.toLowerCase().includes(query) ||
+        poster.game.toLowerCase().includes(query) ||
+        poster.serverName.toLowerCase().includes(query)
+      );
+      if (!matchesSearch) return false;
+    }
+    
+    // Type filter
+    if (activeFilter === "all") return true;
+    
+    if (activeFilter === "prize") {
+      // Has prize (not "TBD", "No Prize", or empty)
+      const hasPrize = poster.prize && 
+        poster.prize !== "TBD" && 
+        !poster.prize.toLowerCase().includes("no prize");
+      return hasPrize;
+    }
+    
+    if (activeFilter === "no-prize") {
+      // No prize or explicitly "No Prize" or "TBD"
+      const noPrize = !poster.prize || 
+        poster.prize === "TBD" || 
+        poster.prize.toLowerCase().includes("no prize");
+      return noPrize;
+    }
+    
+    if (activeFilter === "free") {
+      // Free entry (includes "Free", "FREE", or empty/TBD entry fee)
+      const isFree = !poster.entryFee || 
+        poster.entryFee === "TBD" ||
+        poster.entryFee.toLowerCase().includes("free");
+      return isFree;
+    }
+    
+    if (activeFilter === "paid") {
+      // Paid entry (has a fee and not free/TBD)
+      const isPaid = poster.entryFee && 
+        poster.entryFee !== "TBD" &&
+        !poster.entryFee.toLowerCase().includes("free");
+      return isPaid;
+    }
+    
+    return true;
   });
 
   return (
@@ -295,20 +338,45 @@ export default function PreviewHome() {
             />
           </div>
 
-          <div className="flex gap-2">
-            <Badge variant="default" className="whitespace-nowrap text-xs px-3" data-testid="filter-all">
+          <div className="flex gap-2 overflow-x-auto">
+            <Badge 
+              variant={activeFilter === "all" ? "default" : "outline"} 
+              className="whitespace-nowrap text-xs px-3 cursor-pointer" 
+              onClick={() => setActiveFilter("all")}
+              data-testid="filter-all"
+            >
               All
             </Badge>
-            <Badge variant="outline" className="whitespace-nowrap text-xs px-3" data-testid="filter-prize">
+            <Badge 
+              variant={activeFilter === "prize" ? "default" : "outline"} 
+              className="whitespace-nowrap text-xs px-3 cursor-pointer" 
+              onClick={() => setActiveFilter("prize")}
+              data-testid="filter-prize"
+            >
               Prize
             </Badge>
-            <Badge variant="outline" className="whitespace-nowrap text-xs px-3" data-testid="filter-no-prize">
+            <Badge 
+              variant={activeFilter === "no-prize" ? "default" : "outline"} 
+              className="whitespace-nowrap text-xs px-3 cursor-pointer" 
+              onClick={() => setActiveFilter("no-prize")}
+              data-testid="filter-no-prize"
+            >
               No Prize
             </Badge>
-            <Badge variant="outline" className="whitespace-nowrap text-xs px-3" data-testid="filter-free">
+            <Badge 
+              variant={activeFilter === "free" ? "default" : "outline"} 
+              className="whitespace-nowrap text-xs px-3 cursor-pointer" 
+              onClick={() => setActiveFilter("free")}
+              data-testid="filter-free"
+            >
               Free Entry
             </Badge>
-            <Badge variant="outline" className="whitespace-nowrap text-xs px-3" data-testid="filter-paid">
+            <Badge 
+              variant={activeFilter === "paid" ? "default" : "outline"} 
+              className="whitespace-nowrap text-xs px-3 cursor-pointer" 
+              onClick={() => setActiveFilter("paid")}
+              data-testid="filter-paid"
+            >
               Paid Entry
             </Badge>
           </div>

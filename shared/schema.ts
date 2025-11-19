@@ -197,6 +197,21 @@ export const channels = pgTable("channels", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const channelMessages = pgTable("channel_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  channelId: varchar("channel_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  username: text("username").notNull(),
+  message: text("message"),
+  imageUrl: text("image_url"),
+  fileUrl: text("file_url"),
+  fileName: text("file_name"),
+  replyToId: varchar("reply_to_id"),
+  editedAt: timestamp("edited_at"),
+  deletedAt: timestamp("deleted_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const messageThreads = pgTable("message_threads", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   participantName: text("participant_name").notNull(),
@@ -229,6 +244,13 @@ export const insertChannelSchema = createInsertSchema(channels).omit({
   icon: z.string().min(1, "Channel icon is required"),
 });
 
+export const insertChannelMessageSchema = createInsertSchema(channelMessages).omit({
+  id: true,
+  createdAt: true,
+  editedAt: true,
+  deletedAt: true,
+});
+
 export const insertMessageThreadSchema = createInsertSchema(messageThreads).omit({
   id: true,
   lastMessageTime: true,
@@ -243,6 +265,8 @@ export type InsertServer = z.infer<typeof insertServerSchema>;
 export type Server = typeof servers.$inferSelect;
 export type InsertChannel = z.infer<typeof insertChannelSchema>;
 export type Channel = typeof channels.$inferSelect;
+export type InsertChannelMessage = z.infer<typeof insertChannelMessageSchema>;
+export type ChannelMessage = typeof channelMessages.$inferSelect;
 export type InsertMessageThread = z.infer<typeof insertMessageThreadSchema>;
 export type MessageThread = typeof messageThreads.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
