@@ -26,6 +26,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Server } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const createServerSchema = z.object({
   name: z.string().min(1, "Server name is required"),
@@ -39,6 +40,7 @@ type CreateServerForm = z.infer<typeof createServerSchema>;
 export default function CreateServer() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const form = useForm<CreateServerForm>({
     resolver: zodResolver(createServerSchema),
@@ -52,7 +54,10 @@ export default function CreateServer() {
 
   const createMutation = useMutation({
     mutationFn: async (data: CreateServerForm) => {
-      const res = await apiRequest('POST', '/api/servers', data);
+      const res = await apiRequest('POST', '/api/servers', {
+        ...data,
+        ownerId: user?.id,
+      });
       return res.json();
     },
     onSuccess: (data: any) => {
