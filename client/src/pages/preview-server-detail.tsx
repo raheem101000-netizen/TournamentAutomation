@@ -2,16 +2,17 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronDown, Settings, Trophy, Lock, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronDown, Settings, Trophy, Lock, Plus, ChevronLeft, ChevronRight, FolderOpen } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useQuery } from "@tanstack/react-query";
 import { useRoute } from "wouter";
 import { useState, useCallback, useEffect } from "react";
-import type { Server, Tournament, Channel } from "@shared/schema";
+import type { Server, Tournament, Channel, ChannelCategory } from "@shared/schema";
 import AnnouncementsChannel from "@/components/channels/AnnouncementsChannel";
 import ChatChannel from "@/components/channels/ChatChannel";
 import TournamentDashboardChannel from "@/components/channels/TournamentDashboardChannel";
 import CreateChannelDialog from "@/components/CreateChannelDialog";
+import ManageCategoriesDialog from "@/components/ManageCategoriesDialog";
 import useEmblaCarousel from "embla-carousel-react";
 
 export default function PreviewServerDetail() {
@@ -19,6 +20,7 @@ export default function PreviewServerDetail() {
   const serverId = params?.serverId;
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
   const [createChannelOpen, setCreateChannelOpen] = useState(false);
+  const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
 
   const currentUserId = "user-demo-123"; // TODO: Replace with real auth
 
@@ -29,6 +31,11 @@ export default function PreviewServerDetail() {
 
   const { data: channels = [], isLoading: channelsLoading } = useQuery<Channel[]>({
     queryKey: [`/api/servers/${serverId}/channels`],
+    enabled: !!serverId,
+  });
+
+  const { data: categories = [] } = useQuery<ChannelCategory[]>({
+    queryKey: [`/api/servers/${serverId}/categories`],
     enabled: !!serverId,
   });
 
@@ -291,40 +298,94 @@ export default function PreviewServerDetail() {
 
           {/* Public Channels */}
           {publicChannels.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-4">
               <div className="flex items-center justify-between gap-2 px-2">
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Channels
                 </h3>
                 {server.ownerId === currentUserId && (
-                  <Button 
-                    size="icon" 
-                    variant="ghost" 
-                    className="h-6 w-6"
-                    onClick={() => setCreateChannelOpen(true)}
-                    data-testid="button-create-channel"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      className="h-6 w-6"
+                      onClick={() => setManageCategoriesOpen(true)}
+                      data-testid="button-manage-categories"
+                      title="Manage Categories"
+                    >
+                      <FolderOpen className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      className="h-6 w-6"
+                      onClick={() => setCreateChannelOpen(true)}
+                      data-testid="button-create-channel"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
                 )}
               </div>
-              <div className="space-y-1">
-                {publicChannels.map((channel) => (
-                  <Card
-                    key={channel.id}
-                    className="p-3 hover-elevate cursor-pointer border-0 shadow-none"
-                    onClick={() => setSelectedChannelId(channel.id)}
-                    data-testid={`channel-${channel.slug}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-xl">{channel.icon}</span>
-                      <div className="flex-1 min-w-0 flex items-center gap-2">
-                        <span className="font-medium truncate">{channel.name}</span>
-                      </div>
+
+              {/* Categorized channels */}
+              {categories.sort((a, b) => (a.position ?? 0) - (b.position ?? 0)).map((category) => {
+                const categoryChannels = publicChannels.filter(c => c.categoryId === category.id);
+                if (categoryChannels.length === 0) return null;
+
+                return (
+                  <div key={category.id} className="space-y-2">
+                    <div className="flex items-center gap-2 px-2">
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        {category.name}
+                      </h4>
                     </div>
-                  </Card>
-                ))}
-              </div>
+                    <div className="space-y-1">
+                      {categoryChannels.map((channel) => (
+                        <Card
+                          key={channel.id}
+                          className="p-3 hover-elevate cursor-pointer border-0 shadow-none"
+                          onClick={() => setSelectedChannelId(channel.id)}
+                          data-testid={`channel-${channel.slug}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-xl">{channel.icon}</span>
+                            <div className="flex-1 min-w-0 flex items-center gap-2">
+                              <span className="font-medium truncate">{channel.name}</span>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Uncategorized channels */}
+              {(() => {
+                const uncategorizedChannels = publicChannels.filter(c => !c.categoryId);
+                if (uncategorizedChannels.length === 0) return null;
+
+                return (
+                  <div className="space-y-1">
+                    {uncategorizedChannels.map((channel) => (
+                      <Card
+                        key={channel.id}
+                        className="p-3 hover-elevate cursor-pointer border-0 shadow-none"
+                        onClick={() => setSelectedChannelId(channel.id)}
+                        data-testid={`channel-${channel.slug}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl">{channel.icon}</span>
+                          <div className="flex-1 min-w-0 flex items-center gap-2">
+                            <span className="font-medium truncate">{channel.name}</span>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           )}
 
@@ -364,6 +425,12 @@ export default function PreviewServerDetail() {
         serverId={serverId!}
         open={createChannelOpen}
         onOpenChange={setCreateChannelOpen}
+      />
+
+      <ManageCategoriesDialog
+        serverId={serverId!}
+        open={manageCategoriesOpen}
+        onOpenChange={setManageCategoriesOpen}
       />
 
       <BottomNavigation />
