@@ -106,12 +106,21 @@ export const registrationResponses = pgTable("registration_responses", {
   responseValue: text("response_value").notNull(),
 });
 
-export const insertTournamentSchema = createInsertSchema(tournaments).omit({
-  id: true,
-  createdAt: true,
-  currentRound: true,
-  status: true,
-});
+export const insertTournamentSchema = createInsertSchema(tournaments)
+  .omit({
+    id: true,
+    createdAt: true,
+    currentRound: true,
+    status: true,
+  })
+  .extend({
+    startDate: z.union([z.string(), z.date()]).transform((val) => 
+      typeof val === 'string' ? new Date(val) : val
+    ).nullable().optional(),
+    endDate: z.union([z.string(), z.date()]).transform((val) => 
+      typeof val === 'string' ? new Date(val) : val
+    ).nullable().optional(),
+  });
 
 export const insertTeamSchema = createInsertSchema(teams).omit({
   id: true,
