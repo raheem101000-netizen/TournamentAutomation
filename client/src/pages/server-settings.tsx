@@ -184,6 +184,20 @@ export default function ServerSettings() {
     },
   });
 
+  const memberForm = useForm({
+    resolver: zodResolver(memberSchema),
+    defaultValues: {
+      userId: "",
+      customTitle: "",
+      explicitPermissions: [],
+    },
+  });
+
+  const { data: members = [], isLoading: membersLoading } = useQuery<ServerMember[]>({
+    queryKey: [`/api/servers/${serverId}/members`],
+    enabled: !!serverId,
+  });
+
   const updateServerMutation = useMutation({
     mutationFn: async (data: z.infer<typeof serverProfileSchema>) => {
       return await apiRequest("PATCH", `/api/servers/${serverId}`, data);
@@ -321,6 +335,60 @@ export default function ServerSettings() {
     },
   });
 
+  const createMemberMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof memberSchema>) => {
+      return await apiRequest("POST", `/api/servers/${serverId}/members`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/servers/${serverId}/members`] });
+      memberForm.reset();
+      toast({
+        title: "Member added",
+        description: "Member has been added with custom permissions.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to add member",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateMemberMutation = useMutation({
+    mutationFn: async ({ userId, data }: { userId: string; data: Partial<z.infer<typeof memberSchema>> }) => {
+      return await apiRequest("PATCH", `/api/servers/${serverId}/members/${userId}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/servers/${serverId}/members`] });
+      toast({
+        title: "Member updated",
+        description: "Member permissions have been updated.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to update member",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMemberMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      return await apiRequest("DELETE", `/api/servers/${serverId}/members/${userId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/servers/${serverId}/members`] });
+      toast({
+        title: "Member removed",
+        description: "Member has been removed from server.",
+      });
+    },
+  });
+
   const onServerSubmit = (data: z.infer<typeof serverProfileSchema>) => {
     updateServerMutation.mutate({
       ...data,
@@ -335,6 +403,10 @@ export default function ServerSettings() {
 
   const onBanSubmit = (data: z.infer<typeof banSchema>) => {
     createBanMutation.mutate(data);
+  };
+
+  const onMemberSubmit = (data: z.infer<typeof memberSchema>) => {
+    createMemberMutation.mutate(data);
   };
 
   const onInviteSubmit = (data: z.infer<typeof inviteSchema>) => {
@@ -634,6 +706,160 @@ export default function ServerSettings() {
                           size="icon"
                           onClick={() => deleteRoleMutation.mutate(role.id)}
                           data-testid={`button-delete-role-${role.id}`}
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="members" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Add Member Permissions</CardTitle>
+                <CardDescription>Grant specific permissions to server members</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Form {...memberForm}>
+                  <form onSubmit={memberForm.handleSubmit(onMemberSubmit)} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={memberForm.control}
+                        name="userId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>User ID</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                placeholder="Enter user ID"
+                                data-testid="input-member-user-id"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={memberForm.control}
+                        name="customTitle"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Custom Title (Optional)</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                placeholder="e.g., Tournament Manager"
+                                data-testid="input-member-custom-title"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={memberForm.control}
+                      name="explicitPermissions"
+                      render={() => (
+                        <FormItem>
+                          <FormLabel>Permissions</FormLabel>
+                          <div className="grid grid-cols-2 gap-3 mt-2">
+                            {AVAILABLE_PERMISSIONS.map((permission) => (
+                              <FormField
+                                key={permission}
+                                control={memberForm.control}
+                                name="explicitPermissions"
+                                render={({ field }) => (
+                                  <FormItem className="flex items-center space-x-2 space-y-0">
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={(field.value as string[])?.includes(permission)}
+                                        onCheckedChange={(checked) => {
+                                          const current = (field.value as string[]) || [];
+                                          field.onChange(
+                                            checked
+                                              ? [...current, permission]
+                                              : current.filter((p: string) => p !== permission)
+                                          );
+                                        }}
+                                        data-testid={`checkbox-member-permission-${permission}`}
+                                      />
+                                    </FormControl>
+                                    <FormLabel className="text-sm font-normal cursor-pointer">
+                                      {permission.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                                    </FormLabel>
+                                  </FormItem>
+                                )}
+                              />
+                            ))}
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <Button
+                      type="submit"
+                      disabled={createMemberMutation.isPending}
+                      data-testid="button-add-member"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      {createMemberMutation.isPending ? "Adding..." : "Add Member"}
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Server Members</CardTitle>
+                <CardDescription>Manage member permissions and access</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {membersLoading ? (
+                  <p className="text-muted-foreground">Loading members...</p>
+                ) : members.length === 0 ? (
+                  <p className="text-muted-foreground">No members with custom permissions yet</p>
+                ) : (
+                  <div className="space-y-3">
+                    {members.map((member) => (
+                      <div
+                        key={member.id}
+                        className="flex items-center justify-between p-4 border rounded-md"
+                        data-testid={`member-item-${member.id}`}
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium" data-testid={`text-member-id-${member.id}`}>
+                              User: {member.userId}
+                            </p>
+                            {member.customTitle && (
+                              <Badge variant="secondary" className="text-xs">
+                                {member.customTitle}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex gap-2 mt-2 flex-wrap">
+                            {member.explicitPermissions?.map((perm) => (
+                              <Badge key={perm} variant="outline" className="text-xs">
+                                {perm.replace(/_/g, " ")}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => deleteMemberMutation.mutate(member.userId)}
+                          data-testid={`button-delete-member-${member.id}`}
                         >
                           <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>

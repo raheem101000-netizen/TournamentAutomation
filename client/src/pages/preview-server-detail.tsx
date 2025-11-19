@@ -14,6 +14,7 @@ import TournamentDashboardChannel from "@/components/channels/TournamentDashboar
 import CreateChannelDialog from "@/components/CreateChannelDialog";
 import ManageCategoriesDialog from "@/components/ManageCategoriesDialog";
 import useEmblaCarousel from "embla-carousel-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function PreviewServerDetail() {
   const [match, params] = useRoute("/server/:serverId");
@@ -23,7 +24,13 @@ export default function PreviewServerDetail() {
   const [createChannelOpen, setCreateChannelOpen] = useState(false);
   const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
 
-  const currentUserId = "user-demo-123"; // TODO: Replace with real auth
+  const { user } = useAuth();
+  const currentUserId = user?.id || "user-demo-123";
+
+  const { data: userPermissions, isError: permissionsError, isLoading: permissionsLoading } = useQuery<{ permissions: string[] }>({
+    queryKey: [`/api/servers/${serverId}/members/${currentUserId}/permissions`],
+    enabled: !!serverId && !!currentUserId,
+  });
 
   const { data: server, isLoading: serverLoading } = useQuery<Server>({
     queryKey: [`/api/servers/${serverId}`],
@@ -127,7 +134,33 @@ export default function PreviewServerDetail() {
 
         <main className="container max-w-lg mx-auto px-4 py-4 flex-1">
           {selectedChannel.type === "tournament_dashboard" && (
-            <TournamentDashboardChannel serverId={serverId!} />
+            <>
+              {permissionsLoading ? (
+                <Card className="mt-8">
+                  <CardContent className="py-8">
+                    <p className="text-muted-foreground text-center">Loading permissions...</p>
+                  </CardContent>
+                </Card>
+              ) : (server?.ownerId === currentUserId || 
+                     (!permissionsError && userPermissions?.permissions?.includes("tournament_dashboard_access"))) ? (
+                <TournamentDashboardChannel serverId={serverId!} />
+              ) : (
+                <Card className="mt-8">
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <Lock className="w-5 h-5 text-muted-foreground" />
+                      <CardTitle>Access Restricted</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">
+                      You don't have permission to access the Tournament Dashboard.
+                      Only the server owner or users with "Tournament Dashboard Access" permission can view this channel.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </>
           )}
           {selectedChannel.type === "announcements" && (
             <AnnouncementsChannel />
