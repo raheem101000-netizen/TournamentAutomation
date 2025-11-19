@@ -12,6 +12,12 @@
   - Account disable/delete options with confirmation dialogs
   - Organized in tabs: Profile, Security, Preferences, Danger Zone
 
+- **Server Settings Page** (`/server/:serverId/settings`):
+  - **Overview Tab**: Server name, description, icon & background upload using ImageUploadField
+  - **Roles Tab**: Create/delete roles with name, color picker, and permission checkboxes (manage_server, manage_roles, manage_channels, kick_members, ban_members, manage_messages, mention_everyone, manage_tournaments)
+  - **Bans Tab**: Ban users by ID with optional reason, view banned users in table with unban button
+  - **Invites Tab**: Generate invite links with optional expiration date and max uses, copy invite links, delete invites
+
 - **Database Schema Expansions**:
   - Added `channelCategories` table for Discord-style channel organization
   - Added `serverRoles` table for permission management
@@ -24,7 +30,7 @@
   - Channel categories: Create, read, update, delete
   - Server roles: Full CRUD with permissions array
   - Server bans: Ban/unban users with reason tracking
-  - Server invites: Generate codes with expiration & usage limits
+  - Server invites: Generate codes with expiration & usage limits (with z.coerce.number for maxUses)
   - Channel management: Update channel properties, delete channels
   - Channel messages: Create, read, delete messages
   - Server updates: Modify server profile, icon, background
