@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import { storage } from "./storage";
+import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import {
   insertTournamentSchema,
   insertTeamSchema,
@@ -1123,6 +1124,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteMemberFromServer(req.params.serverId, req.params.userId);
       res.status(204).send();
     } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Object Storage Routes - Reference: blueprint:javascript_object_storage
+  // Serve uploaded objects (public access)
+  app.get("/objects/:objectPath(*)", async (req, res) => {
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const objectFile = await objectStorageService.getObjectEntityFile(
+        req.path,
+      );
+      objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error("Error checking object access:", error);
+      if (error instanceof ObjectNotFoundError) {
+        return res.sendStatus(404);
+      }
+      return res.sendStatus(500);
+    }
+  });
+
+  // Get presigned URL for uploading
+  app.post("/api/objects/upload", async (req, res) => {
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error: any) {
+      console.error("Error getting upload URL:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Normalize tournament poster path after upload
+  app.put("/api/tournament-posters", async (req, res) => {
+    if (!req.body.posterURL) {
+      return res.status(400).json({ error: "posterURL is required" });
+    }
+
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const objectPath = objectStorageService.normalizeObjectEntityPath(
+        req.body.posterURL,
+      );
+
+      res.status(200).json({
+        objectPath: objectPath,
+      });
+    } catch (error: any) {
+      console.error("Error setting tournament poster:", error);
       res.status(500).json({ error: error.message });
     }
   });
