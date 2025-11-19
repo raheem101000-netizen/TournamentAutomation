@@ -1346,6 +1346,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/servers/:serverId/members/:userId", async (req, res) => {
     try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const server = await storage.getServer(req.params.serverId);
+      if (!server) {
+        return res.status(404).json({ error: "Server not found" });
+      }
+
+      const isOwner = server.ownerId === req.session.userId;
+      const requesterPermissions = await storage.getEffectivePermissions(
+        req.params.serverId,
+        req.session.userId
+      );
+      const canManageRoles = requesterPermissions.includes("manage_roles") || 
+                            requesterPermissions.includes("manage_server");
+
+      if (!isOwner && !canManageRoles) {
+        return res.status(403).json({ error: "Forbidden: Only server owners or users with manage_roles permission can update member permissions" });
+      }
+
       const updateSchema = z.object({
         roleId: z.string().optional(),
         customTitle: z.string().optional(),
@@ -1363,6 +1384,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(member);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/servers/:serverId/members/:userId/permissions", async (req, res) => {
+    try {
+      const effectivePermissions = await storage.getEffectivePermissions(
+        req.params.serverId,
+        req.params.userId
+      );
+      res.json({ permissions: effectivePermissions });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   });
 

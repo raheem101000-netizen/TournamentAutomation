@@ -215,6 +215,7 @@ export interface IStorage {
   getServerMemberByUserId(serverId: string, userId: string): Promise<ServerMember | undefined>;
   updateServerMember(serverId: string, userId: string, data: Partial<InsertServerMember>): Promise<ServerMember | undefined>;
   deleteMemberFromServer(serverId: string, userId: string): Promise<void>;
+  getEffectivePermissions(serverId: string, userId: string): Promise<string[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -699,6 +700,24 @@ export class DatabaseStorage implements IStorage {
         eq(serverMembers.serverId, serverId),
         eq(serverMembers.userId, userId)
       ));
+  }
+
+  async getEffectivePermissions(serverId: string, userId: string): Promise<string[]> {
+    const member = await this.getServerMemberByUserId(serverId, userId);
+    if (!member) {
+      return [];
+    }
+
+    const permissions = new Set<string>(member.explicitPermissions || []);
+
+    if (member.roleId) {
+      const [role] = await db.select().from(serverRoles).where(eq(serverRoles.id, member.roleId));
+      if (role && role.permissions) {
+        role.permissions.forEach((p: string) => permissions.add(p));
+      }
+    }
+
+    return Array.from(permissions);
   }
 
   // Channel update/delete operations
