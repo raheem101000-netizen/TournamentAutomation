@@ -122,6 +122,154 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
 
+  // Authentication middleware
+  const requireAuth = (req: any, res: any, next: any) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    next();
+  };
+
+  // Authentication routes
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const registerSchema = z.object({
+        fullName: z.string().min(2),
+        email: z.string().email(),
+        password: z.string().min(6),
+      });
+      const validatedData = registerSchema.parse(req.body);
+
+      // Check if user with email already exists
+      const existingUsers = await storage.getAllUsers();
+      if (existingUsers.some(u => u.email === validatedData.email)) {
+        return res.status(400).json({ error: "Email already registered" });
+      }
+
+      // Hash password
+      const bcrypt = await import('bcrypt');
+      const hashedPassword = await bcrypt.hash(validatedData.password, 10);
+
+      // Create user with hashed password
+      const user = await storage.createUser({
+        username: validatedData.fullName.toLowerCase().replace(/\s+/g, ''),
+        email: validatedData.email,
+        passwordHash: hashedPassword,
+        displayName: validatedData.fullName,
+        bio: null,
+        avatarUrl: null,
+        level: 1,
+        language: 'en',
+        isDisabled: 0,
+      });
+
+      res.status(201).json({ 
+        message: "Registration successful",
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          displayName: user.displayName,
+        }
+      });
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid input data" });
+      }
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const loginSchema = z.object({
+        email: z.string().email(),
+        password: z.string(),
+      });
+      const validatedData = loginSchema.parse(req.body);
+
+      // Find user by email
+      const users = await storage.getAllUsers();
+      const user = users.find(u => u.email === validatedData.email);
+
+      if (!user) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      // Verify password
+      const bcrypt = await import('bcrypt');
+      const passwordValid = await bcrypt.compare(validatedData.password, user.passwordHash);
+
+      if (!passwordValid) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      // Check if account is disabled
+      if (user.isDisabled === 1) {
+        return res.status(403).json({ error: "Account is disabled" });
+      }
+
+      // Create session
+      req.session.userId = user.id;
+
+      res.json({
+        message: "Login successful",
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          displayName: user.displayName,
+          avatarUrl: user.avatarUrl,
+          bio: user.bio,
+          level: user.level,
+        },
+        token: "session-based-auth",
+      });
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid input data" });
+      }
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ error: "Failed to logout" });
+      }
+      res.clearCookie('connect.sid');
+      res.json({ message: "Logout successful" });
+    });
+  });
+
+  app.get("/api/auth/me", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        req.session.destroy(() => {});
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      res.json({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        displayName: user.displayName,
+        avatarUrl: user.avatarUrl,
+        bio: user.bio,
+        level: user.level,
+        language: user.language,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Tournament routes
   app.get("/api/tournaments", async (req, res) => {
     try {
