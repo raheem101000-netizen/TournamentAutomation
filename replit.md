@@ -2,38 +2,39 @@
 
 ## Recent Changes (Nov 19, 2025)
 
-### Tournament Creation Enhancements (Task #1)
+### Tournament Creation Enhancements ✅
 - **Changed entry fee and prize fields from numeric to text**: `entryFee` and `prizeReward` now accept any text input
 - Organizers can now enter: "FREE", "$5", "₦1000", "No Prize", "Gift Card", or any custom text
 - Updated CreateTournamentDialog and EditTournamentDialog with text inputs and helpful placeholders
 - Database schema migration completed successfully
 
-### Tournament Poster Upload System (Task #2)
+### Tournament Poster Upload System ✅
 - **Created ImageUploadField component** for URL-based image uploads
 - Allows organizers to paste image URLs from any hosting service (Imgur, Google Drive, etc.)
 - Integrated into both CreateTournamentDialog and EditTournamentDialog
 - Supports live preview and easy removal
 - Note: File upload and camera features require backend storage implementation (deferred)
 
-### Homepage Filter Functionality (Task #4)
-- **Made filter badges fully functional** with click handlers
+### Homepage Filter Functionality ✅
+- **Made filter badges fully functional** with robust matching logic
 - Active filters: All, Prize, No Prize, Free Entry, Paid Entry
 - Visual indication of active filter (variant switches between default/outline)
-- Smart filtering logic:
-  - "Prize": Shows tournaments with prize rewards (excludes TBD, No Prize)
-  - "No Prize": Shows tournaments without prizes
-  - "Free": Shows free entry tournaments (FREE, empty, or TBD entry fee)
-  - "Paid": Shows paid tournaments (has entry fee amount)
-- Filters combine with search functionality
+- Smart filtering logic with multiple improvements:
+  - **Exact word matching** (not substring) to prevent false matches
+  - **Numeric zero handling** - treats 0, 0.00, 0,00, $0, 0€ as free
+  - **Keyword matching** - recognizes "free", "no entry fee", "no fee", etc.
+  - **Case-insensitive** and **format-agnostic** matching
+- Test cases covered: "Honorary Title" (has prize), "No Prize" (no prize), "FREE" (free), "$25" (paid), "0.00" (free), "No entry fee" (free)
+- Filters combine seamlessly with search functionality
 
-### Channel Messages Schema (Task #3 - Partial)
+### Channel Messages Schema (Partial) ✅
 - Added `channelMessages` table to database with support for:
   - Image uploads (`imageUrl`)
   - File attachments (`fileUrl`, `fileName`)
   - Reply threading (`replyToId`)
   - Message editing (`editedAt`)
   - Soft deletes (`deletedAt`)
-- Full chat UI implementation pending
+- Full chat UI implementation pending (future work)
 
 ### Previous Changes (Nov 18, 2025)
 - Tournament metadata fields: startDate, endDate, platform, region
