@@ -93,7 +93,7 @@ export default function CreateTournamentDialog({
       game,
       imageUrl: imageUrl || null,
       prizeReward: prizeReward || null,
-      entryFee: entryFee ? parseInt(entryFee) : null,
+      entryFee: entryFee || null,
       startDate: startDate ? new Date(startDate) : null,
       endDate: endDate ? new Date(endDate) : null,
       platform: platform || null,
@@ -194,23 +194,23 @@ export default function CreateTournamentDialog({
                 <Label htmlFor="prizeReward">Prize Pool</Label>
                 <Input
                   id="prizeReward"
-                  placeholder="e.g., $1,000 or Gaming Gear"
+                  placeholder="e.g., $1,000, No Prize, TBA"
                   value={prizeReward}
                   onChange={(e) => setPrizeReward(e.target.value)}
                   data-testid="input-tournament-prize"
                 />
+                <p className="text-xs text-muted-foreground">Enter any text or leave blank</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="entryFee">Entry Fee</Label>
                 <Input
                   id="entryFee"
-                  type="number"
-                  placeholder="e.g., 10"
+                  placeholder="e.g., FREE, $5, ₦1000"
                   value={entryFee}
                   onChange={(e) => setEntryFee(e.target.value)}
                   data-testid="input-tournament-entry-fee"
                 />
-                <p className="text-xs text-muted-foreground">Amount in dollars</p>
+                <p className="text-xs text-muted-foreground">Enter any text or leave blank</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">

@@ -458,7 +458,7 @@ function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: Edit
       setGame(tournament.game || "");
       setImageUrl(tournament.imageUrl || "");
       setPrizeReward(tournament.prizeReward || "");
-      setEntryFee(tournament.entryFee?.toString() || "");
+      setEntryFee(tournament.entryFee || "");
       setStartDate(tournament.startDate ? new Date(tournament.startDate).toISOString().slice(0, 16) : "");
       setEndDate(tournament.endDate ? new Date(tournament.endDate).toISOString().slice(0, 16) : "");
       setPlatform(tournament.platform || "");
@@ -482,7 +482,7 @@ function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: Edit
       game: game.trim() || null,
       imageUrl: imageUrl.trim() || null,
       prizeReward: prizeReward.trim() || null,
-      entryFee: entryFee.trim() !== "" ? parseInt(entryFee) : null,
+      entryFee: entryFee.trim() || null,
       startDate: startDate ? new Date(startDate) : null,
       endDate: endDate ? new Date(endDate) : null,
       platform: platform.trim() || null,
@@ -534,6 +534,7 @@ function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: Edit
               <Label htmlFor="edit-prizeReward">Prize Pool</Label>
               <Input
                 id="edit-prizeReward"
+                placeholder="e.g., $1,000, No Prize, TBA"
                 value={prizeReward}
                 onChange={(e) => setPrizeReward(e.target.value)}
                 data-testid="input-edit-tournament-prize"
@@ -543,7 +544,7 @@ function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: Edit
               <Label htmlFor="edit-entryFee">Entry Fee</Label>
               <Input
                 id="edit-entryFee"
-                type="number"
+                placeholder="e.g., FREE, $5, ₦1000"
                 value={entryFee}
                 onChange={(e) => setEntryFee(e.target.value)}
                 data-testid="input-edit-tournament-entry-fee"
