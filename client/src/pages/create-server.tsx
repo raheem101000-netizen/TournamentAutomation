@@ -28,11 +28,13 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Server } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import ImageUploadField from "@/components/ImageUploadField";
+import TagInput from "@/components/TagInput";
 
 const createServerSchema = z.object({
   name: z.string().min(1, "Server name is required"),
   description: z.string().optional(),
   category: z.string().optional(),
+  gameTags: z.array(z.string()).optional(),
   isPublic: z.number().default(1),
   iconUrl: z.string().optional(),
   backgroundUrl: z.string().optional(),
@@ -51,6 +53,7 @@ export default function CreateServer() {
       name: "",
       description: "",
       category: "gaming",
+      gameTags: [],
       isPublic: 1,
       iconUrl: "",
       backgroundUrl: "",
@@ -163,6 +166,24 @@ export default function CreateServer() {
                         <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="gameTags"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Game Tags</FormLabel>
+                    <FormControl>
+                      <TagInput
+                        tags={field.value || []}
+                        onChange={field.onChange}
+                        placeholder="Type a game name and press Enter (e.g., FIFA, Valorant)"
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
