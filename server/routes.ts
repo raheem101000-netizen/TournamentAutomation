@@ -2,7 +2,10 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { createProxyMiddleware } from "http-proxy-middleware";
+import { unsign } from "cookie-signature";
 import { storage } from "./storage";
+import { pool } from "./db";
+import { SESSION_SECRET } from "./index";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import {
@@ -52,21 +55,131 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const matchConnections = new Map<string, Set<WebSocket>>();
+  const channelConnections = new Map<string, Set<WebSocket>>();
+  const wsUserMap = new Map<WebSocket, { userId: string; username: string }>();
 
-  httpServer.on('upgrade', (request, socket, head) => {
+  // Parse session from cookie and verify authentication
+  const getSessionUserId = async (request: any): Promise<{ userId: string; username: string } | null> => {
+    try {
+      const cookies = request.headers.cookie || '';
+      const sessionCookieMatch = cookies.match(/connect\.sid=([^;]+)/);
+      
+      if (!sessionCookieMatch) {
+        return null;
+      }
+
+      // Decode the session ID (it's URL encoded with s: prefix)
+      const sessionId = decodeURIComponent(sessionCookieMatch[1]);
+      
+      // Verify cookie signature using the shared session secret
+      const unsigned = unsign(sessionId, SESSION_SECRET);
+      
+      if (!unsigned) {
+        // Signature verification failed - cookie was tampered with
+        return null;
+      }
+
+      // Query session from database using verified sid
+      const result = await pool.query('SELECT sess FROM session WHERE sid = $1', [unsigned]);
+      
+      if (result.rows.length === 0 || !result.rows[0].sess?.userId) {
+        return null;
+      }
+
+      const userId = result.rows[0].sess.userId;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return null;
+      }
+
+      return {
+        userId: user.id,
+        username: user.username || user.displayName || 'Unknown',
+      };
+    } catch (error) {
+      console.error('Error parsing session:', error);
+      return null;
+    }
+  };
+
+  httpServer.on('upgrade', async (request, socket, head) => {
     const pathname = new URL(request.url || "", `http://${request.headers.host}`).pathname;
     
-    if (pathname === '/ws/chat') {
+    if (pathname === '/ws/chat' || pathname === '/ws/channel') {
+      // Verify authentication before upgrading
+      const userInfo = await getSessionUserId(request);
+      
+      if (!userInfo) {
+        socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+        socket.destroy();
+        return;
+      }
+
       wss.handleUpgrade(request, socket, head, (ws) => {
+        wsUserMap.set(ws, userInfo);
         wss.emit('connection', ws, request);
       });
     }
   });
 
   wss.on("connection", (ws, req) => {
-    const matchId = new URL(req.url || "", `http://${req.headers.host}`).searchParams.get("matchId");
+    const url = new URL(req.url || "", `http://${req.headers.host}`);
+    const matchId = url.searchParams.get("matchId");
+    const channelId = url.searchParams.get("channelId");
+    const userInfo = wsUserMap.get(ws);
 
-    if (matchId) {
+    if (!userInfo) {
+      ws.close(1008, 'Unauthorized');
+      return;
+    }
+
+    // Handle channel connections
+    if (channelId) {
+      if (!channelConnections.has(channelId)) {
+        channelConnections.set(channelId, new Set());
+      }
+      channelConnections.get(channelId)!.add(ws);
+
+      ws.on("message", async (data) => {
+        try {
+          const messageData = JSON.parse(data.toString());
+          
+          // Use authenticated user info from session, not client data
+          const validatedData = insertChannelMessageSchema.parse({
+            channelId: channelId,
+            userId: userInfo.userId,
+            username: userInfo.username,
+            message: messageData.message,
+            imageUrl: messageData.imageUrl || null,
+            replyToId: messageData.replyToId || null,
+          });
+
+          // Create channel message with validated data
+          const savedMessage = await storage.createChannelMessage(validatedData);
+
+          // Broadcast to all connections in this channel
+          const broadcastPayload = {
+            type: "new_message",
+            message: savedMessage,
+          };
+          broadcastToChannel(channelId, broadcastPayload);
+        } catch (error: any) {
+          console.error("Error handling channel WebSocket message:", error);
+          ws.send(JSON.stringify({ error: "Failed to process message", details: error.message }));
+        }
+      });
+
+      ws.on("close", () => {
+        channelConnections.get(channelId)?.delete(ws);
+        wsUserMap.delete(ws);
+        if (channelConnections.get(channelId)?.size === 0) {
+          channelConnections.delete(channelId);
+        }
+      });
+    }
+    // Handle match connections (existing functionality)
+    else if (matchId) {
       if (!matchConnections.has(matchId)) {
         matchConnections.set(matchId, new Set());
       }
@@ -112,6 +225,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const broadcastToMatch = (matchId: string, data: any) => {
     const connections = matchConnections.get(matchId);
+    if (connections) {
+      const message = JSON.stringify(data);
+      connections.forEach((ws) => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(message);
+        }
+      });
+    }
+  };
+
+  const broadcastToChannel = (channelId: string, data: any) => {
+    const connections = channelConnections.get(channelId);
     if (connections) {
       const message = JSON.stringify(data);
       connections.forEach((ws) => {

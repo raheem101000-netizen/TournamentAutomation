@@ -166,7 +166,7 @@ export default function PreviewServerDetail() {
             <AnnouncementsChannel />
           )}
           {selectedChannel.type === "chat" && (
-            <ChatChannel />
+            <ChatChannel channelId={selectedChannel.id} />
           )}
         </main>
 

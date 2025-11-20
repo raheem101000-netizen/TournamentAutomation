@@ -27,6 +27,9 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: false }));
 
+// Shared session secret for both session middleware and WebSocket authentication
+export const SESSION_SECRET = process.env.SESSION_SECRET || 'dev-secret-change-in-production';
+
 const PgSession = connectPg(session);
 
 app.use(session({
@@ -35,7 +38,7 @@ app.use(session({
     tableName: 'session',
     createTableIfMissing: true,
   }),
-  secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
+  secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
