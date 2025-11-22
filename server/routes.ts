@@ -694,6 +694,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Match details endpoint (for 1v1 tournament match screen)
+  app.get("/api/tournaments/:tournamentId/matches/:matchId/details", async (req, res) => {
+    try {
+      const match = await storage.getMatch(req.params.matchId);
+      if (!match) {
+        return res.status(404).json({ error: "Match not found" });
+      }
+
+      const tournament = await storage.getTournament(req.params.tournamentId);
+      if (!tournament) {
+        return res.status(404).json({ error: "Tournament not found" });
+      }
+
+      const team1 = match.team1Id ? await storage.getTeam(match.team1Id) : null;
+      const team2 = match.team2Id ? await storage.getTeam(match.team2Id) : null;
+
+      res.json({
+        match,
+        tournament,
+        team1,
+        team2,
+        team1Players: [],
+        team2Players: [],
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Chat routes
   app.get("/api/matches/:matchId/messages", async (req, res) => {
     try {
