@@ -40,21 +40,21 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 
-const achievementIcons = [
-  { name: "Trophy", icon: Trophy, color: "text-amber-500" },
-  { name: "Medal", icon: Medal, color: "text-slate-500" },
-  { name: "Star", icon: Star, color: "text-blue-500" },
-  { name: "Award", icon: Award, color: "text-purple-500" },
-  { name: "Target", icon: Target, color: "text-red-500" },
-  { name: "Shield", icon: Shield, color: "text-green-500" },
-  { name: "Zap", icon: Zap, color: "text-yellow-500" },
+// Predefined achievements with fixed icon-title pairs
+const predefinedAchievements = [
+  { id: "champion", icon: Trophy, color: "text-amber-500", title: "Champion" },
+  { id: "runner-up", icon: Medal, color: "text-slate-500", title: "Runner Up" },
+  { id: "third-place", icon: Star, color: "text-blue-500", title: "Third Place" },
+  { id: "mvp", icon: Award, color: "text-purple-500", title: "MVP" },
+  { id: "top-scorer", icon: Target, color: "text-red-500", title: "Top Scorer" },
+  { id: "best-defense", icon: Shield, color: "text-green-500", title: "Best Defender" },
+  { id: "rising-star", icon: Zap, color: "text-yellow-500", title: "Rising Star" },
 ];
 
 const awardAchievementSchema = z.object({
   playerId: z.string().min(1, "Please enter a player ID"),
-  title: z.string().min(1, "Achievement title is required").max(50),
-  description: z.string().max(200),
-  icon: z.enum(["Trophy", "Medal", "Star", "Award", "Target", "Shield", "Zap"]),
+  achievementId: z.string().min(1, "Please select an achievement"),
+  description: z.string().max(200).optional(),
 });
 
 interface TournamentDashboardChannelProps {
@@ -74,9 +74,8 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
     resolver: zodResolver(awardAchievementSchema),
     defaultValues: {
       playerId: "",
-      title: "",
+      achievementId: "champion",
       description: "",
-      icon: "Trophy",
     },
   });
 
@@ -172,12 +171,18 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
 
   const awardAchievementMutation = useMutation({
     mutationFn: async (data: z.infer<typeof awardAchievementSchema>) => {
+      // Look up the achievement details
+      const achievement = predefinedAchievements.find(a => a.id === data.achievementId);
+      if (!achievement) {
+        throw new Error("Invalid achievement selected");
+      }
+      
       return apiRequest("POST", "/api/achievements", {
         userId: data.playerId,
-        title: data.title,
+        title: achievement.title,
         description: data.description || "",
         type: "solo",
-        iconUrl: data.icon,
+        iconUrl: achievement.id,
         category: "tournament",
         awardedBy: user?.id,
       });
@@ -770,51 +775,32 @@ function AwardAchievementDialog({
               )}
             />
 
-            {/* Icon Selection */}
+            {/* Achievement Selection */}
             <FormField
               control={form.control}
-              name="icon"
+              name="achievementId"
               render={({ field }: any) => (
                 <FormItem>
-                  <FormLabelComponent>Icon</FormLabelComponent>
+                  <FormLabelComponent>Achievement</FormLabelComponent>
                   <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
-                      <SelectTrigger data-testid="select-achievement-icon">
+                      <SelectTrigger data-testid="select-achievement">
                         <SelectValue />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {achievementIcons.map(({ name, icon: IconComponent, color }) => {
+                      {predefinedAchievements.map(({ id, icon: IconComponent, color, title }) => {
                         return (
-                          <SelectItem key={name} value={name}>
+                          <SelectItem key={id} value={id}>
                             <div className="flex items-center gap-2">
                               <IconComponent className={`w-4 h-4 ${color}`} />
-                              <span>{name}</span>
+                              <span>{title}</span>
                             </div>
                           </SelectItem>
                         );
                       })}
                     </SelectContent>
                   </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Title */}
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }: any) => (
-                <FormItem>
-                  <FormLabelComponent>Title</FormLabelComponent>
-                  <FormControl>
-                    <Input
-                      placeholder="e.g., MVP, Top Scorer"
-                      {...field}
-                      data-testid="input-achievement-title"
-                    />
-                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
