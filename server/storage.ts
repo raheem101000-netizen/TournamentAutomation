@@ -895,7 +895,7 @@ export class DatabaseStorage implements IStorage {
 
   async getOrganizerPermission(organizerId: string): Promise<number | undefined> {
     const [perm] = await db.select().from(organizerPermissions).where(eq(organizerPermissions.organizerId, organizerId));
-    return perm?.canGiveAchievements;
+    return perm?.canGiveAchievements ?? 1;
   }
 
   async updateOrganizerPermission(organizerId: string, data: Partial<OrganizerPermission>): Promise<OrganizerPermission | undefined> {
