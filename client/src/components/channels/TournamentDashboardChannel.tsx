@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Trophy, Plus, ArrowLeft, Calendar, Users as UsersIcon } from "lucide-react";
+import { Trophy, Plus, ArrowLeft, Calendar, Users as UsersIcon, Medal, Star, Award, Target, Shield, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,15 +40,21 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 
-const achievementIconOptions = [
-  "🏆", "⭐", "🥇", "🎖️", "👑", "🔥", "💎", "🌟", "✨", "🎯", "🏅", "🎪"
+const achievementIcons = [
+  { name: "Trophy", icon: Trophy, color: "text-amber-500" },
+  { name: "Medal", icon: Medal, color: "text-slate-500" },
+  { name: "Star", icon: Star, color: "text-blue-500" },
+  { name: "Award", icon: Award, color: "text-purple-500" },
+  { name: "Target", icon: Target, color: "text-red-500" },
+  { name: "Shield", icon: Shield, color: "text-green-500" },
+  { name: "Zap", icon: Zap, color: "text-yellow-500" },
 ];
 
 const awardAchievementSchema = z.object({
   playerId: z.string().min(1, "Please enter a player ID"),
   title: z.string().min(1, "Achievement title is required").max(50),
   description: z.string().max(200),
-  icon: z.string().min(1, "Please select an icon"),
+  icon: z.enum(["Trophy", "Medal", "Star", "Award", "Target", "Shield", "Zap"]),
 });
 
 interface TournamentDashboardChannelProps {
@@ -70,7 +76,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
       playerId: "",
       title: "",
       description: "",
-      icon: "🏆",
+      icon: "Trophy",
     },
   });
 
@@ -449,7 +455,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
           <Trophy className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-semibold">Tournament Dashboard</h2>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2">
           <Button onClick={() => setIsAwardAchievementDialogOpen(true)} variant="outline" data-testid="button-award-achievement">
             <Trophy className="h-4 w-4 mr-2" />
             Award Achievement
@@ -778,11 +784,16 @@ function AwardAchievementDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {achievementIconOptions.map((icon) => (
-                        <SelectItem key={icon} value={icon}>
-                          <span className="text-lg">{icon}</span>
-                        </SelectItem>
-                      ))}
+                      {achievementIcons.map(({ name, icon: IconComponent, color }) => {
+                        return (
+                          <SelectItem key={name} value={name}>
+                            <div className="flex items-center gap-2">
+                              <IconComponent className={`w-4 h-4 ${color}`} />
+                              <span>{name}</span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                   <FormMessage />
