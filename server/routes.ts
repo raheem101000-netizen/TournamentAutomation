@@ -459,8 +459,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (matches) {
           await Promise.all(matches.map((match) => storage.createMatch(match)));
         }
-
-        await storage.updateTournament(tournament.id, { status: "in_progress" });
       }
 
       const registrationConfig = req.body.registrationConfig;
