@@ -45,11 +45,10 @@ const achievementIconOptions = [
 ];
 
 const awardAchievementSchema = z.object({
-  playerId: z.string().min(1, "Please select a player"),
+  playerId: z.string().min(1, "Please enter a player ID"),
   title: z.string().min(1, "Achievement title is required").max(50),
   description: z.string().max(200),
-  icon: z.string(),
-  type: z.string().optional(),
+  icon: z.string().min(1, "Please select an icon"),
 });
 
 interface TournamentDashboardChannelProps {
@@ -72,7 +71,6 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
       title: "",
       description: "",
       icon: "🏆",
-      type: "tournament",
     },
   });
 
@@ -171,10 +169,11 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
       return apiRequest("POST", "/api/achievements", {
         userId: data.playerId,
         title: data.title,
-        description: data.description,
-        type: data.type || "tournament",
+        description: data.description || "",
+        type: "solo",
         iconUrl: data.icon,
-        tournamentId: selectedTournamentId,
+        category: "tournament",
+        awardedBy: user?.id,
       });
     },
     onSuccess: () => {
@@ -184,6 +183,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
       });
       achievementForm.reset();
       setShowAchievementForm(false);
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${selectedTournament?.organizerId}/achievements`] });
     },
     onError: (error: any) => {
       toast({
