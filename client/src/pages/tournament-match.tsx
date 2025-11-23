@@ -26,11 +26,13 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Send, X, ChevronLeft, Trophy } from "lucide-react";
+import { Send, X, ChevronLeft, Trophy, Upload as UploadIcon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { ObjectUploader } from "@/components/ObjectUploader";
 import type { Match, Team, Tournament } from "@shared/schema";
+import type { UploadResult } from "@uppy/core";
 
 const achievementIconOptions = [
   "🏆", "⭐", "🥇", "🎖️", "👑", "🔥", "💎", "🌟", "✨", "🎯", "🏅", "🎪"
@@ -75,8 +77,11 @@ export default function TournamentMatch() {
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [messageInput, setMessageInput] = useState("");
+  const [messageImage, setMessageImage] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [ws, setWs] = useState<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const objectPathRef = useRef<string | null>(null);
 
   // Fetch match details
   const { data: matchDetails, isLoading: matchLoading } = useQuery<MatchDetails>({
@@ -178,11 +183,60 @@ export default function TournamentMatch() {
 
     const messageData = {
       message: messageInput.trim(),
-      imageUrl: null,
+      imageUrl: messageImage || null,
     };
 
     ws.send(JSON.stringify(messageData));
     setMessageInput("");
+    setMessageImage(null);
+  };
+
+  const handleGetUploadParameters = async () => {
+    const response = await apiRequest("POST", "/api/objects/upload");
+    const data = await response.json();
+    objectPathRef.current = data.objectPath;
+    return {
+      method: "PUT" as const,
+      url: data.uploadURL,
+    };
+  };
+
+  const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+    if (result.successful && result.successful.length > 0) {
+      setIsUploadingImage(true);
+      try {
+        const uploadedObjectPath = objectPathRef.current;
+        
+        if (!uploadedObjectPath) {
+          throw new Error("No object path available");
+        }
+        
+        const response = await apiRequest("POST", "/api/objects/normalize", {
+          objectPath: uploadedObjectPath
+        });
+        
+        if (!response.ok) {
+          throw new Error("Failed to process uploaded image");
+        }
+        
+        const data = await response.json();
+        setMessageImage(data.objectPath);
+        
+        toast({
+          title: "Image uploaded",
+          description: "Image ready to send",
+        });
+      } catch (error) {
+        console.error("Error uploading image:", error);
+        toast({
+          title: "Upload failed",
+          description: error instanceof Error ? error.message : "Failed to upload image",
+          variant: "destructive",
+        });
+      } finally {
+        setIsUploadingImage(false);
+      }
+    }
   };
 
   if (matchLoading) {
@@ -406,22 +460,52 @@ export default function TournamentMatch() {
 
             {/* Input */}
             {(isTeam1Manager || isTeam2Manager || isOrganizer) ? (
-              <form className="flex gap-2 pt-3 border-t" onSubmit={handleSendMessage}>
-                <Input
-                  placeholder="Send a message..."
-                  value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
-                  data-testid="input-match-message"
-                />
-                <Button
-                  size="icon"
-                  type="submit"
-                  disabled={!messageInput.trim() || !ws}
-                  data-testid="button-send-match-message"
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </form>
+              <div className="space-y-2 pt-3 border-t">
+                {messageImage && (
+                  <div className="relative rounded max-w-xs">
+                    <img
+                      src={messageImage}
+                      alt="Message attachment"
+                      className="w-full h-32 object-cover rounded"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-1 right-1 h-6 w-6"
+                      onClick={() => setMessageImage(null)}
+                      data-testid="button-remove-message-image"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
+                <form className="flex gap-2" onSubmit={handleSendMessage}>
+                  <Input
+                    placeholder="Send a message..."
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    data-testid="input-match-message"
+                  />
+                  <ObjectUploader
+                    maxNumberOfFiles={1}
+                    maxFileSize={10485760}
+                    onGetUploadParameters={handleGetUploadParameters}
+                    onComplete={handleUploadComplete}
+                    buttonClassName="h-9 px-3"
+                  >
+                    <UploadIcon className="h-4 w-4" />
+                  </ObjectUploader>
+                  <Button
+                    size="icon"
+                    type="submit"
+                    disabled={(!messageInput.trim() && !messageImage) || !ws || isUploadingImage}
+                    data-testid="button-send-match-message"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </form>
+              </div>
             ) : (
               <div className="text-center text-sm text-muted-foreground py-2">
                 Only team managers and organizer can send messages

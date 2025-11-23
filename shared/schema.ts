@@ -33,6 +33,7 @@ export const teams = pgTable("teams", {
   wins: integer("wins").default(0),
   losses: integer("losses").default(0),
   points: integer("points").default(0),
+  isRemoved: integer("is_removed").default(0),
 });
 
 export const matches = pgTable("matches", {

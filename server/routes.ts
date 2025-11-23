@@ -644,6 +644,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (loserTeam) {
             await storage.updateTeam(loserId, {
               losses: (loserTeam.losses ?? 0) + 1,
+              isRemoved: 1,
             });
           }
         }
@@ -687,6 +688,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json(match);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create custom match endpoint
+  app.post("/api/tournaments/:tournamentId/matches/custom", async (req, res) => {
+    try {
+      const { team1Id, team2Id } = req.body;
+      const tournament = await storage.getTournament(req.params.tournamentId);
+
+      if (!tournament) {
+        return res.status(404).json({ error: "Tournament not found" });
+      }
+
+      const team1 = await storage.getTeam(team1Id);
+      const team2 = await storage.getTeam(team2Id);
+
+      if (!team1 || !team2) {
+        return res.status(404).json({ error: "One or both teams not found" });
+      }
+
+      if (team1.isRemoved || team2.isRemoved) {
+        return res.status(400).json({ error: "Cannot create match with eliminated teams" });
+      }
+
+      const allMatches = await storage.getMatchesByTournament(tournament.id);
+      const maxRound = Math.max(...allMatches.map(m => m.round || 1), 0);
+      
+      const newMatch = await storage.createMatch({
+        tournamentId: tournament.id,
+        team1Id,
+        team2Id,
+        round: maxRound + 1,
+        status: "pending",
+      });
+
+      res.status(201).json(newMatch);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

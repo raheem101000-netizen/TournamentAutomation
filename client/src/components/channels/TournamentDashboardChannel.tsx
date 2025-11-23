@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Trophy, Plus, ArrowLeft, Calendar, Users as UsersIcon, Medal, Star, Award, Target, Shield, Zap } from "lucide-react";
+import { Trophy, Plus, ArrowLeft, Calendar, Users as UsersIcon, Medal, Star, Award, Target, Shield, Zap, ChevronDown, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,8 +66,11 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAwardAchievementDialogOpen, setIsAwardAchievementDialogOpen] = useState(false);
+  const [isCreateMatchDialogOpen, setIsCreateMatchDialogOpen] = useState(false);
   const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
+  const [selectedTeam1Id, setSelectedTeam1Id] = useState<string | null>(null);
+  const [selectedTeam2Id, setSelectedTeam2Id] = useState<string | null>(null);
   const { toast} = useToast();
   const { user } = useAuth();
 
@@ -161,6 +164,33 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
         description: "Match result has been recorded.",
       });
       setSelectedMatchId(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const createCustomMatchMutation = useMutation({
+    mutationFn: async ({ team1Id, team2Id }: { team1Id: string; team2Id: string }) => {
+      return apiRequest('POST', `/api/tournaments/${selectedTournamentId}/matches/custom`, {
+        team1Id,
+        team2Id,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/matches`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/teams`] });
+      toast({
+        title: "Match created",
+        description: "New match has been created successfully.",
+      });
+      setSelectedTeam1Id(null);
+      setSelectedTeam2Id(null);
+      setIsCreateMatchDialogOpen(false);
     },
     onError: (error: Error) => {
       toast({
@@ -265,11 +295,12 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
         </div>
 
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="w-full grid grid-cols-5">
+          <TabsList className="w-full grid grid-cols-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="bracket">Bracket</TabsTrigger>
             <TabsTrigger value="standings">Standings</TabsTrigger>
             <TabsTrigger value="matches">Matches</TabsTrigger>
+            <TabsTrigger value="participants">Participants</TabsTrigger>
             <TabsTrigger value="teams">Teams</TabsTrigger>
           </TabsList>
 
@@ -406,6 +437,71 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
             )}
           </TabsContent>
 
+          <TabsContent value="participants">
+            {selectedTournamentTeams.length > 0 ? (
+              <div className="space-y-4">
+                <Button 
+                  onClick={() => setIsCreateMatchDialogOpen(true)} 
+                  data-testid="button-create-custom-match"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Match
+                </Button>
+                <p className="text-sm text-muted-foreground">
+                  {selectedTournamentTeams.filter(t => !t.isRemoved).length} active participants
+                </p>
+                <div className="space-y-2">
+                  {selectedTournamentTeams.map((team) => (
+                    <Card key={team.id} className={team.isRemoved ? "opacity-50" : ""}>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                        <div>
+                          <CardTitle className="text-base">{team.name}</CardTitle>
+                          {team.isRemoved && (
+                            <Badge variant="destructive" className="mt-1">Eliminated</Badge>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Badge variant="outline">{team.wins}W</Badge>
+                          <Badge variant="outline">{team.losses}L</Badge>
+                        </div>
+                      </CardHeader>
+                      {!team.isRemoved && (
+                        <CardContent>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant={selectedTeam1Id === team.id ? "default" : "outline"}
+                              onClick={() => setSelectedTeam1Id(selectedTeam1Id === team.id ? null : team.id)}
+                              data-testid={`button-select-team1-${team.id}`}
+                            >
+                              {selectedTeam1Id === team.id ? <Check className="h-4 w-4 mr-1" /> : ""}
+                              Select
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant={selectedTeam2Id === team.id ? "default" : "outline"}
+                              onClick={() => setSelectedTeam2Id(selectedTeam2Id === team.id ? null : team.id)}
+                              data-testid={`button-select-team2-${team.id}`}
+                            >
+                              {selectedTeam2Id === team.id ? <Check className="h-4 w-4 mr-1" /> : ""}
+                              Select
+                            </Button>
+                          </div>
+                        </CardContent>
+                      )}
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <Card className="p-8">
+                <p className="text-center text-muted-foreground">
+                  No participants yet
+                </p>
+              </Card>
+            )}
+          </TabsContent>
+
           <TabsContent value="teams">
             {selectedTournamentTeams.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -453,6 +549,76 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
             onSubmit={handleSubmitScore}
           />
         )}
+
+        <Dialog open={isCreateMatchDialogOpen} onOpenChange={setIsCreateMatchDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create Custom Match</DialogTitle>
+              <DialogDescription>
+                Select two participants to create a new match
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Team 1</Label>
+                <Select value={selectedTeam1Id || ""} onValueChange={setSelectedTeam1Id}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select team 1" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedTournamentTeams
+                      .filter(t => !t.isRemoved && t.id !== selectedTeam2Id)
+                      .map((team) => (
+                        <SelectItem key={team.id} value={team.id}>
+                          {team.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Team 2</Label>
+                <Select value={selectedTeam2Id || ""} onValueChange={setSelectedTeam2Id}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select team 2" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedTournamentTeams
+                      .filter(t => !t.isRemoved && t.id !== selectedTeam1Id)
+                      .map((team) => (
+                        <SelectItem key={team.id} value={team.id}>
+                          {team.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => setIsCreateMatchDialogOpen(false)}
+                data-testid="button-cancel-create-match"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => {
+                  if (selectedTeam1Id && selectedTeam2Id) {
+                    createCustomMatchMutation.mutate({ team1Id: selectedTeam1Id, team2Id: selectedTeam2Id });
+                  }
+                }}
+                disabled={!selectedTeam1Id || !selectedTeam2Id || createCustomMatchMutation.isPending}
+                data-testid="button-confirm-create-match"
+              >
+                {createCustomMatchMutation.isPending ? "Creating..." : "Create Match"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
