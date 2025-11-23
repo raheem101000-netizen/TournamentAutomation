@@ -46,9 +46,9 @@ const predefinedAchievements = [
   { id: "runner-up", icon: Medal, color: "text-slate-500", title: "Runner Up", isEditable: false },
   { id: "third-place", icon: Star, color: "text-blue-500", title: "Third Place", isEditable: false },
   { id: "mvp", icon: Award, color: "text-purple-500", title: "MVP", isEditable: false },
-  { id: "top-scorer", icon: Target, color: "text-red-500", title: "Top Scorer", isEditable: true },
-  { id: "best-defense", icon: Shield, color: "text-green-500", title: "Best Defender", isEditable: true },
-  { id: "rising-star", icon: Zap, color: "text-yellow-500", title: "Rising Star", isEditable: true },
+  { id: "top-scorer", icon: Target, color: "text-red-500", title: "", isEditable: true },
+  { id: "best-defense", icon: Shield, color: "text-green-500", title: "", isEditable: true },
+  { id: "rising-star", icon: Zap, color: "text-yellow-500", title: "", isEditable: true },
 ];
 
 const awardAchievementSchema = z.object({
@@ -822,16 +822,16 @@ function AwardAchievementDialog({
                   name="customTitle"
                   render={({ field }: any) => (
                     <FormItem>
-                      <FormLabelComponent>Custom Title (Optional)</FormLabelComponent>
+                      <FormLabelComponent>Achievement Title</FormLabelComponent>
                       <FormControl>
                         <Input
-                          placeholder={`e.g., rename from "${selectedAchievement.title}"`}
+                          placeholder="e.g., Top Scorer, Best Defender, Rising Star, or any custom name"
                           {...field}
                           data-testid="input-custom-achievement-title"
                         />
                       </FormControl>
                       <FormDescription>
-                        Leave blank to use the default "{selectedAchievement.title}"
+                        Enter a custom title for this achievement
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
