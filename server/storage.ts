@@ -27,6 +27,9 @@ import {
   serverBans,
   serverInvites,
   channelMessages,
+  organizerPermissions,
+  reports,
+  customerServiceMessages,
   type Tournament,
   type Team,
   type Match,
@@ -73,6 +76,9 @@ import {
   type InsertServerMember,
   type InsertServerRole,
   type InsertServerBan,
+  type OrganizerPermission,
+  type Report,
+  type CustomerServiceMessage,
   type InsertServerInvite,
   type InsertChannelMessage,
 } from "@shared/schema";
@@ -216,6 +222,19 @@ export interface IStorage {
   updateServerMember(serverId: string, userId: string, data: Partial<InsertServerMember>): Promise<ServerMember | undefined>;
   deleteMemberFromServer(serverId: string, userId: string): Promise<void>;
   getEffectivePermissions(serverId: string, userId: string): Promise<string[]>;
+
+  // Admin operations
+  getAllUsers(): Promise<User[]>;
+  getOrganizerUsers(): Promise<User[]>;
+  getOrganizerPermission(organizerId: string): Promise<number | undefined>;
+  updateOrganizerPermission(organizerId: string, data: Partial<OrganizerPermission>): Promise<OrganizerPermission | undefined>;
+  getAllAchievements(): Promise<Achievement[]>;
+  deleteAchievement(achievementId: string): Promise<void>;
+  deleteTournament(tournamentId: string): Promise<void>;
+  getAllReports(): Promise<Report[]>;
+  updateReport(reportId: string, data: Partial<Report>): Promise<Report | undefined>;
+  getAllCustomerServiceMessages(): Promise<CustomerServiceMessage[]>;
+  updateCustomerServiceMessage(messageId: string, data: Partial<CustomerServiceMessage>): Promise<CustomerServiceMessage | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -863,6 +882,72 @@ export class DatabaseStorage implements IStorage {
       .where(eq(servers.id, id))
       .returning();
     return server || undefined;
+  }
+
+  // Admin operations
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(users.createdAt);
+  }
+
+  async getOrganizerUsers(): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.role, "organizer"));
+  }
+
+  async getOrganizerPermission(organizerId: string): Promise<number | undefined> {
+    const [perm] = await db.select().from(organizerPermissions).where(eq(organizerPermissions.organizerId, organizerId));
+    return perm?.canGiveAchievements;
+  }
+
+  async updateOrganizerPermission(organizerId: string, data: Partial<OrganizerPermission>): Promise<OrganizerPermission | undefined> {
+    const existing = await this.getOrganizerPermission(organizerId);
+    if (!existing) {
+      const [perm] = await db.insert(organizerPermissions).values({ organizerId, ...data }).returning();
+      return perm;
+    }
+    const [perm] = await db
+      .update(organizerPermissions)
+      .set(data)
+      .where(eq(organizerPermissions.organizerId, organizerId))
+      .returning();
+    return perm || undefined;
+  }
+
+  async getAllAchievements(): Promise<Achievement[]> {
+    return await db.select().from(achievements).orderBy(achievements.achievedAt);
+  }
+
+  async deleteAchievement(achievementId: string): Promise<void> {
+    await db.delete(achievements).where(eq(achievements.id, achievementId));
+  }
+
+  async deleteTournament(tournamentId: string): Promise<void> {
+    await db.delete(tournaments).where(eq(tournaments.id, tournamentId));
+  }
+
+  async getAllReports(): Promise<Report[]> {
+    return await db.select().from(reports).orderBy(reports.createdAt);
+  }
+
+  async updateReport(reportId: string, data: Partial<Report>): Promise<Report | undefined> {
+    const [report] = await db
+      .update(reports)
+      .set(data)
+      .where(eq(reports.id, reportId))
+      .returning();
+    return report || undefined;
+  }
+
+  async getAllCustomerServiceMessages(): Promise<CustomerServiceMessage[]> {
+    return await db.select().from(customerServiceMessages).orderBy(customerServiceMessages.createdAt);
+  }
+
+  async updateCustomerServiceMessage(messageId: string, data: Partial<CustomerServiceMessage>): Promise<CustomerServiceMessage | undefined> {
+    const [message] = await db
+      .update(customerServiceMessages)
+      .set(data)
+      .where(eq(customerServiceMessages.id, messageId))
+      .returning();
+    return message || undefined;
   }
 }
 

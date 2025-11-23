@@ -2038,5 +2038,213 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // =============== ADMIN PANEL ROUTES ===============
+
+  // Admin - Get all users
+  app.get("/api/admin/users", async (req, res) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      res.json(allUsers);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin - Get all organizers with permissions
+  app.get("/api/admin/organizers", async (req, res) => {
+    try {
+      const organizers = await storage.getOrganizerUsers();
+      const withPermissions = await Promise.all(
+        organizers.map(async (org) => ({
+          ...org,
+          canGiveAchievements: await storage.getOrganizerPermission(org.id),
+        }))
+      );
+      res.json(withPermissions);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin - Change user role
+  app.patch("/api/admin/users/:userId/role", async (req, res) => {
+    try {
+      const { role } = req.body;
+      if (!["player", "organizer", "admin"].includes(role)) {
+        return res.status(400).json({ error: "Invalid role" });
+      }
+      const user = await storage.updateUser(req.params.userId, { role });
+      res.json(user);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin - Ban/Unban user
+  app.patch("/api/admin/users/:userId/ban", async (req, res) => {
+    try {
+      const { isBanned } = req.body;
+      const user = await storage.updateUser(req.params.userId, { isBanned });
+      res.json(user);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin - Delete user
+  app.delete("/api/admin/users/:userId", async (req, res) => {
+    try {
+      await storage.deleteUser(req.params.userId);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin - Get all achievements
+  app.get("/api/admin/achievements", async (req, res) => {
+    try {
+      const allAchievements = await storage.getAllAchievements();
+      const withUsernames = await Promise.all(
+        allAchievements.map(async (ach) => {
+          const user = await storage.getUser(ach.userId);
+          return { ...ach, username: user?.username };
+        })
+      );
+      res.json(withUsernames);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin - Give achievement
+  app.post("/api/admin/achievements", async (req, res) => {
+    try {
+      const { userId, title, description, type } = req.body;
+      const achievement = await storage.createAchievement({
+        userId,
+        title,
+        description,
+        type,
+        awardedBy: req.session?.userId || "admin",
+      });
+      res.status(201).json(achievement);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Admin - Delete achievement
+  app.delete("/api/admin/achievements/:achievementId", async (req, res) => {
+    try {
+      await storage.deleteAchievement(req.params.achievementId);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin - Toggle organizer permissions
+  app.patch("/api/admin/organizers/:organizerId/permissions", async (req, res) => {
+    try {
+      const { canGiveAchievements } = req.body;
+      const perm = await storage.updateOrganizerPermission(
+        req.params.organizerId,
+        { canGiveAchievements }
+      );
+      res.json(perm);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin - Get all tournaments
+  app.get("/api/admin/tournaments", async (req, res) => {
+    try {
+      const tournaments = await storage.getAllTournaments();
+      res.json(tournaments);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin - Delete tournament
+  app.delete("/api/admin/tournaments/:tournamentId", async (req, res) => {
+    try {
+      await storage.deleteTournament(req.params.tournamentId);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin - Freeze/unfreeze tournament
+  app.patch("/api/admin/tournaments/:tournamentId", async (req, res) => {
+    try {
+      const { isFrozen } = req.body;
+      const tournament = await storage.updateTournament(
+        req.params.tournamentId,
+        { isFrozen }
+      );
+      res.json(tournament);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin - Get reports
+  app.get("/api/admin/reports", async (req, res) => {
+    try {
+      const reports = await storage.getAllReports();
+      res.json(reports);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin - Resolve/dismiss report
+  app.patch("/api/admin/reports/:reportId", async (req, res) => {
+    try {
+      const { status } = req.body;
+      const report = await storage.updateReport(req.params.reportId, {
+        status,
+        resolvedBy: req.session?.userId,
+        resolvedAt: new Date(),
+      });
+      res.json(report);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin - Get customer service messages
+  app.get("/api/admin/customer-service-messages", async (req, res) => {
+    try {
+      const messages = await storage.getAllCustomerServiceMessages();
+      res.json(messages);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin - Respond to customer service message
+  app.patch("/api/admin/customer-service-messages/:messageId", async (req, res) => {
+    try {
+      const { response, status } = req.body;
+      const message = await storage.updateCustomerServiceMessage(
+        req.params.messageId,
+        {
+          response,
+          status,
+          respondedBy: req.session?.userId,
+          respondedAt: new Date(),
+        }
+      );
+      res.json(message);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }

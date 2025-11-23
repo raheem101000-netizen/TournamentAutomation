@@ -22,6 +22,7 @@ export const tournaments = pgTable("tournaments", {
   endDate: timestamp("end_date"),
   platform: text("platform"),
   region: text("region"),
+  isFrozen: integer("is_frozen").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -330,6 +331,8 @@ export const users = pgTable("users", {
   bio: text("bio"),
   language: text("language").default("en"),
   isDisabled: integer("is_disabled").default(0),
+  isBanned: integer("is_banned").default(0),
+  role: text("role", { enum: ["player", "organizer", "admin"] }).default("player"),
   level: integer("level").default(1),
   xp: integer("xp").default(0),
   rankTitle: text("rank_title").default("Rookie"),
@@ -347,6 +350,8 @@ export const achievements = pgTable("achievements", {
   achievedAt: timestamp("achieved_at").defaultNow().notNull(),
   category: text("category"),
   type: text("type", { enum: ["solo", "team"] }).notNull(),
+  awardedBy: varchar("awarded_by"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const teamProfiles = pgTable("team_profiles", {
@@ -408,6 +413,37 @@ export const serverInvites = pgTable("server_invites", {
   expiresAt: timestamp("expires_at"),
   maxUses: integer("max_uses"),
   currentUses: integer("current_uses").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const organizerPermissions = pgTable("organizer_permissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizerId: varchar("organizer_id").notNull(),
+  canGiveAchievements: integer("can_give_achievements").default(1),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const reports = pgTable("reports", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  reportedUserId: varchar("reported_user_id").notNull(),
+  reportedBy: varchar("reported_by").notNull(),
+  reason: text("reason").notNull(),
+  description: text("description"),
+  status: text("status", { enum: ["pending", "resolved", "dismissed"] }).default("pending"),
+  resolvedAt: timestamp("resolved_at"),
+  resolvedBy: varchar("resolved_by"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const customerServiceMessages = pgTable("customer_service_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  message: text("message").notNull(),
+  category: text("category").notNull(),
+  status: text("status", { enum: ["new", "in_progress", "resolved"] }).default("new"),
+  response: text("response"),
+  respondedBy: varchar("responded_by"),
+  respondedAt: timestamp("responded_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -482,3 +518,27 @@ export type InsertServerBan = z.infer<typeof insertServerBanSchema>;
 export type ServerBan = typeof serverBans.$inferSelect;
 export type InsertServerInvite = z.infer<typeof insertServerInviteSchema>;
 export type ServerInvite = typeof serverInvites.$inferSelect;
+
+export const insertOrganizerPermissionSchema = createInsertSchema(organizerPermissions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertReportSchema = createInsertSchema(reports).omit({
+  id: true,
+  createdAt: true,
+  resolvedAt: true,
+});
+
+export const insertCustomerServiceMessageSchema = createInsertSchema(customerServiceMessages).omit({
+  id: true,
+  createdAt: true,
+  respondedAt: true,
+});
+
+export type InsertOrganizerPermission = z.infer<typeof insertOrganizerPermissionSchema>;
+export type OrganizerPermission = typeof organizerPermissions.$inferSelect;
+export type InsertReport = z.infer<typeof insertReportSchema>;
+export type Report = typeof reports.$inferSelect;
+export type InsertCustomerServiceMessage = z.infer<typeof insertCustomerServiceMessageSchema>;
+export type CustomerServiceMessage = typeof customerServiceMessages.$inferSelect;

@@ -34,6 +34,7 @@ import CreateTournament from "@/pages/create-tournament";
 import ChatRoom from "@/pages/chat-room";
 import TeamBuilder from "@/pages/team-builder";
 import TournamentMatch from "@/pages/tournament-match";
+import AdminPanel from "@/pages/admin-panel";
 import { User, Search, Bell, Trophy, Server, MessageSquare } from "lucide-react";
 import { initializeApp } from "../../lib/initializeApp";
 
@@ -112,6 +113,9 @@ function Router() {
       </Route>
       <Route path="/tournament/:tournamentId/match/:matchId">
         {() => <ProtectedRoute component={TournamentMatch} />}
+      </Route>
+      <Route path="/admin">
+        {() => <ProtectedRoute component={AdminPanel} />}
       </Route>
       <Route path="/">
         {() => <ProtectedRoute component={PreviewHome} />}
