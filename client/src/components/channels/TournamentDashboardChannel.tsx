@@ -42,18 +42,19 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 
 // Predefined achievements with fixed icon-title pairs
 const predefinedAchievements = [
-  { id: "champion", icon: Trophy, color: "text-amber-500", title: "Champion" },
-  { id: "runner-up", icon: Medal, color: "text-slate-500", title: "Runner Up" },
-  { id: "third-place", icon: Star, color: "text-blue-500", title: "Third Place" },
-  { id: "mvp", icon: Award, color: "text-purple-500", title: "MVP" },
-  { id: "top-scorer", icon: Target, color: "text-red-500", title: "Top Scorer" },
-  { id: "best-defense", icon: Shield, color: "text-green-500", title: "Best Defender" },
-  { id: "rising-star", icon: Zap, color: "text-yellow-500", title: "Rising Star" },
+  { id: "champion", icon: Trophy, color: "text-amber-500", title: "Champion", isEditable: false },
+  { id: "runner-up", icon: Medal, color: "text-slate-500", title: "Runner Up", isEditable: false },
+  { id: "third-place", icon: Star, color: "text-blue-500", title: "Third Place", isEditable: false },
+  { id: "mvp", icon: Award, color: "text-purple-500", title: "MVP", isEditable: false },
+  { id: "top-scorer", icon: Target, color: "text-red-500", title: "Top Scorer", isEditable: true },
+  { id: "best-defense", icon: Shield, color: "text-green-500", title: "Best Defender", isEditable: true },
+  { id: "rising-star", icon: Zap, color: "text-yellow-500", title: "Rising Star", isEditable: true },
 ];
 
 const awardAchievementSchema = z.object({
   playerId: z.string().min(1, "Please enter a player ID"),
   achievementId: z.string().min(1, "Please select an achievement"),
+  customTitle: z.string().max(50).optional(),
   description: z.string().max(200).optional(),
 });
 
@@ -75,6 +76,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
     defaultValues: {
       playerId: "",
       achievementId: "champion",
+      customTitle: "",
       description: "",
     },
   });
@@ -177,9 +179,12 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
         throw new Error("Invalid achievement selected");
       }
       
+      // Use custom title if editable and provided, otherwise use default
+      const finalTitle = achievement.isEditable && data.customTitle ? data.customTitle : achievement.title;
+      
       return apiRequest("POST", "/api/achievements", {
         userId: data.playerId,
-        title: achievement.title,
+        title: finalTitle,
         description: data.description || "",
         type: "solo",
         iconUrl: achievement.id,
@@ -805,6 +810,35 @@ function AwardAchievementDialog({
                 </FormItem>
               )}
             />
+
+            {/* Custom Title for Editable Achievements */}
+            {(() => {
+              const selectedAchievement = predefinedAchievements.find(
+                a => a.id === form.watch("achievementId")
+              );
+              return selectedAchievement?.isEditable ? (
+                <FormField
+                  control={form.control}
+                  name="customTitle"
+                  render={({ field }: any) => (
+                    <FormItem>
+                      <FormLabelComponent>Custom Title (Optional)</FormLabelComponent>
+                      <FormControl>
+                        <Input
+                          placeholder={`e.g., rename from "${selectedAchievement.title}"`}
+                          {...field}
+                          data-testid="input-custom-achievement-title"
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Leave blank to use the default "{selectedAchievement.title}"
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : null;
+            })()}
 
             {/* Description */}
             <FormField
