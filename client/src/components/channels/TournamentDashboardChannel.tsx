@@ -281,7 +281,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                   <Trophy className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold capitalize">
+                  <div className="text-base font-bold capitalize">
                     {selectedTournament.format.replace('_', ' ')}
                   </div>
                 </CardContent>
@@ -292,7 +292,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                   <UsersIcon className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{selectedTournament.totalTeams}</div>
+                  <div className="text-base font-bold">{selectedTournament.totalTeams}</div>
                 </CardContent>
               </Card>
               <Card>
@@ -301,7 +301,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                   <Trophy className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{selectedTournament.prizeReward || 'TBD'}</div>
+                  <div className="text-base font-bold">{selectedTournament.prizeReward || 'TBD'}</div>
                 </CardContent>
               </Card>
             </div>
@@ -313,7 +313,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                     <CardTitle className="text-sm font-medium">Platform</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-lg font-semibold">{selectedTournament.platform}</div>
+                    <div className="text-sm font-semibold">{selectedTournament.platform}</div>
                   </CardContent>
                 </Card>
               )}
@@ -323,7 +323,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                     <CardTitle className="text-sm font-medium">Region</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-lg font-semibold">{selectedTournament.region}</div>
+                    <div className="text-sm font-semibold">{selectedTournament.region}</div>
                   </CardContent>
                 </Card>
               )}
@@ -338,7 +338,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-lg">
+                  <p className="text-sm">
                     {new Date(selectedTournament.startDate).toLocaleDateString('en-US', {
                       weekday: 'long',
                       year: 'numeric',
@@ -478,12 +478,9 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
       </div>
 
       <Tabs defaultValue="upcoming" className="w-full">
-        <TabsList className="w-full grid grid-cols-3">
+        <TabsList className="w-full grid grid-cols-2">
           <TabsTrigger value="upcoming" data-testid="tab-upcoming">
             Upcoming ({upcomingTournaments.length})
-          </TabsTrigger>
-          <TabsTrigger value="in-progress" data-testid="tab-in-progress">
-            In Progress ({inProgressTournaments.length})
           </TabsTrigger>
           <TabsTrigger value="completed" data-testid="tab-completed">
             Completed ({completedTournaments.length})
@@ -500,21 +497,6 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {upcomingTournaments.map((tournament) => (
-                <TournamentCard key={tournament.id} tournament={tournament} onView={handleViewTournament} />
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="in-progress" className="mt-4">
-          {inProgressTournaments.length === 0 ? (
-            <div className="text-center py-12">
-              <Trophy className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-sm text-muted-foreground">No tournaments in progress</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {inProgressTournaments.map((tournament) => (
                 <TournamentCard key={tournament.id} tournament={tournament} onView={handleViewTournament} />
               ))}
             </div>
