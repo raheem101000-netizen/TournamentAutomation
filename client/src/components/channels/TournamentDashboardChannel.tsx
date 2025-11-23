@@ -7,6 +7,26 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel as FormLabelComponent,
+  FormMessage,
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useAuth } from "@/contexts/AuthContext";
 import TournamentCard from "@/components/TournamentCard";
 import CreateTournamentDialog from "@/components/CreateTournamentDialog";
 import BracketView from "@/components/BracketView";
@@ -20,6 +40,18 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 
+const achievementIconOptions = [
+  "🏆", "⭐", "🥇", "🎖️", "👑", "🔥", "💎", "🌟", "✨", "🎯", "🏅", "🎪"
+];
+
+const awardAchievementSchema = z.object({
+  playerId: z.string().min(1, "Please select a player"),
+  title: z.string().min(1, "Achievement title is required").max(50),
+  description: z.string().max(200),
+  icon: z.string(),
+  type: z.string().optional(),
+});
+
 interface TournamentDashboardChannelProps {
   serverId: string;
 }
@@ -29,7 +61,20 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
+  const [showAchievementForm, setShowAchievementForm] = useState(false);
   const { toast} = useToast();
+  const { user } = useAuth();
+
+  const achievementForm = useForm({
+    resolver: zodResolver(awardAchievementSchema),
+    defaultValues: {
+      playerId: "",
+      title: "",
+      description: "",
+      icon: "🏆",
+      type: "tournament",
+    },
+  });
 
   const { data: allTournaments = [], isLoading } = useQuery<Tournament[]>({
     queryKey: ["/api/tournaments"],
@@ -116,6 +161,34 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
       toast({
         title: "Error",
         description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const awardAchievementMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof awardAchievementSchema>) => {
+      return apiRequest("POST", "/api/achievements", {
+        userId: data.playerId,
+        title: data.title,
+        description: data.description,
+        type: data.type || "tournament",
+        iconUrl: data.icon,
+        tournamentId: selectedTournamentId,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Achievement Awarded!",
+        description: "The achievement has been awarded successfully.",
+      });
+      achievementForm.reset();
+      setShowAchievementForm(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to award achievement",
         variant: "destructive",
       });
     },
@@ -353,6 +426,167 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Award Achievement Section - Only for Tournament Organizers */}
+        {selectedTournament && selectedTournament.organizerId === user?.id && (
+          <Card className="mt-6">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Trophy className="w-5 h-5" />
+                  <CardTitle>Award Achievement</CardTitle>
+                </div>
+                <Button
+                  size="sm"
+                  variant={showAchievementForm ? "secondary" : "outline"}
+                  onClick={() => setShowAchievementForm(!showAchievementForm)}
+                  data-testid="button-toggle-achievement"
+                >
+                  {showAchievementForm ? "Close" : "Add Achievement"}
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Recognize outstanding player performance with achievements
+              </p>
+            </CardHeader>
+
+            {showAchievementForm && (
+              <CardContent>
+                <Form {...achievementForm}>
+                  <form
+                    onSubmit={achievementForm.handleSubmit((data) =>
+                      awardAchievementMutation.mutate(data)
+                    )}
+                    className="space-y-4"
+                  >
+                    {/* Player Selection */}
+                    <FormField
+                      control={achievementForm.control}
+                      name="playerId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabelComponent>Player ID</FormLabelComponent>
+                          <FormControl>
+                            <Input
+                              placeholder="Enter player's username or ID"
+                              {...field}
+                              data-testid="input-achievement-player-id"
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Enter the username or user ID of the player to award this achievement to
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Icon Selection */}
+                    <FormField
+                      control={achievementForm.control}
+                      name="icon"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabelComponent>Achievement Icon</FormLabelComponent>
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                          >
+                            <FormControl>
+                              <SelectTrigger data-testid="select-achievement-icon">
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {achievementIconOptions.map((icon) => (
+                                <SelectItem key={icon} value={icon}>
+                                  <span className="text-xl mr-2">{icon}</span>
+                                  {icon === "🏆" && "Champion"}
+                                  {icon === "⭐" && "Star"}
+                                  {icon === "🥇" && "Gold"}
+                                  {icon === "🎖️" && "Medal"}
+                                  {icon === "👑" && "King"}
+                                  {icon === "🔥" && "On Fire"}
+                                  {icon === "💎" && "Legendary"}
+                                  {icon === "🌟" && "Brilliant"}
+                                  {icon === "✨" && "Excellent"}
+                                  {icon === "🎯" && "Precision"}
+                                  {icon === "🏅" && "Award"}
+                                  {icon === "🎪" && "Star"}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Title */}
+                    <FormField
+                      control={achievementForm.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabelComponent>Achievement Title</FormLabelComponent>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g., MVP, Top Scorer, Best Defense"
+                              {...field}
+                              data-testid="input-achievement-title"
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            {field.value?.length || 0}/50 characters
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Description */}
+                    <FormField
+                      control={achievementForm.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabelComponent>Description (Optional)</FormLabelComponent>
+                          <FormControl>
+                            <Input
+                              placeholder="Describe why they earned this achievement"
+                              {...field}
+                              data-testid="input-achievement-description"
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            {field.value?.length || 0}/200 characters
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Submit Button */}
+                    <Button
+                      type="submit"
+                      disabled={awardAchievementMutation.isPending}
+                      className="w-full"
+                      data-testid="button-award-achievement"
+                    >
+                      {awardAchievementMutation.isPending ? (
+                        "Awarding..."
+                      ) : (
+                        <>
+                          <Trophy className="w-4 h-4 mr-2" />
+                          Award Achievement
+                        </>
+                      )}
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            )}
+          </Card>
+        )}
 
         {selectedMatch && getTeamById(selectedMatch.team1Id) && getTeamById(selectedMatch.team2Id) && (
           <SubmitScoreDialog
