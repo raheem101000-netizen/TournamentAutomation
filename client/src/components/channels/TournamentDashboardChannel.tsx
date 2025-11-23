@@ -58,9 +58,9 @@ interface TournamentDashboardChannelProps {
 export default function TournamentDashboardChannel({ serverId }: TournamentDashboardChannelProps) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isAwardAchievementDialogOpen, setIsAwardAchievementDialogOpen] = useState(false);
   const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
-  const [showAchievementForm, setShowAchievementForm] = useState(false);
   const { toast} = useToast();
   const { user } = useAuth();
 
@@ -182,7 +182,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
         description: "The achievement has been awarded successfully.",
       });
       achievementForm.reset();
-      setShowAchievementForm(false);
+      setIsAwardAchievementDialogOpen(false);
       queryClient.invalidateQueries({ queryKey: [`/api/users/${selectedTournament?.organizerId}/achievements`] });
     },
     onError: (error: any) => {
@@ -427,166 +427,6 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
           </TabsContent>
         </Tabs>
 
-        {/* Award Achievement Section - Only for Tournament Organizers */}
-        {selectedTournament && selectedTournament.organizerId === user?.id && (
-          <Card className="mt-6">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Trophy className="w-5 h-5" />
-                  <CardTitle>Award Achievement</CardTitle>
-                </div>
-                <Button
-                  size="sm"
-                  variant={showAchievementForm ? "secondary" : "outline"}
-                  onClick={() => setShowAchievementForm(!showAchievementForm)}
-                  data-testid="button-toggle-achievement"
-                >
-                  {showAchievementForm ? "Close" : "Add Achievement"}
-                </Button>
-              </div>
-              <p className="text-sm text-muted-foreground mt-1">
-                Recognize outstanding player performance with achievements
-              </p>
-            </CardHeader>
-
-            {showAchievementForm && (
-              <CardContent>
-                <Form {...achievementForm}>
-                  <form
-                    onSubmit={achievementForm.handleSubmit((data) =>
-                      awardAchievementMutation.mutate(data)
-                    )}
-                    className="space-y-4"
-                  >
-                    {/* Player Selection */}
-                    <FormField
-                      control={achievementForm.control}
-                      name="playerId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabelComponent>Player ID</FormLabelComponent>
-                          <FormControl>
-                            <Input
-                              placeholder="Enter player's username or ID"
-                              {...field}
-                              data-testid="input-achievement-player-id"
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Enter the username or user ID of the player to award this achievement to
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Icon Selection */}
-                    <FormField
-                      control={achievementForm.control}
-                      name="icon"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabelComponent>Achievement Icon</FormLabelComponent>
-                          <Select
-                            value={field.value}
-                            onValueChange={field.onChange}
-                          >
-                            <FormControl>
-                              <SelectTrigger data-testid="select-achievement-icon">
-                                <SelectValue />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {achievementIconOptions.map((icon) => (
-                                <SelectItem key={icon} value={icon}>
-                                  <span className="text-xl mr-2">{icon}</span>
-                                  {icon === "🏆" && "Champion"}
-                                  {icon === "⭐" && "Star"}
-                                  {icon === "🥇" && "Gold"}
-                                  {icon === "🎖️" && "Medal"}
-                                  {icon === "👑" && "King"}
-                                  {icon === "🔥" && "On Fire"}
-                                  {icon === "💎" && "Legendary"}
-                                  {icon === "🌟" && "Brilliant"}
-                                  {icon === "✨" && "Excellent"}
-                                  {icon === "🎯" && "Precision"}
-                                  {icon === "🏅" && "Award"}
-                                  {icon === "🎪" && "Star"}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Title */}
-                    <FormField
-                      control={achievementForm.control}
-                      name="title"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabelComponent>Achievement Title</FormLabelComponent>
-                          <FormControl>
-                            <Input
-                              placeholder="e.g., MVP, Top Scorer, Best Defense"
-                              {...field}
-                              data-testid="input-achievement-title"
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            {field.value?.length || 0}/50 characters
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Description */}
-                    <FormField
-                      control={achievementForm.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabelComponent>Description (Optional)</FormLabelComponent>
-                          <FormControl>
-                            <Input
-                              placeholder="Describe why they earned this achievement"
-                              {...field}
-                              data-testid="input-achievement-description"
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            {field.value?.length || 0}/200 characters
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Submit Button */}
-                    <Button
-                      type="submit"
-                      disabled={awardAchievementMutation.isPending}
-                      className="w-full"
-                      data-testid="button-award-achievement"
-                    >
-                      {awardAchievementMutation.isPending ? (
-                        "Awarding..."
-                      ) : (
-                        <>
-                          <Trophy className="w-4 h-4 mr-2" />
-                          Award Achievement
-                        </>
-                      )}
-                    </Button>
-                  </form>
-                </Form>
-              </CardContent>
-            )}
-          </Card>
-        )}
 
         {selectedMatch && getTeamById(selectedMatch.team1Id) && getTeamById(selectedMatch.team2Id) && (
           <SubmitScoreDialog
@@ -609,10 +449,16 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
           <Trophy className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-semibold">Tournament Dashboard</h2>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)} data-testid="button-create-tournament">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Tournament
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setIsAwardAchievementDialogOpen(true)} variant="outline" data-testid="button-award-achievement">
+            <Trophy className="h-4 w-4 mr-2" />
+            Award Achievement
+          </Button>
+          <Button onClick={() => setIsCreateDialogOpen(true)} data-testid="button-create-tournament">
+            <Plus className="h-4 w-4 mr-2" />
+            Create Tournament
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="upcoming" className="w-full">
@@ -686,6 +532,14 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
         onOpenChange={setIsEditDialogOpen}
         tournament={selectedTournament}
         onSubmit={(data) => updateTournamentMutation.mutate(data)}
+      />
+
+      <AwardAchievementDialog
+        open={isAwardAchievementDialogOpen}
+        onOpenChange={setIsAwardAchievementDialogOpen}
+        form={achievementForm}
+        onSubmit={(data) => awardAchievementMutation.mutate(data)}
+        isPending={awardAchievementMutation.isPending}
       />
     </div>
   );
@@ -859,6 +713,131 @@ function EditTournamentDialog({ open, onOpenChange, tournament, onSubmit }: Edit
             Save Changes
           </Button>
         </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+interface AwardAchievementDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  form: any;
+  onSubmit: (data: z.infer<typeof awardAchievementSchema>) => void;
+  isPending: boolean;
+}
+
+function AwardAchievementDialog({ 
+  open, 
+  onOpenChange, 
+  form, 
+  onSubmit, 
+  isPending 
+}: AwardAchievementDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Award Achievement</DialogTitle>
+          <DialogDescription>
+            Recognize a player for their outstanding performance
+          </DialogDescription>
+        </DialogHeader>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Player ID */}
+            <FormField
+              control={form.control}
+              name="playerId"
+              render={({ field }: any) => (
+                <FormItem>
+                  <FormLabelComponent>Player ID/Username</FormLabelComponent>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter player's ID or username"
+                      {...field}
+                      data-testid="input-achievement-player-id"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Icon Selection */}
+            <FormField
+              control={form.control}
+              name="icon"
+              render={({ field }: any) => (
+                <FormItem>
+                  <FormLabelComponent>Icon</FormLabelComponent>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-achievement-icon">
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {achievementIconOptions.map((icon) => (
+                        <SelectItem key={icon} value={icon}>
+                          <span className="text-lg">{icon}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Title */}
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }: any) => (
+                <FormItem>
+                  <FormLabelComponent>Title</FormLabelComponent>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., MVP, Top Scorer"
+                      {...field}
+                      data-testid="input-achievement-title"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Description */}
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }: any) => (
+                <FormItem>
+                  <FormLabelComponent>Description (Optional)</FormLabelComponent>
+                  <FormControl>
+                    <Input
+                      placeholder="Why they earned this achievement"
+                      {...field}
+                      data-testid="input-achievement-description"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isPending} data-testid="button-submit-achievement">
+                {isPending ? "Awarding..." : "Award Achievement"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
