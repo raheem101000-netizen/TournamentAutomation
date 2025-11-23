@@ -71,6 +71,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [selectedTeam1Id, setSelectedTeam1Id] = useState<string | null>(null);
   const [selectedTeam2Id, setSelectedTeam2Id] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("overview");
   const { toast} = useToast();
   const { user } = useAuth();
 
@@ -242,10 +243,12 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
 
   const handleViewTournament = (id: string) => {
     setSelectedTournamentId(id);
+    setActiveTab("overview");
   };
 
   const handleBackToList = () => {
     setSelectedTournamentId(null);
+    setActiveTab("overview");
   };
 
   const handleMatchClick = (matchId: string) => {
@@ -294,7 +297,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
           </Button>
         </div>
 
-        <Tabs defaultValue="overview" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full grid grid-cols-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="bracket">Bracket</TabsTrigger>
