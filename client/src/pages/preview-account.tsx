@@ -4,7 +4,7 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Edit, Users, Trophy, Medal, Award, Star, Target, Plus, ArrowRight, Crown, Calendar, Shield } from "lucide-react";
+import { Settings, Edit, Users, Trophy, Medal, Award, Star, Target, Plus, ArrowRight, Crown, Calendar, Shield, Zap } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Dialog,
@@ -92,6 +92,38 @@ export default function PreviewAccount() {
   // Check if viewing own profile or another user's profile
   const isOwnProfile = viewingUser === null;
   const displayUser = viewingUser || currentUser.username;
+  const displayUserId = authUser?.id;
+
+  const { data: userAchievements = [] } = useQuery<any[]>({
+    queryKey: [`/api/users/${displayUserId}/achievements`],
+    enabled: !!displayUserId,
+  });
+
+  const getAchievementIcon = (iconUrl: string) => {
+    const iconMap: { [key: string]: any } = {
+      "champion": Trophy,
+      "runner-up": Medal,
+      "third-place": Medal,
+      "mvp": Award,
+      "top-scorer": Target,
+      "best-defense": Shield,
+      "rising-star": Zap,
+    };
+    return iconMap[iconUrl] || Trophy;
+  };
+
+  const getAchievementColor = (iconUrl: string) => {
+    const colorMap: { [key: string]: string } = {
+      "champion": "text-amber-500",
+      "runner-up": "text-slate-300",
+      "third-place": "text-amber-700",
+      "mvp": "text-purple-500",
+      "top-scorer": "text-red-500",
+      "best-defense": "text-green-500",
+      "rising-star": "text-yellow-500",
+    };
+    return colorMap[iconUrl] || "text-muted-foreground";
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
@@ -194,6 +226,31 @@ export default function PreviewAccount() {
             </div>
           </CardContent>
         </Card>
+
+        {userAchievements && userAchievements.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold">Achievements</h3>
+            <div className="grid grid-cols-3 gap-3">
+              {userAchievements.map((achievement: any) => {
+                const IconComponent = getAchievementIcon(achievement.iconUrl);
+                const colorClass = getAchievementColor(achievement.iconUrl);
+                return (
+                  <Card key={achievement.id} className="hover-elevate">
+                    <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
+                      <IconComponent className={`w-8 h-8 ${colorClass}`} />
+                      <div>
+                        <p className="font-semibold text-sm line-clamp-2">{achievement.title}</p>
+                        {achievement.description && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{achievement.description}</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
