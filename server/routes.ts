@@ -1019,6 +1019,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // REST endpoint for sending channel messages (alternative to WebSocket)
+  app.post("/api/channels/:channelId/messages", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { message, imageUrl, replyToId } = req.body;
+      const { channelId } = req.params;
+      
+      // Get user info for username
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(401).json({ error: "User not found" });
+      }
+      
+      const validatedData = insertChannelMessageSchema.parse({
+        channelId,
+        userId: req.session.userId,
+        username: user.username || user.displayName || 'Unknown',
+        message: message?.trim() || '',
+        imageUrl: imageUrl || null,
+        replyToId: replyToId || null,
+      });
+      
+      const savedMessage = await storage.createChannelMessage(validatedData);
+      res.status(201).json(savedMessage);
+    } catch (error: any) {
+      console.error("Error creating channel message:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   // Mobile preview API routes
   app.get("/api/mobile-preview/servers", async (_req, res) => {
     try {

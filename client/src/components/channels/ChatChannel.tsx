@@ -4,8 +4,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MessageSquare, Send, X, Reply } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import type { ChannelMessage } from "@shared/schema";
 
 interface ChatChannelProps {
@@ -14,11 +16,11 @@ interface ChatChannelProps {
 
 export default function ChatChannel({ channelId }: ChatChannelProps) {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [messages, setMessages] = useState<ChannelMessage[]>([]);
   const [messageInput, setMessageInput] = useState("");
   const [replyingTo, setReplyingTo] = useState<ChannelMessage | null>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
-  const ws = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch initial messages from API
@@ -39,56 +41,41 @@ export default function ChatChannel({ channelId }: ChatChannelProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Connect to WebSocket for real-time updates
-  useEffect(() => {
-    if (!channelId) return;
-
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws/channel?channelId=${channelId}`;
-    
-    const websocket = new WebSocket(wsUrl);
-    
-    websocket.onopen = () => {
-      console.log('WebSocket connected to channel:', channelId);
-    };
-    
-    websocket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === 'new_message') {
-        setMessages(prev => [...prev, data.message]);
+  // REST API mutation for sending messages
+  const sendMessageMutation = useMutation({
+    mutationFn: async (messageData: { message: string; imageUrl: string | null; replyToId: string | null }) => {
+      const response = await apiRequest("POST", `/api/channels/${channelId}/messages`, messageData);
+      if (!response.ok) {
+        throw new Error("Failed to send message");
       }
-    };
-    
-    websocket.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
-    
-    websocket.onclose = () => {
-      console.log('WebSocket disconnected');
-    };
-    
-    ws.current = websocket;
-    
-    return () => {
-      websocket.close();
-    };
-  }, [channelId]);
+      return response.json();
+    },
+    onSuccess: (newMessage) => {
+      setMessages(prev => [...prev, newMessage]);
+      setMessageInput("");
+      setReplyingTo(null);
+    },
+    onError: (error) => {
+      console.error("Error sending message:", error);
+      toast({
+        title: "Failed to send message",
+        description: error instanceof Error ? error.message : "Try again",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!messageInput.trim() || !ws.current) return;
+    if (!messageInput.trim()) return;
 
-    // Only send message content - server extracts userId/username from session
-    const messageData = {
+    // Send message via REST API
+    sendMessageMutation.mutate({
       message: messageInput.trim(),
       imageUrl: null,
       replyToId: replyingTo?.id || null,
-    };
-
-    ws.current.send(JSON.stringify(messageData));
-    setMessageInput("");
-    setReplyingTo(null);
+    });
   };
 
   const handleMessageClick = (message: ChannelMessage) => {
