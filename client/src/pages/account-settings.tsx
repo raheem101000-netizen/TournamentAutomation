@@ -39,7 +39,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import ImageUploadField from "@/components/ImageUploadField";
-import { User, Lock, Globe, HelpCircle, UserX, Trash2, Mail } from "lucide-react";
+import { User, Lock, Globe, HelpCircle, UserX, Trash2, Mail, Trophy, Medal, Award, Target, Shield, Zap } from "lucide-react";
 import type { User as UserType } from "@shared/schema";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -67,6 +67,11 @@ export default function AccountSettings() {
 
   const { data: user, isLoading } = useQuery<UserType>({
     queryKey: [`/api/users/${authUser?.id}`],
+    enabled: !!authUser?.id,
+  });
+
+  const { data: achievements = [] } = useQuery<any[]>({
+    queryKey: [`/api/users/${authUser?.id}/achievements`],
     enabled: !!authUser?.id,
   });
 
@@ -216,7 +221,7 @@ export default function AccountSettings() {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="profile" data-testid="tab-profile">
             <User className="w-4 h-4 mr-2" />
             Profile
@@ -224,6 +229,10 @@ export default function AccountSettings() {
           <TabsTrigger value="security" data-testid="tab-security">
             <Lock className="w-4 h-4 mr-2" />
             Security
+          </TabsTrigger>
+          <TabsTrigger value="achievements" data-testid="tab-achievements">
+            <Trophy className="w-4 h-4 mr-2" />
+            Achievements
           </TabsTrigger>
           <TabsTrigger value="preferences" data-testid="tab-preferences">
             <Globe className="w-4 h-4 mr-2" />
@@ -395,6 +404,73 @@ export default function AccountSettings() {
                   </Button>
                 </form>
               </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="achievements" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Achievements</CardTitle>
+              <CardDescription>Awards earned in tournaments</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {achievements && achievements.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {achievements.map((achievement: any) => {
+                    const getIcon = () => {
+                      const iconMap: { [key: string]: any } = {
+                        "champion": Trophy,
+                        "runner-up": Medal,
+                        "third-place": Medal,
+                        "mvp": Award,
+                        "top-scorer": Target,
+                        "best-defense": Shield,
+                        "rising-star": Zap,
+                      };
+                      const IconComponent = iconMap[achievement.iconUrl] || Trophy;
+                      return <IconComponent className="w-8 h-8" />;
+                    };
+
+                    const getColor = () => {
+                      const colorMap: { [key: string]: string } = {
+                        "champion": "text-amber-500",
+                        "runner-up": "text-slate-300",
+                        "third-place": "text-amber-700",
+                        "mvp": "text-purple-500",
+                        "top-scorer": "text-red-500",
+                        "best-defense": "text-green-500",
+                        "rising-star": "text-yellow-500",
+                      };
+                      return colorMap[achievement.iconUrl] || "text-muted-foreground";
+                    };
+
+                    return (
+                      <div 
+                        key={achievement.id} 
+                        className="flex flex-col items-center gap-2 p-4 rounded-lg border hover-elevate"
+                        data-testid={`achievement-${achievement.id}`}
+                      >
+                        <div className={getColor()}>
+                          {getIcon()}
+                        </div>
+                        <div className="text-center">
+                          <p className="font-semibold text-sm">{achievement.title}</p>
+                          {achievement.description && (
+                            <p className="text-xs text-muted-foreground mt-1">{achievement.description}</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Trophy className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+                  <p className="text-muted-foreground">No achievements yet</p>
+                  <p className="text-xs text-muted-foreground mt-1">Earn achievements by competing in tournaments!</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
