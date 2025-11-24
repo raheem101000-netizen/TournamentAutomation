@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { MessageSquare, Send, X, Reply } from "lucide-react";
+import { MessageSquare, Send, X, Reply, Image as ImageIcon, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -22,6 +22,8 @@ export default function ChatChannel({ channelId }: ChatChannelProps) {
   const [replyingTo, setReplyingTo] = useState<ChannelMessage | null>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch initial messages from API
   const { data: initialMessages } = useQuery<ChannelMessage[]>({
@@ -54,6 +56,10 @@ export default function ChatChannel({ channelId }: ChatChannelProps) {
       setMessages(prev => [...prev, newMessage]);
       setMessageInput("");
       setReplyingTo(null);
+      toast({
+        title: "Message sent!",
+        description: "Your message has been posted",
+      });
     },
     onError: (error) => {
       console.error("Error sending message:", error);
@@ -112,6 +118,34 @@ export default function ChatChannel({ channelId }: ChatChannelProps) {
   const getReplyMessage = (replyToId: string | null) => {
     if (!replyToId) return null;
     return messages.find(m => m.id === replyToId);
+  };
+
+  const handleFileUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageUpload = () => {
+    imageInputRef.current?.click();
+  };
+
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      toast({
+        title: "File upload feature coming soon",
+        description: "File uploads will be available in a future update",
+      });
+    }
+  };
+
+  const handleImageSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      toast({
+        title: "Image upload feature coming soon",
+        description: "Image uploads will be available in a future update",
+      });
+    }
   };
 
   return (
@@ -193,6 +227,24 @@ export default function ChatChannel({ channelId }: ChatChannelProps) {
             </div>
           )}
           <form className="flex gap-2" onSubmit={handleSendMessage}>
+            <Button 
+              size="icon" 
+              variant="ghost"
+              type="button"
+              onClick={handleFileUpload}
+              data-testid="button-attach-file"
+            >
+              <Paperclip className="h-4 w-4" />
+            </Button>
+            <Button 
+              size="icon" 
+              variant="ghost"
+              type="button"
+              onClick={handleImageUpload}
+              data-testid="button-attach-image"
+            >
+              <ImageIcon className="h-4 w-4" />
+            </Button>
             <Input
               placeholder={replyingTo ? `Reply to ${replyingTo.username}...` : "Type a message..."}
               className="flex-1"
@@ -204,6 +256,21 @@ export default function ChatChannel({ channelId }: ChatChannelProps) {
               <Send className="h-4 w-4" />
             </Button>
           </form>
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            onChange={handleFileSelected}
+            data-testid="input-file-upload"
+          />
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleImageSelected}
+            data-testid="input-image-upload"
+          />
         </CardContent>
       </Card>
     </div>
