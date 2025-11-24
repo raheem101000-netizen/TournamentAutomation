@@ -280,8 +280,8 @@ export default function PreviewAccount() {
                       <IconComponent className={`w-8 h-8 ${colorClass}`} />
                       <div className="w-full">
                         <p className="font-semibold text-sm line-clamp-2">{achievement.title}</p>
-                        {achievement.awardedBy && (
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">@{achievement.awardedBy}</p>
+                        {achievement.serverName && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{achievement.serverName}</p>
                         )}
                       </div>
                     </CardContent>

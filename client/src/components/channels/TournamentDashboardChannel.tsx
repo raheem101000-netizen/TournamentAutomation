@@ -215,6 +215,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
       
       return apiRequest("POST", "/api/achievements", {
         userId: data.playerId,
+        serverId: serverId,
         title: finalTitle,
         description: data.description || "",
         type: "solo",

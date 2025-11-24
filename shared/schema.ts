@@ -345,6 +345,7 @@ export const users = pgTable("users", {
 export const achievements = pgTable("achievements", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(),
+  serverId: varchar("server_id"),
   title: text("title").notNull(),
   description: text("description"),
   iconUrl: text("icon_url"),

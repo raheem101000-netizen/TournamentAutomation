@@ -629,10 +629,23 @@ export class DatabaseStorage implements IStorage {
     return achievement;
   }
 
-  async getAchievementsByUser(userId: string): Promise<Achievement[]> {
-    return await db.select().from(achievements)
+  async getAchievementsByUser(userId: string): Promise<any[]> {
+    const achievementsList = await db.select().from(achievements)
       .where(eq(achievements.userId, userId))
       .orderBy(achievements.achievedAt);
+    
+    // Fetch server names for achievements that have a serverId
+    const withServerNames = await Promise.all(
+      achievementsList.map(async (ach) => {
+        if (ach.serverId) {
+          const [server] = await db.select().from(servers).where(eq(servers.id, ach.serverId));
+          return { ...ach, serverName: server?.name };
+        }
+        return ach;
+      })
+    );
+    
+    return withServerNames;
   }
 
   // Team profile operations
