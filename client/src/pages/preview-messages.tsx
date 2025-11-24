@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, ChangeEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Input } from "@/components/ui/input";
@@ -120,6 +120,8 @@ export default function PreviewMessages() {
   const [editingAvatar, setEditingAvatar] = useState<Chat | null>(null);
   const [newAvatarEmoji, setNewAvatarEmoji] = useState("");
   const [messageRequests, setMessageRequests] = useState<Chat[]>(mockMessageRequests);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch message threads from API
   const { data: threads = [], isLoading } = useQuery<MessageThread[]>({
@@ -136,6 +138,34 @@ export default function PreviewMessages() {
       description: `"${messageInput.substring(0, 30)}${messageInput.length > 30 ? '...' : ''}"`,
     });
     setMessageInput("");
+  };
+
+  const handleFileUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageUpload = () => {
+    imageInputRef.current?.click();
+  };
+
+  const handleFileSelected = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      toast({
+        title: "File upload coming soon",
+        description: "File uploads will be available in a future update",
+      });
+    }
+  };
+
+  const handleImageSelected = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      toast({
+        title: "Image upload coming soon",
+        description: "Image uploads will be available in a future update",
+      });
+    }
   };
 
   const handleAcceptRequest = (request: Chat) => {
@@ -233,10 +263,20 @@ export default function PreviewMessages() {
         <div className="sticky bottom-0 border-t bg-background">
           <div className="container max-w-lg mx-auto px-4 py-3">
             <div className="flex items-center gap-2">
-              <Button size="icon" variant="ghost" data-testid="button-attach-file">
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                onClick={handleFileUpload}
+                data-testid="button-attach-file"
+              >
                 <Paperclip className="w-5 h-5" />
               </Button>
-              <Button size="icon" variant="ghost" data-testid="button-attach-image">
+              <Button 
+                size="icon" 
+                variant="ghost"
+                onClick={handleImageUpload}
+                data-testid="button-attach-image"
+              >
                 <ImageIcon className="w-5 h-5" />
               </Button>
               <Input
@@ -259,6 +299,21 @@ export default function PreviewMessages() {
                 <Send className="w-5 h-5" />
               </Button>
             </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              onChange={handleFileSelected}
+              data-testid="input-file-upload"
+            />
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageSelected}
+              data-testid="input-image-upload"
+            />
           </div>
         </div>
       </div>
