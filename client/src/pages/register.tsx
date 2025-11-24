@@ -15,10 +15,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Trophy } from "lucide-react";
 import { PasswordInput } from "@/components/PasswordInput";
+import { useAuth } from "@/contexts/AuthContext";
 
 const registerSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
@@ -35,6 +36,7 @@ type RegisterForm = z.infer<typeof registerSchema>;
 export default function Register() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { refetchUser } = useAuth();
 
   const form = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -55,12 +57,17 @@ export default function Register() {
       });
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast({
         title: "Account created!",
-        description: "You can now log in with your credentials.",
+        description: "Logging you in now...",
       });
-      setLocation("/login");
+      
+      // Refresh user to verify session was set
+      await refetchUser();
+      
+      // Navigate to home page
+      setLocation("/");
     },
     onError: (error: any) => {
       toast({

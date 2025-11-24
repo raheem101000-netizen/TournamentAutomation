@@ -10,7 +10,19 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### November 24, 2025 (Latest - Backend Complete)
+### November 24, 2025 (Latest - Authentication System Fixed)
+- **Critical Session Persistence Bug Fixed**:
+  - ✅ Removed duplicate auth endpoints that were conflicting
+  - ✅ Fixed register endpoint to auto-login users (set `req.session.userId` after account creation)
+  - ✅ Updated register page to call `refetchUser()` and redirect to home after registration
+  - ✅ Fixed session cookie configuration for Replit's proxy environment (`secure: false`, added `path: '/'`)
+  - ✅ Users now automatically logged in after account creation
+  - ✅ Session persists across page reloads and browser restarts
+  - Build status: ✅ Passes with 0 errors
+  - Server status: ✅ Running cleanly on port 5000
+  - Authentication tested and working in both development and published environments
+
+### November 24, 2025 (Backend Complete)
 - **Complete Backend Implementation**:
   - ✅ All API routes fully implemented and tested (100+ endpoints)
   - ✅ WebSocket real-time messaging for channels and matches (channels, messages)

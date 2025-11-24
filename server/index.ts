@@ -44,8 +44,9 @@ app.use(session({
   cookie: {
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: false, // Set to false to work properly with Replit's proxy environment
     sameSite: 'lax',
+    path: '/', // Ensure cookie is set for all paths
   },
 }));
 

@@ -287,6 +287,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isDisabled: 0,
       });
 
+      // Automatically log in the user after registration
+      req.session.userId = user.id;
+
       res.status(201).json({ 
         message: "Registration successful",
         user: {
@@ -1229,93 +1232,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(tags);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
-    }
-  });
-
-  // Authentication routes
-  app.post("/api/auth/register", async (req, res) => {
-    try {
-      const bcrypt = (await import("bcrypt")).default;
-      const { fullName, email, password } = req.body;
-      
-      // Check if user already exists
-      const existingUser = await storage.getUserByUsername(email);
-      if (existingUser) {
-        return res.status(400).json({ error: "User already exists" });
-      }
-
-      // Hash password
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      // Create user
-      const user = await storage.createUser({
-        username: email,
-        fullName: fullName,
-        passwordHash: hashedPassword,
-      });
-
-      res.json({ success: true, userId: user.id });
-    } catch (error: any) {
-      res.status(400).json({ error: error.message });
-    }
-  });
-
-  app.post("/api/auth/login", async (req, res) => {
-    try {
-      const bcrypt = (await import("bcrypt")).default;
-      const { email, password } = req.body;
-
-      const user = await storage.getUserByUsername(email);
-      if (!user || !user.passwordHash) {
-        return res.status(401).json({ error: "Invalid credentials" });
-      }
-
-      const isValid = await bcrypt.compare(password, user.passwordHash);
-      if (!isValid) {
-        return res.status(401).json({ error: "Invalid credentials" });
-      }
-
-      // In production, use proper JWT tokens
-      const token = Buffer.from(`${user.id}:${Date.now()}`).toString('base64');
-
-      res.json({ 
-        success: true,
-        token,
-        user: {
-          id: user.id,
-          username: user.username,
-          fullName: user.fullName,
-        }
-      });
-    } catch (error: any) {
-      res.status(400).json({ error: error.message });
-    }
-  });
-
-  app.get("/api/auth/me", async (req, res) => {
-    try {
-      // Check token from Authorization header
-      const auth = req.headers.authorization;
-      if (!auth) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
-      const token = auth.replace('Bearer ', '');
-      const decoded = Buffer.from(token, 'base64').toString();
-      const [userId] = decoded.split(':');
-
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(401).json({ error: "User not found" });
-      }
-
-      res.json({
-        id: user.id,
-        username: user.username,
-        fullName: user.fullName,
-      });
-    } catch (error: any) {
-      res.status(401).json({ error: "Invalid token" });
     }
   });
 
