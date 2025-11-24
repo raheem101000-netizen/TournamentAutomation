@@ -10,7 +10,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### November 19, 2025 (Latest)
+### November 24, 2025 (Latest)
+- **Achievement System Enhancement**: 
+  - Added `serverId` field to achievements table to track which server awarded each achievement
+  - Made server names under achievement icons clickable to navigate to the server
+  - Display "Server no longer exists" message when server is deleted
+  - Created achievement details popup showing full information: icon, title, description, earned date, category, server, awarded by, and awarded on timestamp
+  - Achievement cards are now clickable to open the details popup
+  - Added data-testid attributes for all interactive achievement elements
+
+### November 19, 2025
 - **My Servers Filter Badges**: Added visible filter UI with "All Servers", "Owned" (crown icon), and "Member" (users icon) badges for easy server list filtering
 - **Image Upload System Overhaul**: Fixed critical image upload bugs affecting profile pictures, server icons/backgrounds, and tournament posters:
   - Created secure `/api/objects/normalize` endpoint with authentication and path validation

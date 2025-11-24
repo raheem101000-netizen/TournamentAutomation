@@ -77,6 +77,8 @@ export default function PreviewAccount() {
   const [, setLocation] = useLocation();
   const [selectedTeam, setSelectedTeam] = useState<typeof mockTeams[0] | null>(null);
   const [viewingUser, setViewingUser] = useState<string | null>(null);
+  const [selectedAchievement, setSelectedAchievement] = useState<any | null>(null);
+  const [serverNotFound, setServerNotFound] = useState(false);
 
   const { user: authUser } = useAuth();
 
@@ -275,13 +277,33 @@ export default function PreviewAccount() {
                 const IconComponent = getAchievementIcon(achievement.iconUrl);
                 const colorClass = getAchievementColor(achievement.iconUrl);
                 return (
-                  <Card key={achievement.id} className="hover-elevate">
+                  <Card 
+                    key={achievement.id} 
+                    className="hover-elevate cursor-pointer"
+                    onClick={() => setSelectedAchievement(achievement)}
+                    data-testid={`achievement-card-${achievement.id}`}
+                  >
                     <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
                       <IconComponent className={`w-8 h-8 ${colorClass}`} />
                       <div className="w-full">
                         <p className="font-semibold text-sm line-clamp-2">{achievement.title}</p>
-                        {achievement.serverName && (
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{achievement.serverName}</p>
+                        {achievement.serverName ? (
+                          <Button
+                            variant="link"
+                            size="sm"
+                            className="text-xs h-auto p-0 mt-1 line-clamp-1 text-muted-foreground hover:text-foreground"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (achievement.serverId) {
+                                setLocation(`/server/${achievement.serverId}`);
+                              }
+                            }}
+                            data-testid={`button-server-link-${achievement.id}`}
+                          >
+                            {achievement.serverName}
+                          </Button>
+                        ) : (
+                          <p className="text-xs text-destructive mt-1">Server no longer exists</p>
                         )}
                       </div>
                     </CardContent>
@@ -295,6 +317,86 @@ export default function PreviewAccount() {
       </main>
 
       <BottomNavigation />
+
+      {/* Achievement Details Modal */}
+      <Dialog open={!!selectedAchievement} onOpenChange={() => setSelectedAchievement(null)}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          {selectedAchievement && (
+            <div className="space-y-6">
+              <DialogHeader className="space-y-4">
+                <div className="flex flex-col items-center text-center space-y-3">
+                  {(() => {
+                    const IconComponent = getAchievementIcon(selectedAchievement.iconUrl);
+                    const colorClass = getAchievementColor(selectedAchievement.iconUrl);
+                    return <IconComponent className={`w-12 h-12 ${colorClass}`} />;
+                  })()}
+                  <DialogTitle className="text-2xl">{selectedAchievement.title}</DialogTitle>
+                </div>
+              </DialogHeader>
+
+              <div className="space-y-6">
+                {selectedAchievement.description && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold text-muted-foreground">Description</h4>
+                    <p className="text-sm">{selectedAchievement.description}</p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-semibold text-muted-foreground">Earned</h4>
+                    <p className="text-sm">
+                      {selectedAchievement.achievedAt
+                        ? new Date(selectedAchievement.achievedAt).toLocaleDateString()
+                        : "N/A"}
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-semibold text-muted-foreground">Category</h4>
+                    <p className="text-sm capitalize">{selectedAchievement.category || "N/A"}</p>
+                  </div>
+                </div>
+
+                {selectedAchievement.serverName && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold text-muted-foreground">Server</h4>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        setSelectedAchievement(null);
+                        setLocation(`/server/${selectedAchievement.serverId}`);
+                      }}
+                      data-testid="button-visit-server"
+                    >
+                      Visit {selectedAchievement.serverName}
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+                )}
+
+                {selectedAchievement.awardedBy && (
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-semibold text-muted-foreground">Awarded By</h4>
+                    <p className="text-sm text-muted-foreground">@{selectedAchievement.awardedBy}</p>
+                  </div>
+                )}
+
+                {selectedAchievement.createdAt && (
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-semibold text-muted-foreground">Awarded On</h4>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(selectedAchievement.createdAt).toLocaleDateString()} at{" "}
+                      {new Date(selectedAchievement.createdAt).toLocaleTimeString()}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Team Modal */}
       <Dialog open={!!selectedTeam} onOpenChange={() => setSelectedTeam(null)}>
