@@ -350,6 +350,20 @@ export default function PreviewAccount() {
                 )}
 
                 <div className="grid grid-cols-2 gap-4">
+                  {selectedAchievement.game && (
+                    <div className="space-y-1">
+                      <h4 className="text-xs font-semibold text-muted-foreground">Game</h4>
+                      <p className="text-sm">{selectedAchievement.game}</p>
+                    </div>
+                  )}
+                  
+                  {selectedAchievement.region && (
+                    <div className="space-y-1">
+                      <h4 className="text-xs font-semibold text-muted-foreground">Region</h4>
+                      <p className="text-sm">{selectedAchievement.region}</p>
+                    </div>
+                  )}
+                  
                   <div className="space-y-1">
                     <h4 className="text-xs font-semibold text-muted-foreground">Category</h4>
                     <p className="text-sm capitalize">{selectedAchievement.category || "N/A"}</p>

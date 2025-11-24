@@ -12,17 +12,25 @@ Preferred communication style: Simple, everyday language.
 
 ### November 24, 2025 (Latest)
 - **Achievement System Complete Enhancement**: 
-  - Added `serverId` field to achievements table to track which server awarded each achievement
-  - Added `reward` field to capture prize details (money, in-game prizes, trophies, etc.)
-  - Made server names under achievement icons clickable to navigate to the server
-  - Display "Server no longer exists" message when server is deleted
-  - Created achievement details popup showing full information:
-    - Icon, title, and description
-    - **Reward** section displaying prize/trophy details provided by organizer
-    - Category, awarded by, and awarded on timestamp
-    - "Visit Server" button for easy navigation
-  - Achievement cards are now clickable to open the details popup
-  - Updated Tournament Dashboard achievement form to include reward input field
+  - Added `serverId`, `reward`, `game`, and `region` fields to achievements table
+  - Achievement popup displays all requested information: description, reward, game, region, server, awarded by, awarded on
+  - Tournament organizers can fill out all fields when awarding achievements:
+    - Player ID/Username
+    - Achievement selection (7 predefined + custom titles for 3 editable types)
+    - Description: Why they earned this achievement
+    - Reward: Prize/trophy details (e.g., "$500 Prize Pool", "Champion Trophy")
+    - Game: Game name (e.g., "Valorant", "Counter-Strike 2")
+    - Region: Region identifier (e.g., "NA", "EU", "APAC", "Global")
+  - Achievement details popup organized in logical sections:
+    - Icon and title at top
+    - Description section
+    - Reward section
+    - Game, Region, and Category fields (displayed only when populated)
+    - Server section with clickable "Visit Server" button
+    - Awarded by and Awarded on timestamps
+  - Made server names clickable to navigate to the server
+  - Display "Server no longer exists" when server is deleted
+  - Achievement cards are clickable to open the details popup
   - Added data-testid attributes for all interactive achievement elements
 
 ### November 19, 2025

@@ -57,6 +57,8 @@ const awardAchievementSchema = z.object({
   customTitle: z.string().max(50).optional(),
   description: z.string().max(200).optional(),
   reward: z.string().max(300).optional(),
+  game: z.string().max(100).optional(),
+  region: z.string().max(100).optional(),
 });
 
 interface TournamentDashboardChannelProps {
@@ -84,6 +86,8 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
       customTitle: "",
       description: "",
       reward: "",
+      game: "",
+      region: "",
     },
   });
 
@@ -221,6 +225,8 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
         title: finalTitle,
         description: data.description || "",
         reward: data.reward || "",
+        game: data.game || "",
+        region: data.region || "",
         type: "solo",
         iconUrl: achievement.id,
         category: "tournament",
@@ -1007,6 +1013,63 @@ function AwardAchievementDialog({
                       placeholder="Why they earned this achievement"
                       {...field}
                       data-testid="input-achievement-description"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Reward */}
+            <FormField
+              control={form.control}
+              name="reward"
+              render={({ field }: any) => (
+                <FormItem>
+                  <FormLabelComponent>Reward (Optional)</FormLabelComponent>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., $500 Prize Pool, Trophy, In-game rewards"
+                      {...field}
+                      data-testid="input-achievement-reward"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Game */}
+            <FormField
+              control={form.control}
+              name="game"
+              render={({ field }: any) => (
+                <FormItem>
+                  <FormLabelComponent>Game (Optional)</FormLabelComponent>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., Valorant, Counter-Strike 2, League of Legends"
+                      {...field}
+                      data-testid="input-achievement-game"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Region */}
+            <FormField
+              control={form.control}
+              name="region"
+              render={({ field }: any) => (
+                <FormItem>
+                  <FormLabelComponent>Region (Optional)</FormLabelComponent>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., NA, EU, APAC, Global"
+                      {...field}
+                      data-testid="input-achievement-region"
                     />
                   </FormControl>
                   <FormMessage />

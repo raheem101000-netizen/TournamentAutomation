@@ -350,6 +350,8 @@ export const achievements = pgTable("achievements", {
   description: text("description"),
   iconUrl: text("icon_url"),
   reward: text("reward"),
+  game: text("game"),
+  region: text("region"),
   achievedAt: timestamp("achieved_at").defaultNow().notNull(),
   category: text("category"),
   type: text("type", { enum: ["solo", "team"] }).notNull(),
