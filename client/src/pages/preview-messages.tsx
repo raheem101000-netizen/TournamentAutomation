@@ -137,6 +137,9 @@ export default function PreviewMessages() {
   const [messageInput, setMessageInput] = useState("");
   const [editingAvatar, setEditingAvatar] = useState<Chat | null>(null);
   const [newAvatarEmoji, setNewAvatarEmoji] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
   const [messageRequests, setMessageRequests] = useState<Chat[]>(mockMessageRequests);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -158,6 +161,11 @@ export default function PreviewMessages() {
   });
 
   const acceptedChats = threads.map(threadToChat);
+  
+  // Filter chats based on search term
+  const filteredChats = acceptedChats.filter(chat =>
+    chat.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
@@ -243,16 +251,87 @@ export default function PreviewMessages() {
     });
   };
 
+  const updateAvatarMutation = useMutation({
+    mutationFn: async (avatar: string) => {
+      if (!editingAvatar) throw new Error("No group selected");
+      
+      const response = await fetch(`/api/message-threads/${editingAvatar.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ participantAvatar: avatar }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to update avatar");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Group avatar updated!",
+        description: `Changed to ${newAvatarEmoji}`,
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/message-threads"] });
+      setEditingAvatar(null);
+      setNewAvatarEmoji("");
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update group avatar",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleUpdateAvatar = () => {
     if (!editingAvatar || !newAvatarEmoji.trim()) return;
-    
-    toast({
-      title: "Group avatar updated!",
-      description: `Changed to ${newAvatarEmoji}`,
-    });
-    
-    setEditingAvatar(null);
-    setNewAvatarEmoji("");
+    updateAvatarMutation.mutate(newAvatarEmoji);
+  };
+
+  const createGroupMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const response = await fetch("/api/message-threads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          participantName: name,
+          participantAvatar: "💬",
+          lastMessage: "",
+          unreadCount: 0,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to create group");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Group chat created!",
+        description: `${newGroupName} has been created`,
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/message-threads"] });
+      setNewGroupName("");
+      setShowCreateGroup(false);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create group chat",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateGroup = () => {
+    if (!newGroupName.trim()) return;
+    createGroupMutation.mutate(newGroupName);
   };
 
   // Conversation view
@@ -409,6 +488,8 @@ export default function PreviewMessages() {
             <Input
               placeholder="Search messages..."
               className="pl-9"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               data-testid="input-search-messages"
             />
           </div>
@@ -441,14 +522,16 @@ export default function PreviewMessages() {
               <Card className="p-8 flex items-center justify-center">
                 <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
               </Card>
-            ) : acceptedChats.length === 0 ? (
+            ) : filteredChats.length === 0 ? (
               <Card>
                 <div className="p-8 text-center">
-                  <p className="text-sm text-muted-foreground">No conversations yet</p>
+                  <p className="text-sm text-muted-foreground">
+                    {searchTerm ? "No conversations match your search" : "No conversations yet"}
+                  </p>
                 </div>
               </Card>
             ) : (
-              acceptedChats.map((chat) => (
+              filteredChats.map((chat) => (
                 <Card
                   key={chat.id}
                   className="p-4 hover-elevate cursor-pointer border-0 shadow-none"
@@ -577,7 +660,8 @@ export default function PreviewMessages() {
         <Button
           size="icon"
           className="w-14 h-14 rounded-full shadow-lg"
-          data-testid="button-new-message"
+          onClick={() => setShowCreateGroup(true)}
+          data-testid="button-create-group"
         >
           <Plus className="w-6 h-6" />
         </Button>
@@ -633,10 +717,39 @@ export default function PreviewMessages() {
             <Button
               className="w-full"
               onClick={handleUpdateAvatar}
-              disabled={!newAvatarEmoji.trim()}
+              disabled={!newAvatarEmoji.trim() || updateAvatarMutation.isPending}
               data-testid="button-update-avatar"
             >
-              Update Avatar
+              {updateAvatarMutation.isPending ? "Updating..." : "Update Avatar"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Group Chat Dialog */}
+      <Dialog open={showCreateGroup} onOpenChange={setShowCreateGroup}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Group Chat</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Group Name</label>
+              <Input
+                placeholder="Enter group name"
+                value={newGroupName}
+                onChange={(e) => setNewGroupName(e.target.value)}
+                data-testid="input-group-name"
+              />
+            </div>
+
+            <Button
+              className="w-full"
+              onClick={handleCreateGroup}
+              disabled={!newGroupName.trim() || createGroupMutation.isPending}
+              data-testid="button-create-group-confirm"
+            >
+              {createGroupMutation.isPending ? "Creating..." : "Create Group"}
             </Button>
           </div>
         </DialogContent>

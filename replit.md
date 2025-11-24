@@ -10,6 +10,38 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### November 24, 2025 (All 4 Features Implemented - WORKING ✅)
+- **Feature 1: Edit Group Chat Profile Pictures**:
+  - ✅ Added `updateMessageThread()` storage method
+  - ✅ Added PATCH `/api/message-threads/:id` endpoint to update thread avatar
+  - ✅ Frontend mutation with API call when updating group avatar
+  - ✅ Avatar changes persist to database and refresh on save
+  
+- **Feature 2: Search Bar in Messages**:
+  - ✅ Added search state to component
+  - ✅ Implemented real-time filtering of message threads by name
+  - ✅ Search bar shows "No conversations match your search" when no results
+  - ✅ Works for both individual and group chats
+  
+- **Feature 3: Create New Group Chat ("+" Button)**:
+  - ✅ "+" button now opens "Create Group Chat" dialog (not floating FAB anymore)
+  - ✅ Dialog has input for group name with validation
+  - ✅ API call creates new thread with default 💬 avatar
+  - ✅ New group appears immediately in conversation list after creation
+  - ✅ Full integration with database persistence
+  
+- **Feature 4: Edit Profile Button (Account Page)**:
+  - ✅ Profile editing form is fully functional
+  - ✅ Mutation handles PATCH request to `/api/users/:id`
+  - ✅ Avatar upload field integrated (ImageUploadField component)
+  - ✅ Form saves all fields: username, email, displayName, bio, avatarUrl
+  - ✅ Success toast confirms profile update
+  - ✅ Cache invalidation refreshes user data after save
+  
+- Build status: ✅ Passes with 0 errors
+- Server status: ✅ Running cleanly on port 5000
+- All features tested and verified working
+
 ### November 24, 2025 (Complete Message System - WORKING ✅)
 - **Full Message Sending & Display System Implemented**:
   - ✅ Created `thread_messages` database table (threadId, userId, username, message, createdAt)

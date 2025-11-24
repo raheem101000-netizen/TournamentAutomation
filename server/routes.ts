@@ -1972,6 +1972,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/message-threads/:id", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const updateSchema = z.object({
+        participantName: z.string().optional(),
+        participantAvatar: z.string().optional(),
+        lastMessage: z.string().optional(),
+        unreadCount: z.number().optional(),
+      });
+      
+      const validatedData = updateSchema.parse(req.body);
+      const thread = await storage.updateMessageThread(req.params.id, validatedData);
+      
+      if (!thread) {
+        return res.status(404).json({ error: "Thread not found" });
+      }
+      
+      res.json(thread);
+    } catch (error: any) {
+      console.error("Error updating message thread:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   // Server role routes
   app.post("/api/servers/:serverId/roles", async (req, res) => {
     try {

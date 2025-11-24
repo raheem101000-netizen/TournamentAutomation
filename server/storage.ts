@@ -184,6 +184,7 @@ export interface IStorage {
   getAllMessageThreads(): Promise<MessageThread[]>;
   createMessageThread(data: InsertMessageThread): Promise<MessageThread>;
   getMessageThread(id: string): Promise<MessageThread | undefined>;
+  updateMessageThread(id: string, data: Partial<MessageThread>): Promise<MessageThread | undefined>;
   createThreadMessage(data: InsertThreadMessage): Promise<ThreadMessage>;
   getThreadMessages(threadId: string): Promise<ThreadMessage[]>;
   getAllNotifications(): Promise<Notification[]>;
@@ -534,6 +535,15 @@ export class DatabaseStorage implements IStorage {
 
   async getMessageThread(id: string): Promise<MessageThread | undefined> {
     const [thread] = await db.select().from(messageThreads).where(eq(messageThreads.id, id));
+    return thread || undefined;
+  }
+
+  async updateMessageThread(id: string, data: Partial<MessageThread>): Promise<MessageThread | undefined> {
+    const [thread] = await db
+      .update(messageThreads)
+      .set(data)
+      .where(eq(messageThreads.id, id))
+      .returning();
     return thread || undefined;
   }
 
