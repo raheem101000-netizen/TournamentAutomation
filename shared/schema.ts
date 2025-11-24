@@ -241,6 +241,15 @@ export const messageThreads = pgTable("message_threads", {
   unreadCount: integer("unread_count").default(0),
 });
 
+export const threadMessages = pgTable("thread_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  threadId: varchar("thread_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  username: text("username").notNull(),
+  message: text("message").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const notifications = pgTable("notifications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   type: text("type", { enum: ["match_result", "friend_request", "tournament_alert", "system"] }).notNull(),
@@ -276,6 +285,11 @@ export const insertMessageThreadSchema = createInsertSchema(messageThreads).omit
   lastMessageTime: true,
 });
 
+export const insertThreadMessageSchema = createInsertSchema(threadMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertNotificationSchema = createInsertSchema(notifications).omit({
   id: true,
   timestamp: true,
@@ -289,6 +303,8 @@ export type InsertChannelMessage = z.infer<typeof insertChannelMessageSchema>;
 export type ChannelMessage = typeof channelMessages.$inferSelect;
 export type InsertMessageThread = z.infer<typeof insertMessageThreadSchema>;
 export type MessageThread = typeof messageThreads.$inferSelect;
+export type InsertThreadMessage = z.infer<typeof insertThreadMessageSchema>;
+export type ThreadMessage = typeof threadMessages.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
 

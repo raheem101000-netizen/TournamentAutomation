@@ -1,5 +1,5 @@
 import { useState, useRef, ChangeEvent } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -130,14 +130,40 @@ export default function PreviewMessages() {
 
   const acceptedChats = threads.map(threadToChat);
 
+  const sendMessageMutation = useMutation({
+    mutationFn: async (message: string) => {
+      if (!selectedChat) throw new Error("No chat selected");
+      
+      const response = await fetch(`/api/message-threads/${selectedChat.id}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to send message");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      setMessageInput("");
+      toast({
+        title: "Message sent!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSendMessage = () => {
     if (!messageInput.trim()) return;
-    
-    toast({
-      title: "Message sent!",
-      description: `"${messageInput.substring(0, 30)}${messageInput.length > 30 ? '...' : ''}"`,
-    });
-    setMessageInput("");
+    sendMessageMutation.mutate(messageInput);
   };
 
   const handleFileUpload = () => {

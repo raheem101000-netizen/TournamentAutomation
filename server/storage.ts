@@ -15,6 +15,7 @@ import {
   channels,
   channelCategories,
   messageThreads,
+  threadMessages,
   notifications,
   posterTemplates,
   posterTemplateTags,
@@ -43,6 +44,7 @@ import {
   type Channel,
   type ChannelCategory,
   type MessageThread,
+  type ThreadMessage,
   type Notification,
   type PosterTemplate,
   type PosterTemplateTag,
@@ -81,6 +83,8 @@ import {
   type CustomerServiceMessage,
   type InsertServerInvite,
   type InsertChannelMessage,
+  type InsertMessageThread,
+  type InsertThreadMessage,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -180,6 +184,8 @@ export interface IStorage {
   getAllMessageThreads(): Promise<MessageThread[]>;
   createMessageThread(data: InsertMessageThread): Promise<MessageThread>;
   getMessageThread(id: string): Promise<MessageThread | undefined>;
+  createThreadMessage(data: InsertThreadMessage): Promise<ThreadMessage>;
+  getThreadMessages(threadId: string): Promise<ThreadMessage[]>;
   getAllNotifications(): Promise<Notification[]>;
 
   // Poster template operations
@@ -529,6 +535,15 @@ export class DatabaseStorage implements IStorage {
   async getMessageThread(id: string): Promise<MessageThread | undefined> {
     const [thread] = await db.select().from(messageThreads).where(eq(messageThreads.id, id));
     return thread || undefined;
+  }
+
+  async createThreadMessage(data: InsertThreadMessage): Promise<ThreadMessage> {
+    const [message] = await db.insert(threadMessages).values(data).returning();
+    return message;
+  }
+
+  async getThreadMessages(threadId: string): Promise<ThreadMessage[]> {
+    return await db.select().from(threadMessages).where(eq(threadMessages.threadId, threadId)).orderBy(threadMessages.createdAt);
   }
 
   async getAllNotifications(): Promise<Notification[]> {

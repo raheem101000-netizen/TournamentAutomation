@@ -26,6 +26,7 @@ import {
   insertServerInviteSchema,
   insertChannelMessageSchema,
   insertMessageThreadSchema,
+  insertThreadMessageSchema,
   insertPosterTemplateSchema,
   insertPosterTemplateTagSchema,
   insertUserSchema,
@@ -1931,6 +1932,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(thread);
     } catch (error: any) {
       console.error("Error fetching message thread:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/message-threads/:id/messages", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(401).json({ error: "User not found" });
+      }
+      
+      const validatedData = insertThreadMessageSchema.parse({
+        threadId: req.params.id,
+        userId: req.session.userId,
+        username: user.username,
+        message: req.body.message,
+      });
+      
+      const message = await storage.createThreadMessage(validatedData);
+      res.status(201).json(message);
+    } catch (error: any) {
+      console.error("Error creating thread message:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/message-threads/:id/messages", async (req, res) => {
+    try {
+      const messages = await storage.getThreadMessages(req.params.id);
+      res.json(messages);
+    } catch (error: any) {
+      console.error("Error fetching thread messages:", error);
       res.status(500).json({ error: error.message });
     }
   });
