@@ -227,31 +227,6 @@ export default function PreviewAccount() {
           </CardContent>
         </Card>
 
-        {userAchievements && userAchievements.length > 0 && (
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold">Achievements</h3>
-            <div className="grid grid-cols-3 gap-3">
-              {userAchievements.map((achievement: any) => {
-                const IconComponent = getAchievementIcon(achievement.iconUrl);
-                const colorClass = getAchievementColor(achievement.iconUrl);
-                return (
-                  <Card key={achievement.id} className="hover-elevate">
-                    <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
-                      <IconComponent className={`w-8 h-8 ${colorClass}`} />
-                      <div>
-                        <p className="font-semibold text-sm line-clamp-2">{achievement.title}</p>
-                        {achievement.description && (
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{achievement.description}</p>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">Teams</h3>
@@ -289,6 +264,31 @@ export default function PreviewAccount() {
             ))}
           </div>
         </div>
+
+        {userAchievements && userAchievements.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold">Achievements</h3>
+            <div className="grid grid-cols-3 gap-3">
+              {userAchievements.map((achievement: any) => {
+                const IconComponent = getAchievementIcon(achievement.iconUrl);
+                const colorClass = getAchievementColor(achievement.iconUrl);
+                return (
+                  <Card key={achievement.id} className="hover-elevate">
+                    <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
+                      <IconComponent className={`w-8 h-8 ${colorClass}`} />
+                      <div>
+                        <p className="font-semibold text-sm line-clamp-2">{achievement.title}</p>
+                        {achievement.description && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{achievement.description}</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
       </main>
 
