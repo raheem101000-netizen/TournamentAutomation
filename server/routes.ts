@@ -989,6 +989,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all channels (for public discovery or user's channels)
+  app.get("/api/channels", async (req, res) => {
+    try {
+      // If serverId is provided, get channels for that server
+      const serverId = req.query.serverId as string;
+      if (serverId) {
+        const channels = await storage.getChannelsByServer(serverId);
+        res.json(channels);
+      } else {
+        // Return empty array - channels require a serverId context
+        res.json([]);
+      }
+    } catch (error: any) {
+      console.error("Error fetching channels:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get all servers (for user discovery or admin)
+  app.get("/api/servers", async (req, res) => {
+    try {
+      // Return all public servers
+      const allServers = await storage.getAllServers();
+      res.json(allServers);
+    } catch (error: any) {
+      console.error("Error fetching servers:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Mobile preview API routes
   app.get("/api/mobile-preview/servers", async (_req, res) => {
     try {
@@ -1357,15 +1387,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get user roles in a specific server
+  // Get user roles - optionally filtered by server
   app.get("/api/users/:userId/roles", async (req, res) => {
     try {
       const serverId = req.query.serverId as string;
-      if (!serverId) {
-        return res.status(400).json({ error: "serverId query parameter is required" });
+      if (serverId) {
+        const roles = await storage.getRolesByUser(req.params.userId, serverId);
+        res.json(roles);
+      } else {
+        // Return empty array if no serverId specified - roles are server-specific
+        res.json([]);
       }
-      const roles = await storage.getRolesByUser(req.params.userId, serverId);
-      res.json(roles);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
