@@ -1441,6 +1441,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user roles in a specific server
+  app.get("/api/users/:userId/roles", async (req, res) => {
+    try {
+      const serverId = req.query.serverId as string;
+      if (!serverId) {
+        return res.status(400).json({ error: "serverId query parameter is required" });
+      }
+      const roles = await storage.getRolesByUser(req.params.userId, serverId);
+      res.json(roles);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Team profile routes
   app.post("/api/team-profiles", async (req, res) => {
     try {

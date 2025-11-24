@@ -156,6 +156,7 @@ export interface IStorage {
   // Server role operations
   createServerRole(data: InsertServerRole): Promise<ServerRole>;
   getRolesByServer(serverId: string): Promise<ServerRole[]>;
+  getRolesByUser(userId: string, serverId: string): Promise<ServerRole[]>;
   updateServerRole(id: string, data: Partial<ServerRole>): Promise<ServerRole | undefined>;
   deleteServerRole(id: string): Promise<void>;
   
@@ -822,6 +823,20 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(serverRoles)
       .where(eq(serverRoles.serverId, serverId))
       .orderBy(serverRoles.position);
+  }
+
+  async getRolesByUser(userId: string, serverId: string): Promise<ServerRole[]> {
+    // Get the server member to find their roleId
+    const member = await this.getServerMemberByUserId(serverId, userId);
+    if (!member || !member.roleId) {
+      return [];
+    }
+    
+    // Get the specific role(s) assigned to this user
+    const [role] = await db.select().from(serverRoles)
+      .where(eq(serverRoles.id, member.roleId));
+    
+    return role ? [role] : [];
   }
 
   async updateServerRole(id: string, data: Partial<ServerRole>): Promise<ServerRole | undefined> {
