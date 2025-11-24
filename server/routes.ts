@@ -1780,6 +1780,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/channels/:channelId/messages/search", async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      if (!query) {
+        return res.status(400).json({ error: "Search query required" });
+      }
+      const messages = await storage.searchChannelMessages(req.params.channelId, query);
+      res.status(200).json(messages);
+    } catch (error: any) {
+      console.error("Error searching messages:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post("/api/channels/:channelId/messages", async (req, res) => {
     try {
       const validatedData = insertChannelMessageSchema.parse({

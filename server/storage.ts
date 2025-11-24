@@ -1,4 +1,4 @@
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, ilike } from "drizzle-orm";
 import { db } from "./db";
 import bcrypt from "bcrypt";
 import {
@@ -151,6 +151,7 @@ export interface IStorage {
   // Channel message operations
   createChannelMessage(data: InsertChannelMessage): Promise<ChannelMessage>;
   getChannelMessages(channelId: string, limit?: number): Promise<ChannelMessage[]>;
+  searchChannelMessages(channelId: string, query: string): Promise<ChannelMessage[]>;
   deleteChannelMessage(id: string): Promise<void>;
   
   // Server role operations
@@ -807,6 +808,15 @@ export class DatabaseStorage implements IStorage {
       .where(eq(channelMessages.channelId, channelId))
       .orderBy(channelMessages.createdAt)
       .limit(limit);
+  }
+
+  async searchChannelMessages(channelId: string, query: string): Promise<ChannelMessage[]> {
+    return await db.select().from(channelMessages)
+      .where(and(
+        eq(channelMessages.channelId, channelId),
+        sql`${channelMessages.message} ILIKE ${`%${query}%`}`
+      ))
+      .orderBy(channelMessages.createdAt);
   }
 
   async deleteChannelMessage(id: string): Promise<void> {
