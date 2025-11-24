@@ -56,9 +56,9 @@ const awardAchievementSchema = z.object({
   achievementId: z.string().min(1, "Please select an achievement"),
   customTitle: z.string().max(50).optional(),
   description: z.string().max(200).optional(),
-  reward: z.string().max(300).optional(),
-  game: z.string().max(100).optional(),
-  region: z.string().max(100).optional(),
+  reward: z.string().min(1, "Reward is required").max(300),
+  game: z.string().min(1, "Game is required").max(100),
+  region: z.string().min(1, "Region is required").max(100),
 });
 
 interface TournamentDashboardChannelProps {
@@ -1026,7 +1026,7 @@ function AwardAchievementDialog({
               name="reward"
               render={({ field }: any) => (
                 <FormItem>
-                  <FormLabelComponent>Reward (Optional)</FormLabelComponent>
+                  <FormLabelComponent>Reward</FormLabelComponent>
                   <FormControl>
                     <Input
                       placeholder="e.g., $500 Prize Pool, Trophy, In-game rewards"
@@ -1045,7 +1045,7 @@ function AwardAchievementDialog({
               name="game"
               render={({ field }: any) => (
                 <FormItem>
-                  <FormLabelComponent>Game (Optional)</FormLabelComponent>
+                  <FormLabelComponent>Game</FormLabelComponent>
                   <FormControl>
                     <Input
                       placeholder="e.g., Valorant, Counter-Strike 2, League of Legends"
@@ -1064,7 +1064,7 @@ function AwardAchievementDialog({
               name="region"
               render={({ field }: any) => (
                 <FormItem>
-                  <FormLabelComponent>Region (Optional)</FormLabelComponent>
+                  <FormLabelComponent>Region</FormLabelComponent>
                   <FormControl>
                     <Input
                       placeholder="e.g., NA, EU, APAC, Global"
