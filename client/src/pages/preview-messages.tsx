@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Search, Plus, Users, Send, ArrowLeft, Edit, Check, X, Image as ImageIcon, Paperclip, Smile } from "lucide-react";
+import { Search, Plus, Users, Send, ArrowLeft, Edit, Check, X, Image as ImageIcon, Paperclip, Smile, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 
@@ -27,48 +28,14 @@ interface Chat {
   members: number;
 }
 
-const mockAcceptedChats: Chat[] = [
-  {
-    id: "1",
-    name: "Team Alpha Squad",
-    isGroup: true,
-    groupImage: "👥",
-    lastMessage: "Ready for tonight's match?",
-    timestamp: "2m ago",
-    unread: 3,
-    members: 5,
-  },
-  {
-    id: "2",
-    name: "Tournament Organizers",
-    isGroup: true,
-    groupImage: "🏆",
-    lastMessage: "Prize pool confirmed!",
-    timestamp: "15m ago",
-    unread: 0,
-    members: 8,
-  },
-  {
-    id: "3",
-    name: "John Smith",
-    isGroup: false,
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=john",
-    lastMessage: "GG! Want to team up again?",
-    timestamp: "1h ago",
-    unread: 1,
-    members: 0,
-  },
-  {
-    id: "4",
-    name: "Practice Group",
-    isGroup: true,
-    groupImage: "🎮",
-    lastMessage: "Sarah sent an image",
-    timestamp: "3h ago",
-    unread: 0,
-    members: 4,
-  },
-];
+interface MessageThread {
+  id: string;
+  participantName: string;
+  participantAvatar?: string;
+  lastMessage: string;
+  lastMessageTime: string;
+  unreadCount: number;
+}
 
 const mockMessageRequests: Chat[] = [
   {
@@ -117,14 +84,49 @@ const mockMessages = [
   },
 ];
 
+function threadToChat(thread: MessageThread): Chat {
+  return {
+    id: thread.id,
+    name: thread.participantName,
+    isGroup: true,
+    groupImage: thread.participantAvatar || "💬",
+    lastMessage: thread.lastMessage,
+    timestamp: formatTime(thread.lastMessageTime),
+    unread: thread.unreadCount,
+    members: 0,
+  };
+}
+
+function formatTime(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return "now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  
+  return date.toLocaleDateString();
+}
+
 export default function PreviewMessages() {
   const { toast } = useToast();
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [editingAvatar, setEditingAvatar] = useState<Chat | null>(null);
   const [newAvatarEmoji, setNewAvatarEmoji] = useState("");
-  const [acceptedChats, setAcceptedChats] = useState<Chat[]>(mockAcceptedChats);
   const [messageRequests, setMessageRequests] = useState<Chat[]>(mockMessageRequests);
+
+  // Fetch message threads from API
+  const { data: threads = [], isLoading } = useQuery<MessageThread[]>({
+    queryKey: ["/api/message-threads"],
+  });
+
+  const acceptedChats = threads.map(threadToChat);
 
   const handleSendMessage = () => {
     if (!messageInput.trim()) return;
@@ -138,7 +140,6 @@ export default function PreviewMessages() {
 
   const handleAcceptRequest = (request: Chat) => {
     setMessageRequests(prev => prev.filter(r => r.id !== request.id));
-    setAcceptedChats(prev => [...prev, request]);
     toast({
       title: "Message request accepted",
       description: `You can now chat with ${request.name}`,
@@ -155,16 +156,6 @@ export default function PreviewMessages() {
 
   const handleUpdateAvatar = () => {
     if (!editingAvatar || !newAvatarEmoji.trim()) return;
-    
-    setAcceptedChats(prev => prev.map(chat =>
-      chat.id === editingAvatar.id && chat.isGroup
-        ? { ...chat, groupImage: newAvatarEmoji }
-        : chat
-    ));
-    
-    if (selectedChat?.id === editingAvatar.id && selectedChat.isGroup) {
-      setSelectedChat(prev => prev && prev.isGroup ? { ...prev, groupImage: newAvatarEmoji } : prev);
-    }
     
     toast({
       title: "Group avatar updated!",
@@ -319,58 +310,70 @@ export default function PreviewMessages() {
           </TabsList>
 
           <TabsContent value="accepted" className="space-y-1">
-            {acceptedChats.map((chat) => (
-              <Card
-                key={chat.id}
-                className="p-4 hover-elevate cursor-pointer border-0 shadow-none"
-                onClick={() => setSelectedChat(chat)}
-                data-testid={`chat-${chat.id}`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <Avatar className="w-12 h-12">
-                      {chat.isGroup ? (
-                        <AvatarFallback className="text-2xl bg-primary/10">
-                          {chat.groupImage}
-                        </AvatarFallback>
-                      ) : (
-                        <AvatarImage src={chat.avatar} />
-                      )}
-                    </Avatar>
-                    {chat.unread > 0 && (
-                      <Badge
-                        variant="destructive"
-                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full p-0 flex items-center justify-center text-xs"
-                      >
-                        {chat.unread}
-                      </Badge>
-                    )}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold truncate">
-                          {chat.name}
-                        </h3>
-                        {chat.isGroup && (
-                          <Badge variant="secondary" className="text-xs">
-                            <Users className="w-3 h-3 mr-1" />
-                            {chat.members}
-                          </Badge>
-                        )}
-                      </div>
-                      <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
-                        {chat.timestamp}
-                      </span>
-                    </div>
-                    <p className={`text-sm truncate ${chat.unread > 0 ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
-                      {chat.lastMessage}
-                    </p>
-                  </div>
+            {isLoading ? (
+              <Card className="p-8 flex items-center justify-center">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              </Card>
+            ) : acceptedChats.length === 0 ? (
+              <Card>
+                <div className="p-8 text-center">
+                  <p className="text-sm text-muted-foreground">No conversations yet</p>
                 </div>
               </Card>
-            ))}
+            ) : (
+              acceptedChats.map((chat) => (
+                <Card
+                  key={chat.id}
+                  className="p-4 hover-elevate cursor-pointer border-0 shadow-none"
+                  onClick={() => setSelectedChat(chat)}
+                  data-testid={`chat-${chat.id}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <Avatar className="w-12 h-12">
+                        {chat.isGroup ? (
+                          <AvatarFallback className="text-2xl bg-primary/10">
+                            {chat.groupImage}
+                          </AvatarFallback>
+                        ) : (
+                          <AvatarImage src={chat.avatar} />
+                        )}
+                      </Avatar>
+                      {chat.unread > 0 && (
+                        <Badge
+                          variant="destructive"
+                          className="absolute -top-1 -right-1 w-5 h-5 rounded-full p-0 flex items-center justify-center text-xs"
+                        >
+                          {chat.unread}
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold truncate">
+                            {chat.name}
+                          </h3>
+                          {chat.isGroup && chat.members > 0 && (
+                            <Badge variant="secondary" className="text-xs">
+                              <Users className="w-3 h-3 mr-1" />
+                              {chat.members}
+                            </Badge>
+                          )}
+                        </div>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+                          {chat.timestamp}
+                        </span>
+                      </div>
+                      <p className={`text-sm truncate ${chat.unread > 0 ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                        {chat.lastMessage}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            )}
           </TabsContent>
 
           <TabsContent value="requests" className="space-y-1">

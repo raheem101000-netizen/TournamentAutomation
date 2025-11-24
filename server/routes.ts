@@ -25,6 +25,7 @@ import {
   insertServerBanSchema,
   insertServerInviteSchema,
   insertChannelMessageSchema,
+  insertMessageThreadSchema,
   insertPosterTemplateSchema,
   insertPosterTemplateTagSchema,
   insertUserSchema,
@@ -1885,6 +1886,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error: any) {
       console.error("Error deleting message:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Message threads routes (Direct messages / Group chats)
+  app.get("/api/message-threads", async (req, res) => {
+    try {
+      const threads = await storage.getAllMessageThreads();
+      res.json(threads);
+    } catch (error: any) {
+      console.error("Error fetching message threads:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/message-threads", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const validatedData = insertMessageThreadSchema.parse({
+        participantName: req.body.participantName,
+        participantAvatar: req.body.participantAvatar || null,
+        lastMessage: req.body.lastMessage || "",
+        unreadCount: 0,
+      });
+      
+      const thread = await storage.createMessageThread(validatedData);
+      res.status(201).json(thread);
+    } catch (error: any) {
+      console.error("Error creating message thread:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/message-threads/:id", async (req, res) => {
+    try {
+      const thread = await storage.getMessageThread(req.params.id);
+      if (!thread) {
+        return res.status(404).json({ error: "Thread not found" });
+      }
+      res.json(thread);
+    } catch (error: any) {
+      console.error("Error fetching message thread:", error);
       res.status(500).json({ error: error.message });
     }
   });
