@@ -1,5 +1,5 @@
 import { useState, useRef, ChangeEvent } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,23 @@ interface MessageThread {
   lastMessage: string;
   lastMessageTime: string;
   unreadCount: number;
+}
+
+interface ThreadMessage {
+  id: string;
+  threadId: string;
+  userId: string;
+  username: string;
+  message: string;
+  createdAt: string;
+}
+
+interface User {
+  id: string;
+  username: string;
+  email?: string;
+  displayName?: string;
+  avatarUrl?: string;
 }
 
 const mockMessageRequests: Chat[] = [
@@ -115,6 +132,7 @@ function formatTime(dateString: string): string {
 
 export default function PreviewMessages() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [editingAvatar, setEditingAvatar] = useState<Chat | null>(null);
@@ -123,9 +141,20 @@ export default function PreviewMessages() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
+  // Fetch current user
+  const { data: currentUser } = useQuery<User>({
+    queryKey: ["/api/auth/me"],
+  });
+
   // Fetch message threads from API
   const { data: threads = [], isLoading } = useQuery<MessageThread[]>({
     queryKey: ["/api/message-threads"],
+  });
+
+  // Fetch messages for selected thread
+  const { data: threadMessages = [], isLoading: messagesLoading } = useQuery<ThreadMessage[]>({
+    queryKey: ["/api/message-threads", selectedChat?.id, "messages"],
+    enabled: !!selectedChat,
   });
 
   const acceptedChats = threads.map(threadToChat);
@@ -150,6 +179,10 @@ export default function PreviewMessages() {
       setMessageInput("");
       toast({
         title: "Message sent!",
+      });
+      // Refetch messages after sending
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/message-threads", selectedChat?.id, "messages"] 
       });
     },
     onError: () => {
@@ -267,22 +300,35 @@ export default function PreviewMessages() {
 
         <main className="flex-1 overflow-y-auto container max-w-lg mx-auto px-4 py-4">
           <div className="space-y-4">
-            {mockMessages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}
-              >
-                <div className={`max-w-[75%] ${message.isOwn ? 'order-2' : 'order-1'}`}>
-                  {!message.isOwn && (
-                    <p className="text-xs text-muted-foreground mb-1 px-3">{message.sender}</p>
-                  )}
-                  <Card className={`p-3 ${message.isOwn ? 'bg-primary text-primary-foreground' : ''}`}>
-                    <p className="text-sm">{message.content}</p>
-                  </Card>
-                  <p className="text-xs text-muted-foreground mt-1 px-3">{message.timestamp}</p>
-                </div>
+            {messagesLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
-            ))}
+            ) : threadMessages.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No messages yet. Start the conversation!</p>
+              </div>
+            ) : (
+              threadMessages.map((msg) => {
+                const isOwn = msg.userId === currentUser?.id;
+                return (
+                  <div
+                    key={msg.id}
+                    className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div className={`max-w-[75%] ${isOwn ? 'order-2' : 'order-1'}`}>
+                      {!isOwn && (
+                        <p className="text-xs text-muted-foreground mb-1 px-3">{msg.username}</p>
+                      )}
+                      <Card className={`p-3 ${isOwn ? 'bg-primary text-primary-foreground' : ''}`}>
+                        <p className="text-sm">{msg.message}</p>
+                      </Card>
+                      <p className="text-xs text-muted-foreground mt-1 px-3">{formatTime(msg.createdAt)}</p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </main>
 
