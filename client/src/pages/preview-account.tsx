@@ -92,11 +92,13 @@ export default function PreviewAccount() {
   // Check if viewing own profile or another user's profile
   const isOwnProfile = viewingUser === null;
   const displayUser = viewingUser || currentUser.username;
-  const displayUserId = authUser?.id;
+  // For own profile, use authUser?.id; for viewing others, we'd need to look up their ID
+  // For now, achievements only show on own profile since we need user ID
+  const achievementsUserId = isOwnProfile ? authUser?.id : null;
 
   const { data: userAchievements = [] } = useQuery<any[]>({
-    queryKey: [`/api/users/${displayUserId}/achievements`],
-    enabled: !!displayUserId,
+    queryKey: [`/api/users/${achievementsUserId}/achievements`],
+    enabled: !!achievementsUserId,
   });
 
   const getAchievementIcon = (iconUrl: string) => {
@@ -276,7 +278,7 @@ export default function PreviewAccount() {
                   <Card key={achievement.id} className="hover-elevate">
                     <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
                       <IconComponent className={`w-8 h-8 ${colorClass}`} />
-                      <div>
+                      <div className="w-full">
                         <p className="font-semibold text-sm line-clamp-2">{achievement.title}</p>
                         {achievement.description && (
                           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{achievement.description}</p>
