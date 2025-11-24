@@ -342,16 +342,14 @@ export default function PreviewAccount() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <h4 className="text-xs font-semibold text-muted-foreground">Earned</h4>
-                    <p className="text-sm">
-                      {selectedAchievement.achievedAt
-                        ? new Date(selectedAchievement.achievedAt).toLocaleDateString()
-                        : "N/A"}
-                    </p>
+                {selectedAchievement.reward && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold text-muted-foreground">Reward</h4>
+                    <p className="text-sm">{selectedAchievement.reward}</p>
                   </div>
-                  
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <h4 className="text-xs font-semibold text-muted-foreground">Category</h4>
                     <p className="text-sm capitalize">{selectedAchievement.category || "N/A"}</p>

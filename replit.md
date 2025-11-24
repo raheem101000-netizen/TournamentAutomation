@@ -11,12 +11,18 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes
 
 ### November 24, 2025 (Latest)
-- **Achievement System Enhancement**: 
+- **Achievement System Complete Enhancement**: 
   - Added `serverId` field to achievements table to track which server awarded each achievement
+  - Added `reward` field to capture prize details (money, in-game prizes, trophies, etc.)
   - Made server names under achievement icons clickable to navigate to the server
   - Display "Server no longer exists" message when server is deleted
-  - Created achievement details popup showing full information: icon, title, description, earned date, category, server, awarded by, and awarded on timestamp
+  - Created achievement details popup showing full information:
+    - Icon, title, and description
+    - **Reward** section displaying prize/trophy details provided by organizer
+    - Category, awarded by, and awarded on timestamp
+    - "Visit Server" button for easy navigation
   - Achievement cards are now clickable to open the details popup
+  - Updated Tournament Dashboard achievement form to include reward input field
   - Added data-testid attributes for all interactive achievement elements
 
 ### November 19, 2025

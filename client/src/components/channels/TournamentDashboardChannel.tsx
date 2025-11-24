@@ -56,6 +56,7 @@ const awardAchievementSchema = z.object({
   achievementId: z.string().min(1, "Please select an achievement"),
   customTitle: z.string().max(50).optional(),
   description: z.string().max(200).optional(),
+  reward: z.string().max(300).optional(),
 });
 
 interface TournamentDashboardChannelProps {
@@ -82,6 +83,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
       achievementId: "champion",
       customTitle: "",
       description: "",
+      reward: "",
     },
   });
 
@@ -218,6 +220,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
         serverId: serverId,
         title: finalTitle,
         description: data.description || "",
+        reward: data.reward || "",
         type: "solo",
         iconUrl: achievement.id,
         category: "tournament",
