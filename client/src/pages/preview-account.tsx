@@ -353,11 +353,11 @@ export default function PreviewAccount() {
                 return (
                   <Card 
                     key={achievement.id} 
-                    className="hover-elevate cursor-pointer"
+                    className="hover-elevate cursor-pointer overflow-hidden"
                     onClick={() => setSelectedAchievement(achievement)}
                     data-testid={`achievement-card-${achievement.id}`}
                   >
-                    <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
+                    <CardContent className="p-4 flex flex-col items-center text-center space-y-2 overflow-hidden">
                       <div className="relative inline-flex items-center justify-center">
                         <IconComponent className={`w-8 h-8 ${colorClass}`} />
                         {medalNumber && (
@@ -366,13 +366,13 @@ export default function PreviewAccount() {
                           </span>
                         )}
                       </div>
-                      <div className="w-full">
-                        <p className="font-semibold text-sm line-clamp-2">{achievement.title}</p>
+                      <div className="w-full min-w-0 truncate">
+                        <p className="font-semibold text-sm line-clamp-2 truncate">{achievement.title}</p>
                         {achievement.serverName ? (
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-xs h-auto p-0 mt-1 line-clamp-1 text-muted-foreground hover:text-foreground"
+                            className="text-xs h-auto p-0 mt-1 text-muted-foreground hover:text-foreground truncate"
                             onClick={(e) => {
                               e.stopPropagation();
                               if (achievement.serverId) {
@@ -381,10 +381,10 @@ export default function PreviewAccount() {
                             }}
                             data-testid={`button-server-link-${achievement.id}`}
                           >
-                            {achievement.serverName}
+                            <span className="block truncate">{achievement.serverName}</span>
                           </Button>
                         ) : (
-                          <p className="text-xs text-destructive mt-1">Server no longer exists</p>
+                          <p className="text-xs text-destructive mt-1 truncate">Server no longer exists</p>
                         )}
                       </div>
                     </CardContent>
