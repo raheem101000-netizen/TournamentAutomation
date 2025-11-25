@@ -10,6 +10,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### November 25, 2025 (Achievement Medal Numbers & Button Fixes - COMPLETE ✅)
+- **Fixed Achievement Medal Numbers**:
+  - ✅ Runner Up medals now display "2" instead of "1"
+  - ✅ Third Place medals now display "3" instead of "1"
+  - ✅ Numbers overlay correctly on both card view and detail popup
+  - ✅ Prevents confusion and clearly shows medal positions
+
 ### November 25, 2025 (Button Fixes & Cleanup - COMPLETE ✅)
 - **Fixed Top-Right "+" Button in Messages**:
   - ✅ Added onClick handler to open "Create Group Chat" dialog

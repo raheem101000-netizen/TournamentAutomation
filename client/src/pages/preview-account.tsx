@@ -281,6 +281,13 @@ export default function PreviewAccount() {
               {userAchievements.map((achievement: any) => {
                 const IconComponent = getAchievementIcon(achievement.iconUrl);
                 const colorClass = getAchievementColor(achievement.iconUrl);
+                const getMedalNumber = () => {
+                  if (achievement.iconUrl === "runner-up") return "2";
+                  if (achievement.iconUrl === "third-place") return "3";
+                  return null;
+                };
+                const medalNumber = getMedalNumber();
+                
                 return (
                   <Card 
                     key={achievement.id} 
@@ -289,7 +296,14 @@ export default function PreviewAccount() {
                     data-testid={`achievement-card-${achievement.id}`}
                   >
                     <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
-                      <IconComponent className={`w-8 h-8 ${colorClass}`} />
+                      <div className="relative inline-flex items-center justify-center">
+                        <IconComponent className={`w-8 h-8 ${colorClass}`} />
+                        {medalNumber && (
+                          <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
+                            {medalNumber}
+                          </span>
+                        )}
+                      </div>
                       <div className="w-full">
                         <p className="font-semibold text-sm line-clamp-2">{achievement.title}</p>
                         {achievement.serverName ? (
@@ -333,7 +347,23 @@ export default function PreviewAccount() {
                   {(() => {
                     const IconComponent = getAchievementIcon(selectedAchievement.iconUrl);
                     const colorClass = getAchievementColor(selectedAchievement.iconUrl);
-                    return <IconComponent className={`w-12 h-12 ${colorClass}`} />;
+                    const getMedalNumber = () => {
+                      if (selectedAchievement.iconUrl === "runner-up") return "2";
+                      if (selectedAchievement.iconUrl === "third-place") return "3";
+                      return null;
+                    };
+                    const medalNumber = getMedalNumber();
+                    
+                    return (
+                      <div className="relative inline-flex items-center justify-center">
+                        <IconComponent className={`w-12 h-12 ${colorClass}`} />
+                        {medalNumber && (
+                          <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white">
+                            {medalNumber}
+                          </span>
+                        )}
+                      </div>
+                    );
                   })()}
                   <DialogTitle className="text-2xl">{selectedAchievement.title}</DialogTitle>
                 </div>
