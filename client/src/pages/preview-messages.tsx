@@ -478,7 +478,12 @@ export default function PreviewMessages() {
         <div className="container max-w-lg mx-auto px-4 py-3 space-y-3">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">Messages</h1>
-            <Button size="icon" variant="ghost" data-testid="button-create-group">
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              onClick={() => setShowCreateGroup(true)}
+              data-testid="button-create-group-header"
+            >
               <Plus className="w-5 h-5" />
             </Button>
           </div>
@@ -661,7 +666,7 @@ export default function PreviewMessages() {
           size="icon"
           className="w-14 h-14 rounded-full shadow-lg"
           onClick={() => setShowCreateGroup(true)}
-          data-testid="button-create-group"
+          data-testid="button-create-group-floating"
         >
           <Plus className="w-6 h-6" />
         </Button>

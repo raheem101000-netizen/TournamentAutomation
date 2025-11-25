@@ -212,7 +212,12 @@ export default function PreviewAccount() {
               )}
 
               {isOwnProfile ? (
-                <Button variant="outline" className="w-full" data-testid="button-edit-profile">
+                <Button 
+                  variant="outline" 
+                  className="w-full" 
+                  onClick={() => setLocation("/account/settings")}
+                  data-testid="button-edit-profile"
+                >
                   <Edit className="w-4 h-4 mr-2" />
                   Edit Profile
                 </Button>

@@ -10,6 +10,21 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### November 25, 2025 (Button Fixes - WORKING ✅)
+- **Fixed Top-Right "+" Button in Messages**:
+  - ✅ Added onClick handler to open "Create Group Chat" dialog
+  - ✅ Now functional and consistent with blue floating button
+  - ✅ Both buttons trigger the same create group dialog
+  
+- **Fixed "Edit Profile" Button on Account Page**:
+  - ✅ Added onClick handler to navigate to account settings page
+  - ✅ Users can now edit their profile from the account preview page
+  - ✅ Navigates to /account/settings when clicked
+  
+- Build status: ✅ Passes with 0 errors
+- Server status: ✅ Running cleanly on port 5000
+- All buttons now fully functional
+
 ### November 24, 2025 (All 4 Features Implemented - WORKING ✅)
 - **Feature 1: Edit Group Chat Profile Pictures**:
   - ✅ Added `updateMessageThread()` storage method
@@ -24,7 +39,7 @@ Preferred communication style: Simple, everyday language.
   - ✅ Works for both individual and group chats
   
 - **Feature 3: Create New Group Chat ("+" Button)**:
-  - ✅ "+" button now opens "Create Group Chat" dialog (not floating FAB anymore)
+  - ✅ "+" button now opens "Create Group Chat" dialog
   - ✅ Dialog has input for group name with validation
   - ✅ API call creates new thread with default 💬 avatar
   - ✅ New group appears immediately in conversation list after creation
@@ -37,10 +52,6 @@ Preferred communication style: Simple, everyday language.
   - ✅ Form saves all fields: username, email, displayName, bio, avatarUrl
   - ✅ Success toast confirms profile update
   - ✅ Cache invalidation refreshes user data after save
-  
-- Build status: ✅ Passes with 0 errors
-- Server status: ✅ Running cleanly on port 5000
-- All features tested and verified working
 
 ### November 24, 2025 (Complete Message System - WORKING ✅)
 - **Full Message Sending & Display System Implemented**:
