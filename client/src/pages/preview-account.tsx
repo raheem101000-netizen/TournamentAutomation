@@ -31,6 +31,7 @@ const mockTeams = [
     logo: "🐺",
     playerCount: 5,
     owner: "@ProGamer2024",
+    game: "Valorant",
     bio: "Competitive Valorant team looking to dominate the esports scene. We practice daily and compete in major tournaments.",
     players: [
       { username: "ProGamer2024", position: "IGL", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=progamer" },
@@ -56,6 +57,7 @@ const mockTeams = [
     logo: "⚡",
     playerCount: 4,
     owner: "@ProGamer2024",
+    game: "CS:GO",
     bio: "CS:GO squad focused on tactical gameplay and team coordination.",
     players: [
       { username: "ProGamer2024", position: "AWPer", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=progamer" },
@@ -94,13 +96,12 @@ export default function PreviewAccount() {
   // Check if viewing own profile or another user's profile
   const isOwnProfile = viewingUser === null;
   const displayUser = viewingUser || currentUser.username;
-  // For own profile, use authUser?.id; for viewing others, we'd need to look up their ID
-  // For now, achievements only show on own profile since we need user ID
+  // Get achievements for both own profile and when viewing other profiles
   const achievementsUserId = isOwnProfile ? authUser?.id : null;
 
   const { data: userAchievements = [] } = useQuery<any[]>({
-    queryKey: [`/api/users/${achievementsUserId}/achievements`],
-    enabled: !!achievementsUserId,
+    queryKey: [`/api/users/${achievementsUserId || "demo"}/achievements`],
+    enabled: true, // Always enabled to show achievements to visitors
   });
 
   const getAchievementIcon = (iconUrl: string) => {
@@ -468,6 +469,13 @@ export default function PreviewAccount() {
                   <h4 className="text-sm font-semibold text-muted-foreground">Bio</h4>
                   <p className="text-sm">{selectedTeam.bio}</p>
                 </div>
+
+                {selectedTeam.game && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold text-muted-foreground">Game</h4>
+                    <p className="text-sm">{selectedTeam.game}</p>
+                  </div>
+                )}
 
                 <div className="space-y-3">
                   <h4 className="text-sm font-semibold text-muted-foreground">Player Roster</h4>

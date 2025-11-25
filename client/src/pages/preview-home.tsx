@@ -20,13 +20,13 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Tournament, Server } from "@shared/schema";
 import { format } from "date-fns";
 
-type FilterType = "all" | "prize" | "no-prize" | "free" | "paid";
+type FilterType = "prize" | "no-prize" | "free" | "paid";
 
 export default function PreviewHome() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+  const [activeFilters, setActiveFilters] = useState<Set<FilterType>>(new Set());
   const [detailsModal, setDetailsModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string | null; serverLogoFallback: string; backgroundImage: string; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; rankReq: string; } | null>(null);
   const [joinModal, setJoinModal] = useState<{ id: string; serverId?: string; title: string; game: string; serverName: string; serverLogo: string | null; serverLogoFallback: string; backgroundImage: string; prize: string; entryFee: string; startDate: string; startTime: string; participants: string; format: string; platform: string; region: string; rankReq: string; } | null>(null);
   const [serverModal, setServerModal] = useState<{ name: string; logo: string | null; logoFallback: string; id?: string } | null>(null);
@@ -265,7 +265,7 @@ export default function PreviewHome() {
 
   const allPosters = tournamentPosters.length > 0 ? tournamentPosters : mockPostersWithRealServers;
   
-  // Filter posters based on search query and active filter
+  // Filter posters based on search query and active filters (can be multiple at once)
   const displayPosters = allPosters.filter(poster => {
     // Search filter
     if (searchQuery) {
@@ -278,8 +278,8 @@ export default function PreviewHome() {
       if (!matchesSearch) return false;
     }
     
-    // Type filter
-    if (activeFilter === "all") return true;
+    // If no filters active, show all
+    if (activeFilters.size === 0) return true;
     
     // Normalize values for filtering
     const prizeNormalized = (poster.prize || "").toLowerCase().trim();
@@ -311,32 +311,45 @@ export default function PreviewHome() {
       return false;
     };
     
-    if (activeFilter === "prize") {
-      // Has prize (not empty and doesn't contain no-prize keywords)
+    // Check prize filters (at least one must match if any prize filter is active)
+    const prizeFiltersActive = activeFilters.has("prize") || activeFilters.has("no-prize");
+    if (prizeFiltersActive) {
       const hasPrize = prizeNormalized && !isNoPrizeKeyword(prizeNormalized);
-      return hasPrize;
-    }
-    
-    if (activeFilter === "no-prize") {
-      // No prize or explicitly states no prize
       const noPrize = !prizeNormalized || isNoPrizeKeyword(prizeNormalized);
-      return noPrize;
+      
+      let prizeMatches = false;
+      if (activeFilters.has("prize") && hasPrize) prizeMatches = true;
+      if (activeFilters.has("no-prize") && noPrize) prizeMatches = true;
+      
+      if (!prizeMatches) return false;
     }
     
-    if (activeFilter === "free") {
-      // Free entry
+    // Check entry fee filters (at least one must match if any fee filter is active)
+    const feeFiltersActive = activeFilters.has("free") || activeFilters.has("paid");
+    if (feeFiltersActive) {
       const isFree = !entryFeeNormalized || isFreeKeyword(entryFeeNormalized);
-      return isFree;
-    }
-    
-    if (activeFilter === "paid") {
-      // Paid entry (has a fee and not free)
       const isPaid = entryFeeNormalized && !isFreeKeyword(entryFeeNormalized);
-      return isPaid;
+      
+      let feeMatches = false;
+      if (activeFilters.has("free") && isFree) feeMatches = true;
+      if (activeFilters.has("paid") && isPaid) feeMatches = true;
+      
+      if (!feeMatches) return false;
     }
     
     return true;
   });
+
+  // Helper to toggle a filter
+  const toggleFilter = (filter: FilterType) => {
+    const newFilters = new Set(activeFilters);
+    if (newFilters.has(filter)) {
+      newFilters.delete(filter);
+    } else {
+      newFilters.add(filter);
+    }
+    setActiveFilters(newFilters);
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
@@ -362,41 +375,41 @@ export default function PreviewHome() {
 
           <div className="flex gap-2 overflow-x-auto">
             <Badge 
-              variant={activeFilter === "all" ? "default" : "outline"} 
+              variant={activeFilters.size === 0 ? "default" : "outline"} 
               className="whitespace-nowrap text-xs px-3 cursor-pointer" 
-              onClick={() => setActiveFilter("all")}
+              onClick={() => setActiveFilters(new Set())}
               data-testid="filter-all"
             >
               All
             </Badge>
             <Badge 
-              variant={activeFilter === "prize" ? "default" : "outline"} 
+              variant={activeFilters.has("prize") ? "default" : "outline"} 
               className="whitespace-nowrap text-xs px-3 cursor-pointer" 
-              onClick={() => setActiveFilter("prize")}
+              onClick={() => toggleFilter("prize")}
               data-testid="filter-prize"
             >
               Prize
             </Badge>
             <Badge 
-              variant={activeFilter === "no-prize" ? "default" : "outline"} 
+              variant={activeFilters.has("no-prize") ? "default" : "outline"} 
               className="whitespace-nowrap text-xs px-3 cursor-pointer" 
-              onClick={() => setActiveFilter("no-prize")}
+              onClick={() => toggleFilter("no-prize")}
               data-testid="filter-no-prize"
             >
               No Prize
             </Badge>
             <Badge 
-              variant={activeFilter === "free" ? "default" : "outline"} 
+              variant={activeFilters.has("free") ? "default" : "outline"} 
               className="whitespace-nowrap text-xs px-3 cursor-pointer" 
-              onClick={() => setActiveFilter("free")}
+              onClick={() => toggleFilter("free")}
               data-testid="filter-free"
             >
               Free Entry
             </Badge>
             <Badge 
-              variant={activeFilter === "paid" ? "default" : "outline"} 
+              variant={activeFilters.has("paid") ? "default" : "outline"} 
               className="whitespace-nowrap text-xs px-3 cursor-pointer" 
-              onClick={() => setActiveFilter("paid")}
+              onClick={() => toggleFilter("paid")}
               data-testid="filter-paid"
             >
               Paid Entry

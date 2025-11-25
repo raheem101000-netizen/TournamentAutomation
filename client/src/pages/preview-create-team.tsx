@@ -41,6 +41,7 @@ export default function PreviewCreateTeam() {
   const [teamLogoImage, setTeamLogoImage] = useState<string | null>(null);
   const [teamName, setTeamName] = useState("");
   const [teamBio, setTeamBio] = useState("");
+  const [teamGame, setTeamGame] = useState("");
   const [players, setPlayers] = useState<TeamPlayer[]>([]);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -203,6 +204,17 @@ export default function PreviewCreateTeam() {
                 onChange={(e) => setTeamBio(e.target.value)}
                 rows={4}
                 data-testid="input-team-bio"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="team-game">Game</Label>
+              <Input
+                id="team-game"
+                placeholder="Enter game name (e.g., Valorant, CS:GO)..."
+                value={teamGame}
+                onChange={(e) => setTeamGame(e.target.value)}
+                data-testid="input-team-game"
               />
             </div>
           </CardContent>
