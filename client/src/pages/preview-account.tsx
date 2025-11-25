@@ -75,6 +75,57 @@ const mockTeams = [
   },
 ];
 
+const mockAchievements = [
+  {
+    id: "ach-1",
+    title: "Tournament Champion",
+    iconUrl: "champion",
+    description: "Won first place in a major tournament",
+    serverName: "Valorant Esports League",
+    serverId: "server-1",
+  },
+  {
+    id: "ach-2",
+    title: "Runner Up",
+    iconUrl: "runner-up",
+    description: "Finished second in a competitive tournament",
+    serverName: "Counter Strike Pro League",
+    serverId: "server-2",
+  },
+  {
+    id: "ach-3",
+    title: "Third Place Finisher",
+    iconUrl: "third-place",
+    description: "Achieved third place in a regional competition",
+    serverName: "Fighting Game Championship",
+    serverId: "server-3",
+  },
+  {
+    id: "ach-4",
+    title: "MVP Award",
+    iconUrl: "mvp",
+    description: "Voted Most Valuable Player in a tournament",
+    serverName: "Valorant Esports League",
+    serverId: "server-1",
+  },
+  {
+    id: "ach-5",
+    title: "Rising Star",
+    iconUrl: "rising-star",
+    description: "Recognized as an emerging competitive talent",
+    serverName: null,
+    serverId: null,
+  },
+  {
+    id: "ach-6",
+    title: "Best Defender",
+    iconUrl: "best-defense",
+    description: "Awarded best defensive player in tournament",
+    serverName: "Counter Strike Pro League",
+    serverId: "server-2",
+  },
+];
+
 export default function PreviewAccount() {
   const [, setLocation] = useLocation();
   const [selectedTeam, setSelectedTeam] = useState<typeof mockTeams[0] | null>(null);
@@ -106,10 +157,13 @@ export default function PreviewAccount() {
   // Determine which user ID to fetch achievements for
   const achievementsUserId = isOwnProfile ? authUser?.id : viewedUserData?.id;
 
-  const { data: userAchievements = [] } = useQuery<any[]>({
+  const { data: dbAchievements = [] } = useQuery<any[]>({
     queryKey: [`/api/users/${achievementsUserId || "demo"}/achievements`],
     enabled: !!achievementsUserId, // Enable if we have a userId
   });
+
+  // Use mock achievements when viewing a visitor profile, real achievements for own profile
+  const userAchievements = !isOwnProfile ? mockAchievements : dbAchievements;
 
   const getAchievementIcon = (iconUrl: string) => {
     const iconMap: { [key: string]: any } = {
