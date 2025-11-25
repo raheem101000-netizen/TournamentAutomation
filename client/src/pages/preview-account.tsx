@@ -96,12 +96,19 @@ export default function PreviewAccount() {
   // Check if viewing own profile or another user's profile
   const isOwnProfile = viewingUser === null;
   const displayUser = viewingUser || currentUser.username;
-  // Get achievements for both own profile and when viewing other profiles
-  const achievementsUserId = isOwnProfile ? authUser?.id : null;
+
+  // Fetch viewed user's data if viewing another profile
+  const { data: viewedUserData } = useQuery<User | undefined>({
+    queryKey: [`/api/users/username/${viewingUser}`],
+    enabled: viewingUser !== null,
+  });
+
+  // Determine which user ID to fetch achievements for
+  const achievementsUserId = isOwnProfile ? authUser?.id : viewedUserData?.id;
 
   const { data: userAchievements = [] } = useQuery<any[]>({
     queryKey: [`/api/users/${achievementsUserId || "demo"}/achievements`],
-    enabled: true, // Always enabled to show achievements to visitors
+    enabled: !!achievementsUserId, // Enable if we have a userId
   });
 
   const getAchievementIcon = (iconUrl: string) => {
@@ -309,7 +316,7 @@ export default function PreviewAccount() {
                         <p className="font-semibold text-sm line-clamp-2">{achievement.title}</p>
                         {achievement.serverName ? (
                           <Button
-                            variant="link"
+                            variant="ghost"
                             size="sm"
                             className="text-xs h-auto p-0 mt-1 line-clamp-1 text-muted-foreground hover:text-foreground"
                             onClick={(e) => {

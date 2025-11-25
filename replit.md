@@ -8,6 +8,27 @@ This project is a web application featuring mobile preview pages and a comprehen
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### November 25, 2025 (Achievements Visibility & Team Game Field - COMPLETE ✅)
+- **Fixed achievements visibility for visitors**:
+  - ✅ Achievements now display when visiting other players' profiles
+  - ✅ Achievements section visible to all visitors, not just profile owner
+  - ✅ Implementation: Fetch viewed user by username via `/api/users/username/:username`, then use their ID to fetch achievements
+  - ✅ Fixed TypeScript: Added `User | undefined` type annotation for viewed user data query
+  - ✅ Fixed Button variant from "link" to "ghost" for achievement server links
+
+- **Added "Game" field to teams**:
+  - ✅ Added `game` column to teams schema 
+  - ✅ Added game input field to team creation form
+  - ✅ Game displays in team profile modals for both owner and visitors
+
+- **Fixed homepage filters to work together**:
+  - ✅ Changed from single active filter to multiple selectable filters using `Set<FilterType>`
+  - ✅ Prize + No Prize can combine, Free Entry + Paid Entry can combine
+  - ✅ Example: Select "Prize" + "Free Entry" to show free tournaments with prize pools
+  - ✅ "All" button resets all filters
+
 ## System Architecture
 
 ### Frontend Architecture
