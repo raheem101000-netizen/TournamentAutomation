@@ -661,17 +661,6 @@ export default function PreviewMessages() {
         </Tabs>
       </main>
 
-      <div className="fixed bottom-16 right-4 z-40">
-        <Button
-          size="icon"
-          className="w-14 h-14 rounded-full shadow-lg"
-          onClick={() => setShowCreateGroup(true)}
-          data-testid="button-create-group-floating"
-        >
-          <Plus className="w-6 h-6" />
-        </Button>
-      </div>
-
       <BottomNavigation />
 
       {/* Edit Group Avatar Dialog */}
