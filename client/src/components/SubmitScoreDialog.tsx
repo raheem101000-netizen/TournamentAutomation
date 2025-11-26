@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, Loader2 } from "lucide-react";
 import type { ChatMessage, Team } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SubmitScoreDialogProps {
   open: boolean;
@@ -32,6 +33,7 @@ export default function SubmitScoreDialog({
   onSelectWinner,
 }: SubmitScoreDialogProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   if (!team1 || !team2) return null;
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -57,7 +59,7 @@ export default function SubmitScoreDialog({
   };
 
   const handleSendMessage = async () => {
-    if (isSending || !messageInput.trim()) return;
+    if (isSending || !messageInput.trim() || !user) return;
 
     setIsSending(true);
     try {
@@ -69,6 +71,7 @@ export default function SubmitScoreDialog({
         body: JSON.stringify({
           message: messageInput.trim(),
           teamId: team1.id,
+          userId: user.id,
         }),
       });
 
@@ -126,22 +129,22 @@ export default function SubmitScoreDialog({
               ) : (
                 messages.map((msg) => {
                   const isTeam1 = msg.teamId === team1.id;
-                  const teamName = isTeam1 ? team1.name : team2.name;
+                  const senderName = msg.userId === user?.id ? (user.displayName || user.username || "You") : (msg.teamId === team1.id ? team1.name : team2.name);
                   return (
                     <div 
                       key={msg.id} 
-                      className={`flex gap-2 ${isTeam1 ? 'flex-row-reverse' : ''}`}
+                      className={`flex gap-2 ${msg.userId === user?.id ? 'flex-row-reverse' : ''}`}
                       data-testid={`message-${msg.id}`}
                     >
                       <Avatar className="h-8 w-8 flex-shrink-0">
                         <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                          {getTeamInitials(teamName)}
+                          {senderName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
                         </AvatarFallback>
                       </Avatar>
-                      <div className={`flex flex-col gap-1 max-w-xs ${isTeam1 ? 'items-end' : ''}`}>
-                        <span className="text-xs text-muted-foreground">{teamName}</span>
+                      <div className={`flex flex-col gap-1 max-w-xs ${msg.userId === user?.id ? 'items-end' : ''}`}>
+                        <span className="text-xs text-muted-foreground">{senderName}</span>
                         <div className={`rounded-md p-2 ${
-                          isTeam1 ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                          msg.userId === user?.id ? 'bg-primary text-primary-foreground' : 'bg-muted'
                         }`}>
                           {msg.message && <p className="text-sm">{msg.message}</p>}
                         </div>

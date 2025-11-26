@@ -54,6 +54,7 @@ export const chatMessages = pgTable("chat_messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   matchId: varchar("match_id").notNull(),
   teamId: varchar("team_id"),
+  userId: varchar("user_id"),
   message: text("message").notNull(),
   imageUrl: text("image_url"),
   isSystem: integer("is_system").default(0),
@@ -139,6 +140,8 @@ export const insertMatchSchema = createInsertSchema(matches).omit({
 export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
   id: true,
   createdAt: true,
+}).extend({
+  userId: z.string().optional(),
 });
 
 export const insertRegistrationConfigSchema = createInsertSchema(registrationConfigs).omit({
