@@ -698,6 +698,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Select winner endpoint (marks match complete and removes loser)
+  app.post("/api/matches/:matchId/winner", async (req, res) => {
+    try {
+      const { winnerId } = req.body;
+      const match = await storage.getMatch(req.params.matchId);
+
+      if (!match) {
+        return res.status(404).json({ error: "Match not found" });
+      }
+
+      if (!winnerId) {
+        return res.status(400).json({ error: "Winner ID is required" });
+      }
+
+      const validTeams = [match.team1Id, match.team2Id].filter(Boolean);
+      if (!validTeams.includes(winnerId)) {
+        return res.status(400).json({ error: "Winner must be one of the match participants" });
+      }
+
+      // Update match with winner and complete status
+      const updatedMatch = await storage.updateMatch(req.params.matchId, {
+        winnerId,
+        status: "completed",
+      });
+
+      // Update winner stats
+      const winnerTeam = await storage.getTeam(winnerId);
+      if (winnerTeam) {
+        await storage.updateTeam(winnerId, {
+          wins: (winnerTeam.wins ?? 0) + 1,
+          points: (winnerTeam.points ?? 0) + 3,
+        });
+      }
+
+      // Find and remove loser
+      const loserId = validTeams.find((id) => id !== winnerId);
+      if (loserId) {
+        const loserTeam = await storage.getTeam(loserId);
+        if (loserTeam) {
+          await storage.updateTeam(loserId, {
+            losses: (loserTeam.losses ?? 0) + 1,
+            isRemoved: 1,
+          });
+        }
+      }
+
+      res.json(updatedMatch);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Create custom match endpoint
   app.post("/api/tournaments/:tournamentId/matches/custom", async (req, res) => {
     try {

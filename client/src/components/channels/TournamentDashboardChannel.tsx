@@ -454,18 +454,54 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
             {selectedTournamentMatches.length > 0 ? (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Click on a match to submit scores
+                  {user?.id === selectedTournament.organizerId 
+                    ? "Click match to select winner OR submit scores" 
+                    : "Click on a match to view details"}
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {selectedTournamentMatches.map((match) => (
-                    <div key={match.id} onClick={() => handleMatchClick(match.id)} className="cursor-pointer">
-                      <MatchCard
-                        match={match}
-                        team1={getTeamById(match.team1Id)}
-                        team2={getTeamById(match.team2Id)}
-                      />
-                    </div>
-                  ))}
+                  {selectedTournamentMatches.map((match) => {
+                    const team1 = getTeamById(match.team1Id);
+                    const team2 = getTeamById(match.team2Id);
+                    return (
+                      <div key={match.id} className="space-y-2">
+                        <div onClick={() => handleMatchClick(match.id)} className="cursor-pointer">
+                          <MatchCard
+                            match={match}
+                            team1={team1}
+                            team2={team2}
+                          />
+                        </div>
+                        {user?.id === selectedTournament.organizerId && match.status !== "completed" && team1 && team2 && (
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => {
+                                setWinnerMatchId(match.id);
+                                setPendingWinnerId(team1.id);
+                              }}
+                              data-testid={`button-select-winner-team1-${match.id}`}
+                            >
+                              {team1.name} Wins
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => {
+                                setWinnerMatchId(match.id);
+                                setPendingWinnerId(team2.id);
+                              }}
+                              data-testid={`button-select-winner-team2-${match.id}`}
+                            >
+                              {team2.name} Wins
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ) : (
@@ -588,6 +624,35 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
             team2={getTeamById(selectedMatch.team2Id)!}
             onSubmit={handleSubmitScore}
           />
+        )}
+
+        {winnerMatchId && pendingWinnerId && (
+          <Dialog open={!!winnerMatchId} onOpenChange={() => { setWinnerMatchId(null); setPendingWinnerId(null); }}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Confirm Winner</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to select this team as the winner? The losing team will be removed from the tournament.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button 
+                  variant="outline" 
+                  onClick={() => { setWinnerMatchId(null); setPendingWinnerId(null); }}
+                  data-testid="button-cancel-winner"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={() => selectWinnerMutation.mutate({ matchId: winnerMatchId, winnerId: pendingWinnerId })}
+                  disabled={selectWinnerMutation.isPending}
+                  data-testid="button-confirm-winner"
+                >
+                  {selectWinnerMutation.isPending ? "Confirming..." : "Confirm Winner"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         )}
 
         <Dialog open={isCreateMatchDialogOpen} onOpenChange={setIsCreateMatchDialogOpen}>

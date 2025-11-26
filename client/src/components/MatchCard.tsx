@@ -94,8 +94,8 @@ export default function MatchCard({
   }
 
   return (
-    <Card className="hover-elevate" data-testid={`card-match-${match.id}`}>
-      <CardContent className="p-6">
+    <Card className="hover-elevate overflow-hidden" data-testid={`card-match-${match.id}`}>
+      <CardContent className="p-6 overflow-hidden">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <Badge className={statusColors[match.status]} data-testid={`badge-match-status-${match.id}`}>
@@ -105,14 +105,14 @@ export default function MatchCard({
             <span className="text-sm text-muted-foreground">Round {match.round}</span>
           </div>
 
-          <div className="grid grid-cols-[1fr,auto,1fr] gap-4 items-center">
-            <div className={`flex flex-col items-center gap-2 p-4 rounded-md ${isWinner(team1?.id || null) ? 'bg-primary/5 ring-2 ring-primary/20' : ''}`}>
+          <div className="grid grid-cols-[1fr,auto,1fr] gap-4 items-center overflow-hidden">
+            <div className={`flex flex-col items-center gap-2 p-4 rounded-md overflow-hidden ${isWinner(team1?.id || null) ? 'bg-primary/5 ring-2 ring-primary/20' : ''}`}>
               <Avatar className="h-12 w-12">
                 <AvatarFallback className={isWinner(team1?.id || null) ? "bg-primary text-primary-foreground" : "bg-muted"}>
                   {team1 ? getTeamInitials(team1.name) : "?"}
                 </AvatarFallback>
               </Avatar>
-              <p className="font-display font-semibold text-center" data-testid={`text-team1-${match.id}`}>
+              <p className="font-display font-semibold text-center truncate" data-testid={`text-team1-${match.id}`}>
                 {team1?.name || "TBD"}
               </p>
               {match.status === "completed" && match.team1Score !== null && (
@@ -122,13 +122,13 @@ export default function MatchCard({
 
             <div className="text-2xl font-bold text-muted-foreground">VS</div>
 
-            <div className={`flex flex-col items-center gap-2 p-4 rounded-md ${isWinner(team2?.id || null) ? 'bg-primary/5 ring-2 ring-primary/20' : ''}`}>
+            <div className={`flex flex-col items-center gap-2 p-4 rounded-md overflow-hidden ${isWinner(team2?.id || null) ? 'bg-primary/5 ring-2 ring-primary/20' : ''}`}>
               <Avatar className="h-12 w-12">
                 <AvatarFallback className={isWinner(team2?.id || null) ? "bg-primary text-primary-foreground" : "bg-muted"}>
                   {team2 ? getTeamInitials(team2.name) : "?"}
                 </AvatarFallback>
               </Avatar>
-              <p className="font-display font-semibold text-center" data-testid={`text-team2-${match.id}`}>
+              <p className="font-display font-semibold text-center truncate" data-testid={`text-team2-${match.id}`}>
                 {team2?.name || "TBD"}
               </p>
               {match.status === "completed" && match.team2Score !== null && (
