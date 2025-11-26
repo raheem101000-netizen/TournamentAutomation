@@ -99,7 +99,8 @@ export default function SubmitScoreDialog({
     return () => websocket.close();
   }, [matchId, open]);
 
-  const getTeamInitials = (name: string) => {
+  const getTeamInitials = (name?: string) => {
+    if (!name) return "??";
     return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
   };
 
@@ -136,7 +137,7 @@ export default function SubmitScoreDialog({
       <DialogContent className="max-w-2xl max-h-[80vh]">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">
-            {team1.name} vs {team2.name}
+            {team1?.name || "Team 1"} vs {team2?.name || "Team 2"}
           </DialogTitle>
           <DialogDescription>
             Submit final scores and chat with teams
@@ -152,7 +153,7 @@ export default function SubmitScoreDialog({
           <TabsContent value="score" className="space-y-6 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="team1-score">{team1.name}</Label>
+                <Label htmlFor="team1-score">{team1?.name || "Team 1"}</Label>
                 <div className="flex items-center gap-2">
                   <Avatar className="h-8 w-8">
                     <AvatarFallback className="bg-primary/10 text-primary text-xs">
@@ -172,7 +173,7 @@ export default function SubmitScoreDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="team2-score">{team2.name}</Label>
+                <Label htmlFor="team2-score">{team2?.name || "Team 2"}</Label>
                 <div className="flex items-center gap-2">
                   <Avatar className="h-8 w-8">
                     <AvatarFallback className="bg-primary/10 text-primary text-xs">
@@ -206,7 +207,7 @@ export default function SubmitScoreDialog({
                         {getTeamInitials(team1.name)}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="font-display font-medium">{team1.name}</span>
+                    <span className="font-display font-medium">{team1?.name || "Team 1"}</span>
                   </Label>
 
                   <Label
@@ -219,7 +220,7 @@ export default function SubmitScoreDialog({
                         {getTeamInitials(team2.name)}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="font-display font-medium">{team2.name}</span>
+                    <span className="font-display font-medium">{team2?.name || "Team 2"}</span>
                   </Label>
                 </div>
               </RadioGroup>

@@ -616,12 +616,12 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
         </Tabs>
 
 
-        {selectedMatch && selectedMatchId && (
+        {selectedMatch && selectedMatchId && getTeamById(selectedMatch.team1Id) && getTeamById(selectedMatch.team2Id) && (
           <SubmitScoreDialog
             open={true}
             onOpenChange={(open) => !open && setSelectedMatchId(null)}
-            team1={getTeamById(selectedMatch.team1Id) || selectedMatch.team1Id as any}
-            team2={getTeamById(selectedMatch.team2Id) || selectedMatch.team2Id as any}
+            team1={getTeamById(selectedMatch.team1Id)!}
+            team2={getTeamById(selectedMatch.team2Id)!}
             matchId={selectedMatch.id}
             onSubmit={handleSubmitScore}
           />
