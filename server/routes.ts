@@ -4,12 +4,14 @@ import { WebSocketServer, WebSocket } from "ws";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import { unsign } from "cookie-signature";
 import { randomUUID } from "crypto";
+import multer from "multer";
 import { storage } from "./storage";
 import { pool } from "./db";
 import { SESSION_SECRET } from "./index";
 
 // Simple in-memory file storage for uploads
 const uploadedFiles = new Map<string, Buffer>();
+const upload = multer({ storage: multer.memoryStorage() });
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import {
@@ -1721,14 +1723,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Simple file upload endpoint with in-memory storage
-  app.post("/api/objects/upload", async (req, res) => {
+  app.post("/api/objects/upload", upload.single("file"), async (req, res) => {
     try {
-      if (!req.file) {
+      const file = req.file as Express.Multer.File | undefined;
+      if (!file) {
         return res.status(400).json({ error: "No file provided" });
       }
 
       const fileId = randomUUID();
-      uploadedFiles.set(fileId, req.file.buffer);
+      uploadedFiles.set(fileId, file.buffer);
       
       // Return a URL to retrieve the file
       const fileUrl = `/api/uploads/${fileId}`;
