@@ -188,25 +188,19 @@ export default function SubmitScoreDialog({
                       </Avatar>
                       <div className={`flex flex-col gap-1 max-w-md ${isCurrentUser ? 'items-end' : ''}`}>
                         <span className="text-xs text-muted-foreground">{senderName}</span>
-                        <div className={`rounded-md p-2 max-w-md overflow-hidden ${
-                          isCurrentUser ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                        }`}>
-                          {msg.imageUrl && (
-                            <div className="mb-2">
-                              <img 
-                                src={msg.imageUrl} 
-                                alt="Uploaded file" 
-                                className="max-h-48 rounded w-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
-                                onClick={() => setEnlargedImageUrl(msg.imageUrl)}
-                                onError={(e) => {
-                                  console.error("Image failed to load:", msg.imageUrl);
-                                  (e.target as HTMLImageElement).style.display = 'none';
-                                }}
-                              />
-                            </div>
-                          )}
-                          {msg.message && <p className="text-sm break-words">{msg.message}</p>}
-                        </div>
+                        {msg.imageUrl && (
+                          <img 
+                            src={msg.imageUrl} 
+                            alt="Uploaded file" 
+                            className="max-h-48 rounded w-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => setEnlargedImageUrl(msg.imageUrl)}
+                            onError={(e) => {
+                              console.error("Image failed to load:", msg.imageUrl);
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        )}
+                        {msg.message && <p className="text-sm break-words">{msg.message}</p>}
                       </div>
                     </div>
                   );
