@@ -163,8 +163,8 @@ export default function SubmitScoreDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 flex flex-col gap-4 overflow-hidden">
-          <ScrollArea className="flex-1 pr-4">
+        <div className="flex-1 flex flex-col gap-4 min-h-0">
+          <div className="flex-1 overflow-y-auto pr-4">
             <div className="space-y-3">
               {messages.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-8">No messages yet. Teams can post updates here.</p>
@@ -201,7 +201,7 @@ export default function SubmitScoreDialog({
               )}
               <div ref={messagesEndRef} />
             </div>
-          </ScrollArea>
+          </div>
 
           <div className="border-t pt-3 space-y-2">
             {uploadPreview && (
