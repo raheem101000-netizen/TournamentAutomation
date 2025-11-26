@@ -32,7 +32,7 @@ import CreateTournamentDialog from "@/components/CreateTournamentDialog";
 import BracketView from "@/components/BracketView";
 import StandingsTable from "@/components/StandingsTable";
 import MatchCard from "@/components/MatchCard";
-import SubmitScoreDialog from "@/components/SubmitScoreDialog";
+import MatchDetailsDialog from "@/components/MatchDetailsDialog";
 import ImageUploadField from "@/components/ImageUploadField";
 import type { Tournament, InsertTournament, Team, Match } from "@shared/schema";
 import type { RegistrationFormConfig } from "@/modules/registration/types";
@@ -617,12 +617,13 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
 
 
         {selectedMatch && getTeamById(selectedMatch.team1Id) && getTeamById(selectedMatch.team2Id) && (
-          <SubmitScoreDialog
+          <MatchDetailsDialog
             open={!!selectedMatchId}
             onOpenChange={(open) => !open && setSelectedMatchId(null)}
+            match={selectedMatch}
             team1={getTeamById(selectedMatch.team1Id)!}
             team2={getTeamById(selectedMatch.team2Id)!}
-            onSubmit={handleSubmitScore}
+            onSubmitScore={handleSubmitScore}
           />
         )}
 
