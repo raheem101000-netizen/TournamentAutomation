@@ -163,9 +163,9 @@ export default function SubmitScoreDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 flex flex-col gap-4 min-h-0">
-          <div className="flex-1 overflow-y-auto pr-4">
-            <div className="space-y-3">
+        <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+          <ScrollArea className="flex-1">
+            <div className="space-y-3 pr-4">
               {messages.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-8">No messages yet. Teams can post updates here.</p>
               ) : (
@@ -184,15 +184,15 @@ export default function SubmitScoreDialog({
                           {senderName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
                         </AvatarFallback>
                       </Avatar>
-                      <div className={`flex flex-col gap-1 max-w-2xl ${isCurrentUser ? 'items-end' : ''}`}>
+                      <div className={`flex flex-col gap-1 max-w-md ${isCurrentUser ? 'items-end' : ''}`}>
                         <span className="text-xs text-muted-foreground">{senderName}</span>
-                        <div className={`rounded-md p-2 ${
+                        <div className={`rounded-md p-2 max-w-md overflow-hidden ${
                           isCurrentUser ? 'bg-primary text-primary-foreground' : 'bg-muted'
                         }`}>
                           {msg.imageUrl && (
-                            <img src={msg.imageUrl} alt="Uploaded file" className="max-w-lg max-h-96 rounded mb-2 object-contain" />
+                            <img src={msg.imageUrl} alt="Uploaded file" className="max-h-48 rounded mb-2 w-full object-cover" />
                           )}
-                          {msg.message && <p className="text-sm">{msg.message}</p>}
+                          {msg.message && <p className="text-sm break-words">{msg.message}</p>}
                         </div>
                       </div>
                     </div>
@@ -201,7 +201,7 @@ export default function SubmitScoreDialog({
               )}
               <div ref={messagesEndRef} />
             </div>
-          </div>
+          </ScrollArea>
 
           <div className="border-t pt-3 space-y-2">
             {uploadPreview && (
