@@ -75,6 +75,8 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
   const [selectedTeam1Id, setSelectedTeam1Id] = useState<string | null>(null);
   const [selectedTeam2Id, setSelectedTeam2Id] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
+  const [winnerMatchId, setWinnerMatchId] = useState<string | null>(null);
+  const [pendingWinnerId, setPendingWinnerId] = useState<string | null>(null);
   const { toast} = useToast();
   const { user } = useAuth();
 
@@ -198,6 +200,31 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
       setSelectedTeam1Id(null);
       setSelectedTeam2Id(null);
       setIsCreateMatchDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const selectWinnerMutation = useMutation({
+    mutationFn: async ({ matchId, winnerId }: { matchId: string; winnerId: string }) => {
+      return apiRequest('POST', `/api/matches/${matchId}/winner`, {
+        winnerId,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/matches`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/teams`] });
+      toast({
+        title: "Winner selected",
+        description: "Match winner has been recorded and loser removed from tournament.",
+      });
+      setWinnerMatchId(null);
+      setPendingWinnerId(null);
     },
     onError: (error: Error) => {
       toast({
