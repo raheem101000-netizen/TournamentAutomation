@@ -42,6 +42,7 @@ export default function SubmitScoreDialog({
   const [isSelectingWinner, setIsSelectingWinner] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+  const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -195,7 +196,8 @@ export default function SubmitScoreDialog({
                               <img 
                                 src={msg.imageUrl} 
                                 alt="Uploaded file" 
-                                className="max-h-48 rounded w-full object-cover"
+                                className="max-h-48 rounded w-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={() => setEnlargedImageUrl(msg.imageUrl)}
                                 onError={(e) => {
                                   console.error("Image failed to load:", msg.imageUrl);
                                   (e.target as HTMLImageElement).style.display = 'none';
@@ -312,6 +314,18 @@ export default function SubmitScoreDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <Dialog open={!!enlargedImageUrl} onOpenChange={(open) => !open && setEnlargedImageUrl(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex items-center justify-center p-0 bg-black/95">
+          {enlargedImageUrl && (
+            <img 
+              src={enlargedImageUrl} 
+              alt="Enlarged" 
+              className="max-w-full max-h-[90vh] object-contain"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
