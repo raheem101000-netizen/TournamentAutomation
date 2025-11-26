@@ -623,37 +623,18 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
             team1={getTeamById(selectedMatch.team1Id) || { id: selectedMatch.team1Id, name: "Team 1", wins: 0, losses: 0, points: 0, isRemoved: false }}
             team2={getTeamById(selectedMatch.team2Id) || { id: selectedMatch.team2Id, name: "Team 2", wins: 0, losses: 0, points: 0, isRemoved: false }}
             matchId={selectedMatch.id}
-            onSubmit={handleSubmitScore}
+            onSelectWinner={(winnerId) => {
+              return new Promise((resolve, reject) => {
+                selectWinnerMutation.mutate(
+                  { matchId: selectedMatch.id, winnerId },
+                  {
+                    onSuccess: () => resolve(),
+                    onError: (error) => reject(error),
+                  }
+                );
+              });
+            }}
           />
-        )}
-
-        {winnerMatchId && pendingWinnerId && (
-          <Dialog open={!!winnerMatchId} onOpenChange={() => { setWinnerMatchId(null); setPendingWinnerId(null); }}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Confirm Winner</DialogTitle>
-                <DialogDescription>
-                  Are you sure you want to select this team as the winner? The losing team will be removed from the tournament.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button 
-                  variant="outline" 
-                  onClick={() => { setWinnerMatchId(null); setPendingWinnerId(null); }}
-                  data-testid="button-cancel-winner"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={() => selectWinnerMutation.mutate({ matchId: winnerMatchId, winnerId: pendingWinnerId })}
-                  disabled={selectWinnerMutation.isPending}
-                  data-testid="button-confirm-winner"
-                >
-                  {selectWinnerMutation.isPending ? "Confirming..." : "Confirm Winner"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         )}
 
         <Dialog open={isCreateMatchDialogOpen} onOpenChange={setIsCreateMatchDialogOpen}>

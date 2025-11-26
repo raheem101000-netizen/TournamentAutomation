@@ -4,13 +4,15 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Send, Image as ImageIcon, X, Loader2 } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 import type { ChatMessage, Team } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
 
 interface SubmitScoreDialogProps {
   open: boolean;
@@ -18,6 +20,7 @@ interface SubmitScoreDialogProps {
   team1: Team | null;
   team2: Team | null;
   matchId: string;
+  onSelectWinner: (winnerId: string) => Promise<void>;
 }
 
 export default function SubmitScoreDialog({ 
@@ -25,16 +28,16 @@ export default function SubmitScoreDialog({
   onOpenChange, 
   team1, 
   team2, 
-  matchId
+  matchId,
+  onSelectWinner,
 }: SubmitScoreDialogProps) {
+  const { toast } = useToast();
   if (!team1 || !team2) return null;
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [messageInput, setMessageInput] = useState("");
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isSelectingWinner, setIsSelectingWinner] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -53,58 +56,64 @@ export default function SubmitScoreDialog({
     return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      setSelectedImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRemoveImage = () => {
-    setSelectedImage(null);
-    setImagePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
   const handleSendMessage = async () => {
-    if (isSending || (!messageInput.trim() && !selectedImage)) return;
+    if (isSending || !messageInput.trim()) return;
 
     setIsSending(true);
     try {
-      const formData = new FormData();
-      formData.append('message', messageInput.trim());
-      if (selectedImage) {
-        formData.append('image', selectedImage);
-      }
-
       const response = await fetch(`/api/matches/${matchId}/messages`, {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: messageInput.trim(),
+          teamId: team1.id,
+        }),
       });
 
-      if (!response.ok) throw new Error('Failed to send message');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to send message');
+      }
       
       const newMessage = await response.json();
       setMessages(prev => [...prev, newMessage]);
       setMessageInput("");
-      handleRemoveImage();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending message:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send message",
+        variant: "destructive",
+      });
     } finally {
       setIsSending(false);
     }
   };
 
+  const handleSelectWinner = async (winnerId: string) => {
+    setIsSelectingWinner(true);
+    try {
+      await onSelectWinner(winnerId);
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error("Error selecting winner:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to select winner",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSelectingWinner(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle className="font-display text-xl">
+          <DialogTitle className="font-display text-xl" data-testid="text-match-chat-title">
             Match Chat: {team1.name} vs {team2.name}
           </DialogTitle>
         </DialogHeader>
@@ -113,7 +122,7 @@ export default function SubmitScoreDialog({
           <ScrollArea className="flex-1 pr-4">
             <div className="space-y-3">
               {messages.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-8">No messages yet. Upload proof here.</p>
+                <p className="text-xs text-muted-foreground text-center py-8">No messages yet. Teams can post updates here.</p>
               ) : (
                 messages.map((msg) => {
                   const isTeam1 = msg.teamId === team1.id;
@@ -146,44 +155,9 @@ export default function SubmitScoreDialog({
           </ScrollArea>
 
           <div className="border-t pt-3 space-y-2">
-            {imagePreview && (
-              <div className="relative inline-block">
-                <img 
-                  src={imagePreview} 
-                  alt="Preview" 
-                  className="max-h-24 rounded-md border"
-                />
-                <Button
-                  size="icon"
-                  variant="destructive"
-                  className="absolute -top-2 -right-2 h-5 w-5 rounded-full"
-                  onClick={handleRemoveImage}
-                  data-testid="button-remove-image"
-                >
-                  <X className="w-2 h-2" />
-                </Button>
-              </div>
-            )}
             <div className="flex gap-2">
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                ref={fileInputRef}
-                onChange={handleImageSelect}
-                data-testid="input-file-upload"
-              />
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isSending}
-                data-testid="button-upload-image"
-              >
-                <ImageIcon className="w-4 h-4" />
-              </Button>
               <Input
-                placeholder="Type a message or attach an image..."
+                placeholder="Type a message..."
                 value={messageInput}
                 onChange={(e) => setMessageInput(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
@@ -193,7 +167,7 @@ export default function SubmitScoreDialog({
               <Button 
                 size="icon"
                 onClick={handleSendMessage}
-                disabled={isSending || (!messageInput.trim() && !selectedImage)}
+                disabled={isSending || !messageInput.trim()}
                 data-testid="button-send-message"
               >
                 {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
@@ -201,6 +175,32 @@ export default function SubmitScoreDialog({
             </div>
           </div>
         </div>
+
+        <DialogFooter className="gap-2 pt-4 border-t">
+          <Button 
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            data-testid="button-close-chat"
+          >
+            Close
+          </Button>
+          <Button 
+            onClick={() => handleSelectWinner(team1.id)}
+            disabled={isSelectingWinner}
+            data-testid="button-team1-wins"
+          >
+            {isSelectingWinner ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            {team1.name} Wins
+          </Button>
+          <Button 
+            onClick={() => handleSelectWinner(team2.id)}
+            disabled={isSelectingWinner}
+            data-testid="button-team2-wins"
+          >
+            {isSelectingWinner ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            {team2.name} Wins
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
