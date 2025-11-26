@@ -150,81 +150,80 @@ export default function SubmitScoreDialog({
           </TabsList>
 
           <TabsContent value="score" className="space-y-6 py-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="team1-score">{team1.name}</Label>
-              <div className="flex items-center gap-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                    {getTeamInitials(team1.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <Input
-                  id="team1-score"
-                  type="number"
-                  min="0"
-                  placeholder="0"
-                  value={team1Score}
-                  onChange={(e) => setTeam1Score(e.target.value)}
-                  data-testid="input-team1-score"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="team2-score">{team2.name}</Label>
-              <div className="flex items-center gap-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                    {getTeamInitials(team2.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <Input
-                  id="team2-score"
-                  type="number"
-                  min="0"
-                  placeholder="0"
-                  value={team2Score}
-                  onChange={(e) => setTeam2Score(e.target.value)}
-                  data-testid="input-team2-score"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <Label>Winner</Label>
-            <RadioGroup value={winnerId} onValueChange={setWinnerId}>
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label
-                  htmlFor={team1.id}
-                  className="flex items-center gap-3 p-4 border rounded-md cursor-pointer hover-elevate"
-                >
-                  <RadioGroupItem value={team1.id} id={team1.id} data-testid="radio-winner-team1" />
-                  <Avatar className="h-10 w-10">
-                    <AvatarFallback className="bg-primary/10 text-primary">
+                <Label htmlFor="team1-score">{team1.name}</Label>
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs">
                       {getTeamInitials(team1.name)}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="font-display font-medium">{team1.name}</span>
-                </Label>
+                  <Input
+                    id="team1-score"
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={team1Score}
+                    onChange={(e) => setTeam1Score(e.target.value)}
+                    data-testid="input-team1-score"
+                  />
+                </div>
+              </div>
 
-                <Label
-                  htmlFor={team2.id}
-                  className="flex items-center gap-3 p-4 border rounded-md cursor-pointer hover-elevate"
-                >
-                  <RadioGroupItem value={team2.id} id={team2.id} data-testid="radio-winner-team2" />
-                  <Avatar className="h-10 w-10">
-                    <AvatarFallback className="bg-primary/10 text-primary">
+              <div className="space-y-2">
+                <Label htmlFor="team2-score">{team2.name}</Label>
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs">
                       {getTeamInitials(team2.name)}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="font-display font-medium">{team2.name}</span>
-                </Label>
+                  <Input
+                    id="team2-score"
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={team2Score}
+                    onChange={(e) => setTeam2Score(e.target.value)}
+                    data-testid="input-team2-score"
+                  />
+                </div>
               </div>
-            </RadioGroup>
-          </div>
-        </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label>Winner</Label>
+              <RadioGroup value={winnerId} onValueChange={setWinnerId}>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor={team1.id}
+                    className="flex items-center gap-3 p-4 border rounded-md cursor-pointer hover-elevate"
+                  >
+                    <RadioGroupItem value={team1.id} id={team1.id} data-testid="radio-winner-team1" />
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="bg-primary/10 text-primary">
+                        {getTeamInitials(team1.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="font-display font-medium">{team1.name}</span>
+                  </Label>
+
+                  <Label
+                    htmlFor={team2.id}
+                    className="flex items-center gap-3 p-4 border rounded-md cursor-pointer hover-elevate"
+                  >
+                    <RadioGroupItem value={team2.id} id={team2.id} data-testid="radio-winner-team2" />
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="bg-primary/10 text-primary">
+                        {getTeamInitials(team2.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="font-display font-medium">{team2.name}</span>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
 
             <div className="flex gap-2 justify-end">
               <Button 
