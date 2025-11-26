@@ -8,10 +8,28 @@ import multer from "multer";
 import { storage } from "./storage";
 import { pool } from "./db";
 import { SESSION_SECRET } from "./index";
+import fs from "fs";
+import path from "path";
 
-// Simple in-memory file storage for uploads
-const uploadedFiles = new Map<string, Buffer>();
-const upload = multer({ storage: multer.memoryStorage() });
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(process.cwd(), "uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// File storage configuration - save to disk instead of memory
+const fileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const fileId = randomUUID();
+    const ext = path.extname(file.originalname);
+    cb(null, `${fileId}${ext}`);
+  }
+});
+
+const upload = multer({ storage: fileStorage });
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import {
@@ -1722,7 +1740,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Simple file upload endpoint with in-memory storage
+  // File upload endpoint - saves to disk
   app.post("/api/objects/upload", upload.single("file"), async (req, res) => {
     try {
       const file = req.file as Express.Multer.File | undefined;
@@ -1730,11 +1748,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "No file provided" });
       }
 
-      const fileId = randomUUID();
-      uploadedFiles.set(fileId, file.buffer);
+      // Extract just the filename without extension
+      const filename = path.basename(file.filename, path.extname(file.filename));
       
       // Return a URL to retrieve the file
-      const fileUrl = `/api/uploads/${fileId}`;
+      const fileUrl = `/api/uploads/${filename}`;
       res.json({ url: fileUrl, fileUrl });
     } catch (error: any) {
       console.error("Error uploading file:", error);
@@ -1742,27 +1760,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Retrieve uploaded files
+  // Retrieve uploaded files from disk
   app.get("/api/uploads/:fileId", (req, res) => {
     try {
-      const file = uploadedFiles.get(req.params.fileId);
-      if (!file) {
+      // Search for file with any extension
+      const files = fs.readdirSync(uploadsDir);
+      const uploadedFile = files.find(f => path.basename(f, path.extname(f)) === req.params.fileId);
+      
+      if (!uploadedFile) {
         return res.status(404).json({ error: "File not found" });
       }
 
-      // Detect content type from file magic numbers or default to octet-stream
+      const filePath = path.join(uploadsDir, uploadedFile);
+      
+      // Detect content type from file magic numbers
       let contentType = "application/octet-stream";
-      if (file.length > 4) {
-        // Check for common image formats
-        const magic = file.slice(0, 4).toString("hex");
+      const buffer = fs.readFileSync(filePath);
+      if (buffer.length > 4) {
+        const magic = buffer.slice(0, 4).toString("hex");
         if (magic.startsWith("ffd8ff")) contentType = "image/jpeg";
         else if (magic.startsWith("89504e47")) contentType = "image/png";
         else if (magic.startsWith("47494638")) contentType = "image/gif";
-        else if (magic.startsWith("52494646") && file.length > 12) contentType = "image/webp";
+        else if (magic.startsWith("52494646") && buffer.length > 12) contentType = "image/webp";
       }
 
       res.set("Content-Type", contentType);
-      res.send(file);
+      res.sendFile(filePath);
     } catch (error: any) {
       console.error("Error retrieving file:", error);
       res.status(500).json({ error: error.message });

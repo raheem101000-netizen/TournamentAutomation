@@ -164,7 +164,7 @@ export default function SubmitScoreDialog({
         </DialogHeader>
 
         <div className="flex-1 flex flex-col gap-4 overflow-hidden">
-          <div className="flex-1 overflow-y-auto pr-4">
+          <div className="flex-1 overflow-y-auto pr-4 hide-scrollbar">
             <div className="space-y-3">
               {messages.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-8">No messages yet. Teams can post updates here.</p>
