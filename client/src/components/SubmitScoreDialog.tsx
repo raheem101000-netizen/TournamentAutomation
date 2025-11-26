@@ -187,7 +187,7 @@ export default function SubmitScoreDialog({
                         </AvatarFallback>
                       </Avatar>
                       <div className={`flex flex-col gap-1 max-w-md ${isCurrentUser ? 'items-end' : ''}`}>
-                        <span className="text-xs text-muted-foreground">{senderName}</span>
+                        <span className="text-xs text-foreground">{senderName}</span>
                         {msg.imageUrl && (
                           <img 
                             src={msg.imageUrl} 
@@ -200,7 +200,7 @@ export default function SubmitScoreDialog({
                             }}
                           />
                         )}
-                        {msg.message && <p className="text-sm break-words">{msg.message}</p>}
+                        {msg.message && <p className="text-sm break-words text-muted-foreground">{msg.message}</p>}
                       </div>
                     </div>
                   );
