@@ -89,7 +89,7 @@ export default function SubmitScoreDialog({
         const formData = new FormData();
         formData.append('file', uploadedFile);
         
-        const uploadResponse = await fetch('/api/upload', {
+        const uploadResponse = await fetch('/api/objects/upload', {
           method: 'POST',
           body: formData,
         });
@@ -99,7 +99,7 @@ export default function SubmitScoreDialog({
         }
 
         const uploadResult = await uploadResponse.json();
-        imageUrl = uploadResult.url;
+        imageUrl = uploadResult.url || uploadResult.fileUrl;
       }
 
       const response = await fetch(`/api/matches/${matchId}/messages`, {
@@ -170,7 +170,7 @@ export default function SubmitScoreDialog({
                 <p className="text-xs text-muted-foreground text-center py-8">No messages yet. Teams can post updates here.</p>
               ) : (
                 messages.map((msg) => {
-                  const senderName = msg.senderDisplayName || msg.userId === user?.id ? (user.displayName || user.username || "You") : (msg.teamId === team1.id ? team1.name : team2.name);
+                  const senderName = msg.senderDisplayName || (msg.userId === user?.id ? (user?.displayName || user?.username || "You") : "Unknown");
                   const isCurrentUser = msg.userId === user?.id;
                   
                   return (
