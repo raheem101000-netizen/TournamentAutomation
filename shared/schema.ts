@@ -142,6 +142,8 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
   createdAt: true,
 }).extend({
   userId: z.string().optional(),
+  message: z.string().optional().nullable(),
+  imageUrl: z.string().optional().nullable(),
 });
 
 export const insertRegistrationConfigSchema = createInsertSchema(registrationConfigs).omit({

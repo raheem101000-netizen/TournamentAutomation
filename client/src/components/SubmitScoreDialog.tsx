@@ -108,8 +108,9 @@ export default function SubmitScoreDialog({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: messageInput.trim(),
-          imageUrl,
+          message: messageInput.trim() || null,
+          imageUrl: imageUrl || null,
+          matchId: matchId,
           teamId: team1.id,
           userId: user.id,
         }),
@@ -190,7 +191,17 @@ export default function SubmitScoreDialog({
                           isCurrentUser ? 'bg-primary text-primary-foreground' : 'bg-muted'
                         }`}>
                           {msg.imageUrl && (
-                            <img src={msg.imageUrl} alt="Uploaded file" className="max-h-48 rounded mb-2 w-full object-cover" />
+                            <div className="mb-2">
+                              <img 
+                                src={msg.imageUrl} 
+                                alt="Uploaded file" 
+                                className="max-h-48 rounded w-full object-cover"
+                                onError={(e) => {
+                                  console.error("Image failed to load:", msg.imageUrl);
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                            </div>
                           )}
                           {msg.message && <p className="text-sm break-words">{msg.message}</p>}
                         </div>
