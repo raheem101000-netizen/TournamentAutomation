@@ -3,9 +3,13 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import { unsign } from "cookie-signature";
+import { randomUUID } from "crypto";
 import { storage } from "./storage";
 import { pool } from "./db";
 import { SESSION_SECRET } from "./index";
+
+// Simple in-memory file storage for uploads
+const uploadedFiles = new Map<string, Buffer>();
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import {
@@ -1716,14 +1720,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get presigned URL for uploading
+  // Simple file upload endpoint with in-memory storage
   app.post("/api/objects/upload", async (req, res) => {
-    const objectStorageService = new ObjectStorageService();
     try {
-      const { uploadURL, objectPath } = await objectStorageService.getObjectEntityUploadURL();
-      res.json({ uploadURL, objectPath });
+      if (!req.file) {
+        return res.status(400).json({ error: "No file provided" });
+      }
+
+      const fileId = randomUUID();
+      uploadedFiles.set(fileId, req.file.buffer);
+      
+      // Return a URL to retrieve the file
+      const fileUrl = `/api/uploads/${fileId}`;
+      res.json({ url: fileUrl, fileUrl });
     } catch (error: any) {
-      console.error("Error getting upload URL:", error);
+      console.error("Error uploading file:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Retrieve uploaded files
+  app.get("/api/uploads/:fileId", (req, res) => {
+    try {
+      const file = uploadedFiles.get(req.params.fileId);
+      if (!file) {
+        return res.status(404).json({ error: "File not found" });
+      }
+
+      // Detect content type from file magic numbers or default to octet-stream
+      let contentType = "application/octet-stream";
+      if (file.length > 4) {
+        // Check for common image formats
+        const magic = file.slice(0, 4).toString("hex");
+        if (magic.startsWith("ffd8ff")) contentType = "image/jpeg";
+        else if (magic.startsWith("89504e47")) contentType = "image/png";
+        else if (magic.startsWith("47494638")) contentType = "image/gif";
+        else if (magic.startsWith("52494646") && file.length > 12) contentType = "image/webp";
+      }
+
+      res.set("Content-Type", contentType);
+      res.send(file);
+    } catch (error: any) {
+      console.error("Error retrieving file:", error);
       res.status(500).json({ error: error.message });
     }
   });
