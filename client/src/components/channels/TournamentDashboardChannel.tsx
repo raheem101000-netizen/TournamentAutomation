@@ -618,7 +618,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
 
         {selectedMatch && selectedMatchId && getTeamById(selectedMatch.team1Id) && getTeamById(selectedMatch.team2Id) && (
           <SubmitScoreDialog
-            open={true}
+            open={!!selectedMatchId}
             onOpenChange={(open) => !open && setSelectedMatchId(null)}
             team1={getTeamById(selectedMatch.team1Id)!}
             team2={getTeamById(selectedMatch.team2Id)!}
