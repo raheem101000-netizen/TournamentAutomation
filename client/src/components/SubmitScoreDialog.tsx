@@ -184,13 +184,13 @@ export default function SubmitScoreDialog({
                           {senderName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
                         </AvatarFallback>
                       </Avatar>
-                      <div className={`flex flex-col gap-1 max-w-xs ${isCurrentUser ? 'items-end' : ''}`}>
+                      <div className={`flex flex-col gap-1 max-w-2xl ${isCurrentUser ? 'items-end' : ''}`}>
                         <span className="text-xs text-muted-foreground">{senderName}</span>
                         <div className={`rounded-md p-2 ${
                           isCurrentUser ? 'bg-primary text-primary-foreground' : 'bg-muted'
                         }`}>
                           {msg.imageUrl && (
-                            <img src={msg.imageUrl} alt="Uploaded file" className="max-w-sm rounded mb-2" />
+                            <img src={msg.imageUrl} alt="Uploaded file" className="max-w-lg max-h-96 rounded mb-2 object-contain" />
                           )}
                           {msg.message && <p className="text-sm">{msg.message}</p>}
                         </div>
