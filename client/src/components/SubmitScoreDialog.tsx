@@ -9,8 +9,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Send, Loader2 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Send, Loader2, Upload, X } from "lucide-react";
 import type { ChatMessage, Team } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -36,11 +36,14 @@ export default function SubmitScoreDialog({
   const { user } = useAuth();
   if (!team1 || !team2) return null;
 
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
   const [messageInput, setMessageInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isSelectingWinner, setIsSelectingWinner] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!matchId || !open) return;
@@ -58,11 +61,47 @@ export default function SubmitScoreDialog({
     return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploadedFile(file);
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          setUploadPreview(event.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        setUploadPreview(null);
+      }
+    }
+  };
+
   const handleSendMessage = async () => {
-    if (isSending || !messageInput.trim() || !user) return;
+    if (isSending || (!messageInput.trim() && !uploadedFile) || !user) return;
 
     setIsSending(true);
     try {
+      let imageUrl: string | undefined = undefined;
+
+      // Handle file upload if present
+      if (uploadedFile) {
+        const formData = new FormData();
+        formData.append('file', uploadedFile);
+        
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload file');
+        }
+
+        const uploadResult = await uploadResponse.json();
+        imageUrl = uploadResult.url;
+      }
+
       const response = await fetch(`/api/matches/${matchId}/messages`, {
         method: 'POST',
         headers: {
@@ -70,6 +109,7 @@ export default function SubmitScoreDialog({
         },
         body: JSON.stringify({
           message: messageInput.trim(),
+          imageUrl,
           teamId: team1.id,
           userId: user.id,
         }),
@@ -83,6 +123,8 @@ export default function SubmitScoreDialog({
       const newMessage = await response.json();
       setMessages(prev => [...prev, newMessage]);
       setMessageInput("");
+      setUploadedFile(null);
+      setUploadPreview(null);
     } catch (error: any) {
       console.error("Error sending message:", error);
       toast({
@@ -128,12 +170,13 @@ export default function SubmitScoreDialog({
                 <p className="text-xs text-muted-foreground text-center py-8">No messages yet. Teams can post updates here.</p>
               ) : (
                 messages.map((msg) => {
-                  const isTeam1 = msg.teamId === team1.id;
-                  const senderName = msg.userId === user?.id ? (user.displayName || user.username || "You") : (msg.teamId === team1.id ? team1.name : team2.name);
+                  const senderName = msg.senderDisplayName || msg.userId === user?.id ? (user.displayName || user.username || "You") : (msg.teamId === team1.id ? team1.name : team2.name);
+                  const isCurrentUser = msg.userId === user?.id;
+                  
                   return (
                     <div 
                       key={msg.id} 
-                      className={`flex gap-2 ${msg.userId === user?.id ? 'flex-row-reverse' : ''}`}
+                      className={`flex gap-2 ${isCurrentUser ? 'flex-row-reverse' : ''}`}
                       data-testid={`message-${msg.id}`}
                     >
                       <Avatar className="h-8 w-8 flex-shrink-0">
@@ -141,11 +184,14 @@ export default function SubmitScoreDialog({
                           {senderName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
                         </AvatarFallback>
                       </Avatar>
-                      <div className={`flex flex-col gap-1 max-w-xs ${msg.userId === user?.id ? 'items-end' : ''}`}>
+                      <div className={`flex flex-col gap-1 max-w-xs ${isCurrentUser ? 'items-end' : ''}`}>
                         <span className="text-xs text-muted-foreground">{senderName}</span>
                         <div className={`rounded-md p-2 ${
-                          msg.userId === user?.id ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                          isCurrentUser ? 'bg-primary text-primary-foreground' : 'bg-muted'
                         }`}>
+                          {msg.imageUrl && (
+                            <img src={msg.imageUrl} alt="Uploaded file" className="max-w-sm rounded mb-2" />
+                          )}
                           {msg.message && <p className="text-sm">{msg.message}</p>}
                         </div>
                       </div>
@@ -158,7 +204,57 @@ export default function SubmitScoreDialog({
           </ScrollArea>
 
           <div className="border-t pt-3 space-y-2">
+            {uploadPreview && (
+              <div className="relative">
+                <img src={uploadPreview} alt="Preview" className="max-h-32 rounded" />
+                <Button
+                  size="icon"
+                  variant="destructive"
+                  className="absolute top-1 right-1 h-6 w-6"
+                  onClick={() => {
+                    setUploadedFile(null);
+                    setUploadPreview(null);
+                  }}
+                  data-testid="button-remove-upload"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+            )}
+            {uploadedFile && !uploadPreview && (
+              <div className="flex items-center gap-2 p-2 bg-muted rounded text-sm">
+                <span>{uploadedFile.name}</span>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-5 w-5 ml-auto"
+                  onClick={() => {
+                    setUploadedFile(null);
+                    setUploadPreview(null);
+                  }}
+                  data-testid="button-remove-upload"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+            )}
             <div className="flex gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                onChange={handleFileSelect}
+                className="hidden"
+                data-testid="input-file-upload"
+              />
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isSending}
+                data-testid="button-upload-file"
+              >
+                <Upload className="w-4 h-4" />
+              </Button>
               <Input
                 placeholder="Type a message..."
                 value={messageInput}
@@ -170,7 +266,7 @@ export default function SubmitScoreDialog({
               <Button 
                 size="icon"
                 onClick={handleSendMessage}
-                disabled={isSending || !messageInput.trim()}
+                disabled={isSending || (!messageInput.trim() && !uploadedFile)}
                 data-testid="button-send-message"
               >
                 {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
