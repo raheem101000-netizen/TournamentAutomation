@@ -118,9 +118,12 @@ export interface IStorage {
   
   createRegistrationStep(data: InsertRegistrationStep): Promise<RegistrationStep>;
   getStepsByConfig(configId: string): Promise<RegistrationStep[]>;
+  updateRegistrationStep(id: string, data: Partial<RegistrationStep>): Promise<RegistrationStep | undefined>;
   
   createRegistrationField(data: InsertRegistrationField): Promise<RegistrationField>;
   getFieldsByStep(stepId: string): Promise<RegistrationField[]>;
+  updateRegistrationField(id: string, data: Partial<RegistrationField>): Promise<RegistrationField | undefined>;
+  deleteRegistrationField(id: string): Promise<void>;
   
   createRegistration(data: InsertRegistration): Promise<Registration>;
   getRegistration(id: string): Promise<Registration | undefined>;
@@ -406,6 +409,15 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(registrationSteps).where(eq(registrationSteps.configId, configId));
   }
 
+  async updateRegistrationStep(id: string, data: Partial<RegistrationStep>): Promise<RegistrationStep | undefined> {
+    const [step] = await db
+      .update(registrationSteps)
+      .set(data)
+      .where(eq(registrationSteps.id, id))
+      .returning();
+    return step || undefined;
+  }
+
   async createRegistrationField(data: InsertRegistrationField): Promise<RegistrationField> {
     const [field] = await db.insert(registrationFields).values(data).returning();
     return field;
@@ -413,6 +425,19 @@ export class DatabaseStorage implements IStorage {
 
   async getFieldsByStep(stepId: string): Promise<RegistrationField[]> {
     return await db.select().from(registrationFields).where(eq(registrationFields.stepId, stepId));
+  }
+
+  async updateRegistrationField(id: string, data: Partial<RegistrationField>): Promise<RegistrationField | undefined> {
+    const [field] = await db
+      .update(registrationFields)
+      .set(data)
+      .where(eq(registrationFields.id, id))
+      .returning();
+    return field || undefined;
+  }
+
+  async deleteRegistrationField(id: string): Promise<void> {
+    await db.delete(registrationFields).where(eq(registrationFields.id, id));
   }
 
   async createRegistration(data: InsertRegistration): Promise<Registration> {
