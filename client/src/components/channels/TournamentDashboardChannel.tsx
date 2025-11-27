@@ -363,7 +363,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                   <UsersIcon className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-base font-bold">{selectedTournament.totalTeams}</div>
+                  <div className="text-base font-bold">{selectedTournament.totalTeams === -1 ? "Unlimited" : selectedTournament.totalTeams}</div>
                 </CardContent>
               </Card>
               <Card>

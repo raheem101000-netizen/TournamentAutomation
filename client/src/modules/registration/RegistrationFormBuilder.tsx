@@ -115,8 +115,9 @@ export default function RegistrationFormBuilder({
     // Convert dropdown options from comma-separated string to JSON array
     const processedSteps = steps.map(step => ({
       ...step,
-      fields: step.fields.map(field => ({
+      fields: step.fields.map((field, idx) => ({
         ...field,
+        displayOrder: idx,
         dropdownOptions: field.fieldType === "dropdown" && field.dropdownOptions
           ? JSON.stringify(
               field.dropdownOptions
@@ -137,6 +138,7 @@ export default function RegistrationFormBuilder({
       paymentInstructions: requiresPayment ? paymentInstructions : null,
       steps: processedSteps
     };
+    console.log('[DEBUG] Registration config being saved:', JSON.stringify(config, null, 2));
     onSave(config);
   };
 
