@@ -99,7 +99,15 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
   });
 
   const createTournamentMutation = useMutation({
-    mutationFn: async (data: InsertTournament & { teamNames: string[]; registrationConfig?: RegistrationFormConfig }) => {
+    mutationFn: async (data: InsertTournament & { teamNames: string[]; registrationConfig?: RegistrationFormConfig; serverId?: string }) => {
+      console.log('[MUTATION-CREATE] Tournament data to send:', {
+        name: data.name,
+        game: data.game,
+        format: data.format,
+        hasRegistrationConfig: !!data.registrationConfig,
+        registrationConfigSteps: data.registrationConfig?.steps?.length || 0,
+        registrationConfigData: JSON.stringify(data.registrationConfig, null, 2)
+      });
       return apiRequest('POST', '/api/tournaments', data);
     },
     onSuccess: () => {
@@ -826,7 +834,15 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
       <CreateTournamentDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
-        onSubmit={(data) => createTournamentMutation.mutate({ ...data, serverId })}
+        onSubmit={(data) => {
+          console.log('[DASHBOARD] CreateTournamentDialog onSubmit called with:', {
+            name: data.name,
+            format: data.format,
+            hasRegistrationConfig: !!data.registrationConfig,
+            registrationSteps: data.registrationConfig?.steps?.length || 0
+          });
+          createTournamentMutation.mutate({ ...data, serverId });
+        }}
       />
 
       <EditTournamentDialog
