@@ -79,6 +79,14 @@ export default function CreateTournamentDialog({
 
   const handleSubmit = () => {
     const totalTeams = teamCapacityMode === "unlimited" ? -1 : parseInt(maxTeams) || 16;
+    console.log('[FRONTEND] Creating tournament with registration:', {
+      enableRegistration,
+      configExists: !!registrationConfig,
+      stepsCount: registrationConfig?.steps?.length || 0,
+      fieldsPerStep: registrationConfig?.steps?.map(s => ({ title: s.stepTitle, fieldCount: s.fields?.length || 0 })) || []
+    });
+    console.log('[FRONTEND] Full registration config:', JSON.stringify(registrationConfig, null, 2));
+    
     onSubmit({
       name,
       game,

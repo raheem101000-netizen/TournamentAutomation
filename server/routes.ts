@@ -491,6 +491,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const registrationConfig = req.body.registrationConfig;
+      console.log('[REGISTRATION] Config received:', registrationConfig ? `Yes - ${registrationConfig.steps?.length || 0} steps` : 'No');
+      console.log('[REGISTRATION] Full config:', JSON.stringify(registrationConfig, null, 2));
+      
       if (registrationConfig) {
         let createdConfigId: string | null = null;
         const createdStepIds: string[] = [];
@@ -507,8 +510,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const validatedConfig = insertRegistrationConfigSchema.parse(configData);
           const createdConfig = await storage.createRegistrationConfig(validatedConfig);
           createdConfigId = createdConfig.id;
+          console.log('[REGISTRATION] Config created with ID:', createdConfigId);
 
+          console.log('[REGISTRATION] Processing', registrationConfig.steps?.length || 0, 'steps');
           for (const step of registrationConfig.steps) {
+            console.log('[REGISTRATION] Processing step:', step.stepTitle, 'with', step.fields?.length || 0, 'fields');
             const stepData = {
               configId: createdConfig.id,
               stepNumber: step.stepNumber,
@@ -518,8 +524,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const validatedStep = insertRegistrationStepSchema.parse(stepData);
             const createdStep = await storage.createRegistrationStep(validatedStep);
             createdStepIds.push(createdStep.id);
+            console.log('[REGISTRATION] Step created:', createdStep.id);
 
             for (const field of step.fields) {
+              console.log('[REGISTRATION] Creating field:', field.fieldLabel);
               const fieldData = {
                 stepId: createdStep.id,
                 fieldType: field.fieldType,
@@ -531,9 +539,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               };
               const validatedField = insertRegistrationFieldSchema.parse(fieldData);
               await storage.createRegistrationField(validatedField);
+              console.log('[REGISTRATION] Field created:', field.fieldLabel);
             }
           }
+          console.log('[REGISTRATION] All fields saved successfully');
         } catch (regError: any) {
+          console.log('[REGISTRATION] ERROR:', regError.message);
           if (createdConfigId) {
             await storage.deleteRegistrationConfig(createdConfigId);
           }
