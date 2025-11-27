@@ -100,9 +100,9 @@ export default function CreateTournamentDialog({
       platform: platform || null,
       region: region || null,
       format: format as any,
-      totalTeams: teams.length,
+      totalTeams: 0,
       swissRounds: format === "swiss" ? swissRounds : null,
-      teamNames: teams,
+      teamNames: [],
       registrationConfig: enableRegistration ? registrationConfig : undefined,
     });
     handleReset();
@@ -130,16 +130,14 @@ export default function CreateTournamentDialog({
 
   const canProceedStep1 = name.trim().length > 0 && game.trim().length > 0;
   const canProceedStep2 = true;
-  const canProceedStep3 = teams.length >= 2;
-  const canProceedStep4 = !enableRegistration || (registrationConfig !== undefined);
-  const totalSteps = 4;
+  const canProceedStep3 = !enableRegistration || (registrationConfig !== undefined);
+  const totalSteps = 3;
 
   const getStepTitle = () => {
     switch (step) {
       case 1: return "Tournament Details";
       case 2: return "Select Format";
-      case 3: return "Add Teams";
-      case 4: return "Registration Setup (Optional)";
+      case 3: return "Registration Setup (Optional)";
       default: return "";
     }
   };
@@ -315,61 +313,6 @@ export default function CreateTournamentDialog({
 
         {step === 3 && (
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="team">Add Team</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="team"
-                  placeholder="Team name"
-                  value={teamInput}
-                  onChange={(e) => setTeamInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddTeam()}
-                  data-testid="input-team-name"
-                />
-                <Button 
-                  onClick={handleAddTeam}
-                  data-testid="button-add-team"
-                >
-                  Add
-                </Button>
-              </div>
-            </div>
-
-            {teams.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Teams ({teams.length})</Label>
-                  {teams.length < 2 && (
-                    <span className="text-sm text-destructive">Minimum 2 teams required</span>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {teams.map((team, index) => (
-                    <Badge 
-                      key={index}
-                      variant="secondary"
-                      className="pl-3 pr-2 py-1.5 gap-2"
-                      data-testid={`badge-team-${index}`}
-                    >
-                      <Users className="w-3 h-3" />
-                      {team}
-                      <button
-                        onClick={() => handleRemoveTeam(index)}
-                        className="ml-1 hover:text-destructive"
-                        data-testid={`button-remove-team-${index}`}
-                      >
-                        ×
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {step === 4 && (
-          <div className="space-y-4 py-4">
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-primary/10 rounded-md">
@@ -401,8 +344,8 @@ export default function CreateTournamentDialog({
 
             {!enableRegistration && (
               <div className="text-center py-8 text-muted-foreground">
-                <p>Registration is disabled. Teams will need to be added manually.</p>
-                <p className="text-sm mt-2">You can enable registration later from the tournament settings.</p>
+                <p>Registration is disabled. Users can register from the tournament page.</p>
+                <p className="text-sm mt-2">Enable registration above to customize the signup form, or allow open registration.</p>
               </div>
             )}
           </div>
@@ -423,8 +366,7 @@ export default function CreateTournamentDialog({
               onClick={() => setStep(step + 1)}
               disabled={
                 (step === 1 && !canProceedStep1) ||
-                (step === 2 && !canProceedStep2) ||
-                (step === 3 && !canProceedStep3)
+                (step === 2 && !canProceedStep2)
               }
               data-testid="button-next"
             >
@@ -433,7 +375,7 @@ export default function CreateTournamentDialog({
           ) : (
             <Button
               onClick={handleSubmit}
-              disabled={!canProceedStep4}
+              disabled={!canProceedStep3}
               data-testid="button-create-tournament"
             >
               Create Tournament
