@@ -93,6 +93,7 @@ export const registrationFields = pgTable("registration_fields", {
 export const registrations = pgTable("registrations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   tournamentId: varchar("tournament_id").notNull(),
+  userId: varchar("user_id").notNull(),
   teamName: text("team_name").notNull(),
   contactEmail: text("contact_email"),
   status: text("status", { enum: ["draft", "submitted", "approved", "rejected"] }).notNull().default("draft"),
@@ -163,6 +164,8 @@ export const insertRegistrationSchema = createInsertSchema(registrations).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  userId: z.string().optional(),
 });
 
 export const insertRegistrationResponseSchema = createInsertSchema(registrationResponses).omit({
