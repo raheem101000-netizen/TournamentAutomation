@@ -650,7 +650,10 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
               <RegistrationFormBuilder
                 tournamentId={selectedTournamentId}
                 initialConfig={registrationConfig}
-                onSave={(config) => updateRegistrationConfigMutation.mutate(config)}
+                onSave={(config) => {
+                  console.log('[DASHBOARD] onSave callback received, tournamentId:', selectedTournamentId, 'config:', config);
+                  updateRegistrationConfigMutation.mutate(config);
+                }}
               />
             )}
           </TabsContent>
