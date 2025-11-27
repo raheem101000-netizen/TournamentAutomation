@@ -564,9 +564,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/tournaments/:id/registration/config", async (req, res) => {
     try {
-      const config = await storage.getRegistrationConfigByTournament(req.params.id);
+      let config = await storage.getRegistrationConfigByTournament(req.params.id);
+      
+      // If no config exists, auto-create a default one
       if (!config) {
-        return res.status(404).json({ error: "Registration config not found" });
+        const defaultConfigData = {
+          tournamentId: req.params.id,
+          requiresPayment: 0,
+          entryFee: null,
+          paymentUrl: null,
+          paymentInstructions: null
+        };
+        const validatedConfig = insertRegistrationConfigSchema.parse(defaultConfigData);
+        config = await storage.createRegistrationConfig(validatedConfig);
+        
+        // Create default "Team Name" step
+        const defaultStepData = {
+          configId: config.id,
+          stepNumber: 1,
+          stepTitle: "Team Information",
+          stepDescription: "Basic team details"
+        };
+        const validatedStep = insertRegistrationStepSchema.parse(defaultStepData);
+        const step = await storage.createRegistrationStep(validatedStep);
+        
+        // Create default "Team Name" field
+        const defaultFieldData = {
+          stepId: step.id,
+          fieldType: "text" as const,
+          fieldLabel: "Team Name",
+          fieldPlaceholder: "Enter your team name",
+          isRequired: 1,
+          dropdownOptions: null,
+          displayOrder: 0
+        };
+        const validatedField = insertRegistrationFieldSchema.parse(defaultFieldData);
+        await storage.createRegistrationField(validatedField);
       }
 
       const steps = await storage.getStepsByConfig(config.id);
