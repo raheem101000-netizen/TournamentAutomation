@@ -160,7 +160,7 @@ export default function RegistrationFormBuilder({
   useEffect(() => {
     const config = buildConfig();
     onSave(config);
-  }, [steps, requiresPayment, entryFee, paymentUrl, paymentInstructions]);
+  }, [steps, requiresPayment, entryFee, paymentUrl, paymentInstructions, onSave]);
 
   const handleSave = async () => {
     const config = buildConfig();
