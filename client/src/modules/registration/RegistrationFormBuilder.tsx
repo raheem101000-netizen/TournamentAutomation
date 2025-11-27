@@ -159,8 +159,9 @@ export default function RegistrationFormBuilder({
   // Auto-save config to parent whenever steps or payment settings change
   useEffect(() => {
     const config = buildConfig();
+    console.log('[AUTO-SAVE] Config updated:', JSON.stringify(config, null, 2));
     onSave(config);
-  }, [steps, requiresPayment, entryFee, paymentUrl, paymentInstructions, onSave]);
+  }, [steps, requiresPayment, entryFee, paymentUrl, paymentInstructions, onSave, buildConfig]);
 
   const handleSave = () => {
     const config = buildConfig();
