@@ -51,7 +51,6 @@ export default function TournamentRegistrationForm({
   // Build dynamic schema based on fetched fields
   const schemaObj: Record<string, any> = {
     teamName: z.string().min(1, "Team name is required"),
-    contactEmail: z.string().email("Valid email required").optional(),
   };
 
   // Add fields for each step if config exists
@@ -92,14 +91,12 @@ export default function TournamentRegistrationForm({
 
   type FormData = Record<string, any> & {
     teamName: string;
-    contactEmail?: string;
   };
 
   const form = useForm<FormData>({
     resolver: zodResolver(dynamicSchema),
     defaultValues: {
       teamName: "",
-      contactEmail: user?.email || "",
       ...Object.fromEntries(
         config?.steps.flatMap((s) => s.fields).map((f) => [f.id, ""]) || []
       ),
@@ -110,13 +107,12 @@ export default function TournamentRegistrationForm({
     mutationFn: async (data: FormData) => {
       const responses = Object.fromEntries(
         Object.entries(data)
-          .filter(([key]) => key !== "teamName" && key !== "contactEmail")
+          .filter(([key]) => key !== "teamName")
           .map(([key, value]) => [key, value])
       );
 
       const res = await apiRequest("POST", `/api/tournaments/${tournamentId}/registrations`, {
         teamName: data.teamName,
-        contactEmail: data.contactEmail,
         userId: user?.id,
         responses,
       });
@@ -186,7 +182,7 @@ export default function TournamentRegistrationForm({
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Basic fields */}
+            {/* Team Name - Always Required */}
             <FormField
               control={form.control}
               name="teamName"
@@ -204,28 +200,10 @@ export default function TournamentRegistrationForm({
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="contactEmail"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contact Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="your@email.com"
-                      {...field}
-                      data-testid="input-register-email"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
-            {/* Dynamic fields from all steps */}
+            {/* Dynamic fields from organizer's registration form */}
             {allFields.length > 0 && (
-              <div className="space-y-6 border-t pt-6">
+              <div className="space-y-6">
                 {allFields.map((field) => (
                   <FormField
                     key={field.id}
@@ -287,6 +265,13 @@ export default function TournamentRegistrationForm({
                     )}
                   />
                 ))}
+              </div>
+            )}
+
+            {/* Empty state if no custom fields */}
+            {allFields.length === 0 && config && (
+              <div className="text-center py-4 text-muted-foreground">
+                <p className="text-sm">No additional fields configured for this tournament</p>
               </div>
             )}
 
