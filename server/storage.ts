@@ -119,6 +119,7 @@ export interface IStorage {
   createRegistrationStep(data: InsertRegistrationStep): Promise<RegistrationStep>;
   getStepsByConfig(configId: string): Promise<RegistrationStep[]>;
   updateRegistrationStep(id: string, data: Partial<RegistrationStep>): Promise<RegistrationStep | undefined>;
+  deleteRegistrationStep(id: string): Promise<void>;
   
   createRegistrationField(data: InsertRegistrationField): Promise<RegistrationField>;
   getFieldsByStep(stepId: string): Promise<RegistrationField[]>;
@@ -416,6 +417,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(registrationSteps.id, id))
       .returning();
     return step || undefined;
+  }
+
+  async deleteRegistrationStep(id: string): Promise<void> {
+    await db.delete(registrationSteps).where(eq(registrationSteps.id, id));
   }
 
   async createRegistrationField(data: InsertRegistrationField): Promise<RegistrationField> {
