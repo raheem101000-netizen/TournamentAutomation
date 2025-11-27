@@ -45,7 +45,7 @@ export default function TournamentRegistrationForm({
 
   // Fetch registration config with steps and fields
   const { data: config, isLoading: configLoading } = useQuery<RegistrationConfig>({
-    queryKey: [`/api/tournaments/${tournamentId}/registration-config`],
+    queryKey: [`/api/tournaments/${tournamentId}/registration/config`],
   });
 
   // Build dynamic schema based on fetched fields
