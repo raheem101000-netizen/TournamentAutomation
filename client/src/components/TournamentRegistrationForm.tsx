@@ -156,20 +156,17 @@ export default function TournamentRegistrationForm({
   }
 
   // Collect all fields from all steps and sort by display order
-  const allFields = useMemo(() => {
-    if (!config?.steps) return [];
-    const fields: (RegistrationField & { stepTitle: string; stepNumber: number })[] = [];
-    config.steps.forEach((step) => {
-      step.fields.forEach((field) => {
-        fields.push({
-          ...field,
-          stepTitle: step.stepTitle,
-          stepNumber: step.stepNumber,
-        });
-      });
-    });
-    return fields.sort((a, b) => a.displayOrder - b.displayOrder);
-  }, [config]);
+  const allFields = config?.steps
+    ? config.steps
+        .flatMap((step) =>
+          step.fields.map((field) => ({
+            ...field,
+            stepTitle: step.stepTitle,
+            stepNumber: step.stepNumber,
+          }))
+        )
+        .sort((a, b) => a.displayOrder - b.displayOrder)
+    : [];
 
   const onSubmit = (data: FormData) => {
     if (!user) {
