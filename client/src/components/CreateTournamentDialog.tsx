@@ -46,6 +46,8 @@ export default function CreateTournamentDialog({
   const [swissRounds, setSwissRounds] = useState(3);
   const [enableRegistration, setEnableRegistration] = useState(false);
   const [registrationConfig, setRegistrationConfig] = useState<RegistrationFormConfig | undefined>();
+  const [teamCapacityMode, setTeamCapacityMode] = useState<"unlimited" | "specific">("unlimited");
+  const [maxTeams, setMaxTeams] = useState("16");
 
   const handleRegistrationChange = useCallback((config: RegistrationFormConfig) => {
     setRegistrationConfig(config);
@@ -76,6 +78,7 @@ export default function CreateTournamentDialog({
   ];
 
   const handleSubmit = () => {
+    const totalTeams = teamCapacityMode === "unlimited" ? -1 : parseInt(maxTeams) || 16;
     onSubmit({
       name,
       game,
@@ -87,7 +90,7 @@ export default function CreateTournamentDialog({
       platform: platform || null,
       region: region || null,
       format: format as any,
-      totalTeams: 0,
+      totalTeams,
       swissRounds: format === "swiss" ? swissRounds : null,
       teamNames: [],
       registrationConfig: enableRegistration ? registrationConfig : undefined,
@@ -110,6 +113,8 @@ export default function CreateTournamentDialog({
     setSwissRounds(3);
     setEnableRegistration(false);
     setRegistrationConfig(undefined);
+    setTeamCapacityMode("unlimited");
+    setMaxTeams("16");
     onOpenChange(false);
   };
 
@@ -298,15 +303,59 @@ export default function CreateTournamentDialog({
 
         {step === 3 && (
           <div className="space-y-4 py-4">
+            {/* Team Capacity Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Team Capacity</CardTitle>
+                <CardDescription>Set the maximum number of teams allowed to register</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <RadioGroup value={teamCapacityMode} onValueChange={(v) => setTeamCapacityMode(v as any)}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="unlimited" id="unlimited" />
+                    <Label htmlFor="unlimited" className="cursor-pointer font-normal">
+                      Unlimited teams
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="specific" id="specific" />
+                    <Label htmlFor="specific" className="cursor-pointer font-normal">
+                      Set maximum number of teams
+                    </Label>
+                  </div>
+                </RadioGroup>
+
+                {teamCapacityMode === "specific" && (
+                  <div className="space-y-2 ml-6">
+                    <Label htmlFor="maxTeams">Maximum Teams</Label>
+                    <Input
+                      id="maxTeams"
+                      type="number"
+                      min="1"
+                      max="1000"
+                      value={maxTeams}
+                      onChange={(e) => setMaxTeams(e.target.value)}
+                      placeholder="e.g., 16, 32, 64"
+                      data-testid="input-max-teams"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Teams will not be able to register once this limit is reached
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Registration Form Builder */}
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-primary/10 rounded-md">
                   <FileText className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <Label className="font-semibold">Enable Registration</Label>
+                  <Label className="font-semibold">Custom Registration Form</Label>
                   <p className="text-sm text-muted-foreground">
-                    Allow teams to register through a custom sign-up form
+                    Add custom fields to the registration form
                   </p>
                 </div>
               </div>
@@ -328,9 +377,9 @@ export default function CreateTournamentDialog({
             )}
 
             {!enableRegistration && (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>Registration is disabled. Users can register from the tournament page.</p>
-                <p className="text-sm mt-2">Enable registration above to customize the signup form, or allow open registration.</p>
+              <div className="text-center py-6 text-muted-foreground bg-muted/30 rounded-lg">
+                <p className="text-sm">Custom registration form is optional.</p>
+                <p className="text-xs mt-2">Enable above to add custom fields like "Game Username", "Team Size", etc.</p>
               </div>
             )}
           </div>

@@ -961,7 +961,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       const totalCapacityUsed = existingTeams.length + pendingRegistrations.length;
-      if (totalCapacityUsed >= tournament.totalTeams) {
+      // Only check capacity if totalTeams is positive (unlimited is -1)
+      if (tournament.totalTeams > 0 && totalCapacityUsed >= tournament.totalTeams) {
         return res.status(409).json({ error: "Tournament is full" });
       }
 
