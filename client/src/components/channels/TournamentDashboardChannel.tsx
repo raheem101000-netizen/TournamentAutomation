@@ -157,18 +157,22 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
 
   const updateRegistrationConfigMutation = useMutation({
     mutationFn: async (config: RegistrationFormConfig) => {
-      return apiRequest('PUT', `/api/tournaments/${selectedTournamentId}/registration/config`, config);
+      console.log('[MUTATION] Saving registration config:', config);
+      const result = await apiRequest('PUT', `/api/tournaments/${selectedTournamentId}/registration/config`, config);
+      console.log('[MUTATION] Save successful');
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/registration/config`] });
       toast({
-        title: "Registration updated",
-        description: "Registration form configuration has been saved.",
+        title: "Registration saved",
+        description: "Registration steps updated successfully.",
       });
     },
     onError: (error: Error) => {
+      console.error('[MUTATION] Error:', error);
       toast({
-        title: "Error",
+        title: "Error saving registration",
         description: error.message,
         variant: "destructive",
       });

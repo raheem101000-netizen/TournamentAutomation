@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -163,21 +162,8 @@ export default function RegistrationFormBuilder({
     onSave(config);
   }, [steps, requiresPayment, entryFee, paymentUrl, paymentInstructions, onSave]);
 
-  const handleSave = async () => {
+  const handleSave = () => {
     const config = buildConfig();
-    
-    // Save to backend if editing existing tournament
-    if (tournamentId !== "new") {
-      try {
-        console.log('[REGISTRATION SAVE] Sending config to backend:', config);
-        await apiRequest('PUT', `/api/tournaments/${tournamentId}/registration/config`, config);
-        console.log('[REGISTRATION SAVE] Success');
-      } catch (error) {
-        console.error('[REGISTRATION SAVE] Error:', error);
-      }
-    }
-    
-    // Call parent callback
     onSave(config);
   };
 
