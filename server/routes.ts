@@ -464,8 +464,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[DEBUG] Tournament creation request body:', JSON.stringify(req.body, null, 2));
       const validatedData = insertTournamentSchema.parse(req.body);
       
-      // Extract extra fields that shouldn't go to storage.createTournament
-      const { teamNames, registrationConfig, serverId, ...tournamentData } = validatedData;
+      // Extract registration config and team names (don't save these to tournament table)
+      // Keep serverId - it needs to be saved!
+      const { teamNames, registrationConfig, ...tournamentData } = validatedData;
       
       const tournament = await storage.createTournament(tournamentData);
 
