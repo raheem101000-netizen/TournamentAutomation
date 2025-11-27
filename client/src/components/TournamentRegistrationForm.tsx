@@ -44,14 +44,12 @@ export default function TournamentRegistrationForm({
   const { toast } = useToast();
 
   // Fetch registration config with steps and fields
-  const { data: config, isLoading: configLoading } = useQuery<RegistrationConfig>({
+  const { data: config, isLoading: configLoading } = useQuery<RegistrationConfig | null>({
     queryKey: [`/api/tournaments/${tournamentId}/registration/config`],
   });
 
   // Build dynamic schema based on fetched fields
-  const schemaObj: Record<string, any> = {
-    teamName: z.string().min(1, "Team name is required"),
-  };
+  const schemaObj: Record<string, any> = {};
 
   // Add fields for each step if config exists
   if (config?.steps) {
@@ -89,32 +87,20 @@ export default function TournamentRegistrationForm({
 
   const dynamicSchema = z.object(schemaObj);
 
-  type FormData = Record<string, any> & {
-    teamName: string;
-  };
+  type FormData = Record<string, any>;
 
   const form = useForm<FormData>({
     resolver: zodResolver(dynamicSchema),
-    defaultValues: {
-      teamName: "",
-      ...Object.fromEntries(
-        config?.steps.flatMap((s) => s.fields).map((f) => [f.id, ""]) || []
-      ),
-    },
+    defaultValues: Object.fromEntries(
+      config?.steps.flatMap((s) => s.fields).map((f) => [f.id, ""]) || []
+    ),
   });
 
   const registerMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const responses = Object.fromEntries(
-        Object.entries(data)
-          .filter(([key]) => key !== "teamName")
-          .map(([key, value]) => [key, value])
-      );
-
       const res = await apiRequest("POST", `/api/tournaments/${tournamentId}/registrations`, {
-        teamName: data.teamName,
         userId: user?.id,
-        responses,
+        responses: data,
       });
       return res.json();
     },
@@ -148,8 +134,19 @@ export default function TournamentRegistrationForm({
     );
   }
 
+  // If no registration config was set up, don't show a form at all
+  if (!config) {
+    return (
+      <Card>
+        <CardContent className="pt-6 text-center">
+          <p className="text-muted-foreground text-sm">Registration is not available for this tournament</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Collect all fields from all steps and sort by display order
-  const allFields = config?.steps
+  const allFields = config.steps
     ? config.steps
         .flatMap((step) =>
           step.fields.map((field) => ({
@@ -182,27 +179,8 @@ export default function TournamentRegistrationForm({
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Team Name - Always Required */}
-            <FormField
-              control={form.control}
-              name="teamName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Team Name</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter your team name"
-                      {...field}
-                      data-testid="input-register-team-name"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Dynamic fields from organizer's registration form */}
-            {allFields.length > 0 && (
+            {/* Dynamic fields from organizer's registration form - ONLY these fields */}
+            {allFields.length > 0 ? (
               <div className="space-y-6">
                 {allFields.map((field) => (
                   <FormField
@@ -264,12 +242,9 @@ export default function TournamentRegistrationForm({
                   />
                 ))}
               </div>
-            )}
-
-            {/* Empty state if no custom fields */}
-            {allFields.length === 0 && config && (
+            ) : (
               <div className="text-center py-4 text-muted-foreground">
-                <p className="text-sm">No additional fields configured for this tournament</p>
+                <p className="text-sm">No registration fields configured for this tournament</p>
               </div>
             )}
 

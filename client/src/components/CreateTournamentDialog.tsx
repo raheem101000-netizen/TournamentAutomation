@@ -86,44 +86,14 @@ export default function CreateTournamentDialog({
   const handleSubmit = () => {
     const totalTeams = teamCapacityMode === "unlimited" ? -1 : parseInt(maxTeams) || 16;
     
-    // Get registration config from either ref or state - use whichever is available and latest
-    let finalConfig: RegistrationFormConfig | undefined = undefined;
-    
-    if (enableRegistration) {
-      // Prefer the ref (most recent), fall back to state
-      finalConfig = latestConfigRef.current || registrationConfig;
-      
-      // If still undefined, create a default config with Team Name field
-      if (!finalConfig) {
-        finalConfig = {
-          requiresPayment: 0,
-          entryFee: null,
-          paymentUrl: null,
-          paymentInstructions: null,
-          steps: [{
-            id: "step-1",
-            stepNumber: 1,
-            stepTitle: "Team Information",
-            stepDescription: "Basic team details",
-            fields: [{
-              id: "field-team-name",
-              fieldType: "text",
-              fieldLabel: "Team Name",
-              fieldPlaceholder: "Enter your team name",
-              isRequired: 1,
-              dropdownOptions: null,
-              displayOrder: 0
-            }]
-          }]
-        };
-      }
-    }
+    // Get registration config from the ref (most up-to-date) or state
+    const finalConfig = enableRegistration ? (latestConfigRef.current || registrationConfig) : undefined;
     
     console.log('[SUBMIT] Creating tournament with:', {
       enableRegistration,
       configExists: !!finalConfig,
       stepsCount: finalConfig?.steps?.length || 0,
-      configJSON: JSON.stringify(finalConfig, null, 2)
+      steps: finalConfig?.steps?.map(s => ({ title: s.stepTitle, fieldCount: s.fields?.length || 0 })) || []
     });
     
     onSubmit({
