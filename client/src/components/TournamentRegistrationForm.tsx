@@ -216,7 +216,7 @@ export default function TournamentRegistrationForm({
                           {field.isRequired && <span className="text-destructive ml-1">*</span>}
                         </FormLabel>
                         <FormControl>
-                          {field.fieldType === "text" && (
+                          {field.fieldType === "text" ? (
                             <Input
                               placeholder={field.fieldPlaceholder || ""}
                               {...formField}
@@ -224,8 +224,7 @@ export default function TournamentRegistrationForm({
                               onChange={formField.onChange}
                               data-testid={`input-${field.id}`}
                             />
-                          )}
-                          {field.fieldType === "dropdown" && (
+                          ) : field.fieldType === "dropdown" ? (
                             <Select
                               value={formField.value || ""}
                               onValueChange={formField.onChange}
@@ -244,8 +243,7 @@ export default function TournamentRegistrationForm({
                                   ))}
                               </SelectContent>
                             </Select>
-                          )}
-                          {field.fieldType === "yesno" && (
+                          ) : field.fieldType === "yesno" ? (
                             <Select
                               value={formField.value || ""}
                               onValueChange={formField.onChange}
@@ -258,7 +256,7 @@ export default function TournamentRegistrationForm({
                                 <SelectItem value="no">No</SelectItem>
                               </SelectContent>
                             </Select>
-                          )}
+                          ) : null}
                         </FormControl>
                         <FormMessage />
                       </FormItem>
