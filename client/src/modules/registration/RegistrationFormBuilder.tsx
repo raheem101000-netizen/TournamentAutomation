@@ -164,7 +164,8 @@ export default function RegistrationFormBuilder({
 
   const handleSave = () => {
     const config = buildConfig();
-    console.log('[REGISTRATION] Save button clicked, calling onSave with config:', config);
+    console.log('[REG-BUILDER] Save button clicked');
+    console.log('[REG-BUILDER] Config:', JSON.stringify(config, null, 2));
     onSave(config);
   };
 

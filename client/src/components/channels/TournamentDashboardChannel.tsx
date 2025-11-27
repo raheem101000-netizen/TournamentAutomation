@@ -157,12 +157,19 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
 
   const updateRegistrationConfigMutation = useMutation({
     mutationFn: async (config: RegistrationFormConfig) => {
-      console.log('[MUTATION] Saving registration config:', config);
-      const result = await apiRequest('PUT', `/api/tournaments/${selectedTournamentId}/registration/config`, config);
-      console.log('[MUTATION] Save successful');
-      return result;
+      console.log('[MUTATION] Starting save for tournament:', selectedTournamentId);
+      console.log('[MUTATION] Config payload:', JSON.stringify(config, null, 2));
+      try {
+        const result = await apiRequest('PUT', `/api/tournaments/${selectedTournamentId}/registration/config`, config);
+        console.log('[MUTATION] Backend response:', result);
+        return result;
+      } catch (err) {
+        console.error('[MUTATION] API call failed:', err);
+        throw err;
+      }
     },
     onSuccess: () => {
+      console.log('[MUTATION] Success - invalidating cache');
       queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/registration/config`] });
       toast({
         title: "Registration saved",
@@ -170,7 +177,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
       });
     },
     onError: (error: Error) => {
-      console.error('[MUTATION] Error:', error);
+      console.error('[MUTATION] Error callback:', error);
       toast({
         title: "Error saving registration",
         description: error.message,
