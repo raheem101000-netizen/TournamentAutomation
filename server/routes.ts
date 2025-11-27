@@ -567,18 +567,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/tournaments/:id/registration/config", async (req, res) => {
     try {
-      const config = await storage.getRegistrationConfigByTournament(req.params.id);
+      const tournamentId = req.params.id;
+      console.log('[REGISTRATION-GET] Querying config for tournament:', tournamentId);
+      
+      const config = await storage.getRegistrationConfigByTournament(tournamentId);
+      console.log('[REGISTRATION-GET] Config found:', config ? `Yes - ID: ${config.id}` : 'No');
       
       // If no config exists, return null - do NOT auto-create defaults
       if (!config) {
+        console.log('[REGISTRATION-GET] Returning null - no config for this tournament');
         return res.json(null);
       }
 
+      console.log('[REGISTRATION-GET] Fetching steps for config:', config.id);
       const steps = await storage.getStepsByConfig(config.id);
+      console.log('[REGISTRATION-GET] Steps found:', steps.length);
       
       const stepsWithFields = await Promise.all(
         steps.map(async (step) => {
           const fields = await storage.getFieldsByStep(step.id);
+          console.log('[REGISTRATION-GET] Step', step.id, 'has', fields.length, 'fields');
           return {
             ...step,
             fields: fields.sort((a, b) => a.displayOrder - b.displayOrder)
