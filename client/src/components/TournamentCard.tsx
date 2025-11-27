@@ -58,7 +58,7 @@ export default function TournamentCard({ tournament, onView }: TournamentCardPro
           </Badge>
           <div className="flex items-center gap-1 text-muted-foreground">
             <Users className="w-4 h-4" />
-            <span>{tournament.totalTeams} teams</span>
+            <span>{tournament.totalTeams === -1 ? "Unlimited" : tournament.totalTeams} teams</span>
           </div>
         </div>
 
