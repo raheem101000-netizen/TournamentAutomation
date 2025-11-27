@@ -463,9 +463,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('[DEBUG] Tournament creation request body:', JSON.stringify(req.body, null, 2));
       const validatedData = insertTournamentSchema.parse(req.body);
-      const tournament = await storage.createTournament(validatedData);
+      
+      // Extract extra fields that shouldn't go to storage.createTournament
+      const { teamNames, registrationConfig, serverId, ...tournamentData } = validatedData;
+      
+      const tournament = await storage.createTournament(tournamentData);
 
-      const teamNames = req.body.teamNames as string[];
       if (teamNames && teamNames.length > 0) {
         const createdTeams = await Promise.all(
           teamNames.map((name) =>
@@ -490,7 +493,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const registrationConfig = req.body.registrationConfig;
       console.log('[REGISTRATION] Config received:', registrationConfig ? `Yes - ${registrationConfig.steps?.length || 0} steps` : 'No');
       console.log('[REGISTRATION] Full config:', JSON.stringify(registrationConfig, null, 2));
       

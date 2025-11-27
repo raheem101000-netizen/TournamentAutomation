@@ -125,7 +125,11 @@ export const insertTournamentSchema = createInsertSchema(tournaments)
     endDate: z.union([z.string(), z.date()]).transform((val) => 
       typeof val === 'string' ? new Date(val) : val
     ).nullable().optional(),
-  });
+    // Allow extra fields needed by POST endpoint but not in DB
+    teamNames: z.array(z.string()).optional(),
+    registrationConfig: z.any().optional(),
+    serverId: z.string().optional(),
+  }).passthrough();
 
 export const insertTeamSchema = createInsertSchema(teams).omit({
   id: true,
