@@ -246,20 +246,19 @@ export default function PreviewAccount() {
                       <AvatarImage src={currentUser.avatarUrl || undefined} />
                       <AvatarFallback>{currentUser.username.substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <Button
-                      size="icon"
-                      className="absolute bottom-0 right-0 w-8 h-8 rounded-full"
-                      data-testid="button-edit-avatar"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
+                    {isOwnProfile && (
+                      <Button
+                        size="icon"
+                        className="absolute bottom-0 right-0 w-8 h-8 rounded-full"
+                        data-testid="button-edit-avatar"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
 
                   <div className="space-y-2 w-full">
-                    <div className="flex items-center justify-center gap-2">
-                      <h2 className="text-2xl font-bold">{currentUser.username}</h2>
-                      <Badge variant="secondary">Lv. {currentUser.level ?? 1}</Badge>
-                    </div>
+                    <h2 className="text-2xl font-bold">{currentUser.username}</h2>
                     
                     <div className="flex items-center justify-center gap-2 text-muted-foreground">
                       <Users className="w-4 h-4" />
