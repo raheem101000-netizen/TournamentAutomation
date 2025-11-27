@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -48,8 +48,13 @@ export default function CreateTournamentDialog({
   const [registrationConfig, setRegistrationConfig] = useState<RegistrationFormConfig | undefined>();
   const [teamCapacityMode, setTeamCapacityMode] = useState<"unlimited" | "specific">("unlimited");
   const [maxTeams, setMaxTeams] = useState("16");
+  
+  // Use ref to store the latest config from RegistrationFormBuilder
+  const latestConfigRef = useRef<RegistrationFormConfig | undefined>();
 
   const handleRegistrationChange = useCallback((config: RegistrationFormConfig) => {
+    // Store in both state (for UI) and ref (for guaranteed latest value on submit)
+    latestConfigRef.current = config;
     setRegistrationConfig(config);
   }, []);
 
@@ -79,13 +84,17 @@ export default function CreateTournamentDialog({
 
   const handleSubmit = () => {
     const totalTeams = teamCapacityMode === "unlimited" ? -1 : parseInt(maxTeams) || 16;
+    
+    // Use the ref to get the guaranteed latest config, not the potentially stale state
+    const finalConfig = enableRegistration ? latestConfigRef.current : undefined;
+    
     console.log('[FRONTEND] Creating tournament with registration:', {
       enableRegistration,
-      configExists: !!registrationConfig,
-      stepsCount: registrationConfig?.steps?.length || 0,
-      fieldsPerStep: registrationConfig?.steps?.map(s => ({ title: s.stepTitle, fieldCount: s.fields?.length || 0 })) || []
+      configExists: !!finalConfig,
+      stepsCount: finalConfig?.steps?.length || 0,
+      fieldsPerStep: finalConfig?.steps?.map(s => ({ title: s.stepTitle, fieldCount: s.fields?.length || 0 })) || []
     });
-    console.log('[FRONTEND] Full registration config:', JSON.stringify(registrationConfig, null, 2));
+    console.log('[FRONTEND] Full registration config:', JSON.stringify(finalConfig, null, 2));
     
     onSubmit({
       name,
@@ -101,7 +110,7 @@ export default function CreateTournamentDialog({
       totalTeams,
       swissRounds: format === "swiss" ? swissRounds : null,
       teamNames: [],
-      registrationConfig: enableRegistration ? registrationConfig : undefined,
+      registrationConfig: finalConfig,
     });
     handleReset();
   };
