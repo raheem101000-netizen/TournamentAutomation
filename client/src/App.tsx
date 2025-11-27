@@ -115,6 +115,9 @@ function Router() {
       <Route path="/tournament/:tournamentId/match/:matchId">
         {() => <ProtectedRoute component={TournamentMatch} />}
       </Route>
+      <Route path="/tournament/:id/register">
+        {() => <ProtectedRoute component={TournamentRegister} />}
+      </Route>
       <Route path="/admin">
         {() => <ProtectedRoute component={AdminPanel} />}
       </Route>

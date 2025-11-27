@@ -113,13 +113,15 @@ export default function TournamentRegister() {
         </Card>
 
         {/* Registration Form */}
-        <TournamentRegistrationForm
-          tournamentId={tournamentId}
-          tournamentName={tournament.name}
-          onRegistrationSuccess={() => {
-            setLocation("/");
-          }}
-        />
+        {tournamentId && (
+          <TournamentRegistrationForm
+            tournamentId={tournamentId}
+            tournamentName={tournament.name}
+            onRegistrationSuccess={() => {
+              setLocation("/");
+            }}
+          />
+        )}
       </div>
     </div>
   );

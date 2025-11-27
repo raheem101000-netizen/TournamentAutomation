@@ -675,11 +675,10 @@ export default function PreviewHome() {
               variant="outline"
               data-testid="button-signup-page"
               onClick={() => {
-                toast({
-                  title: "Feature in development",
-                  description: "Tournament registration page is being developed.",
-                  variant: "destructive",
-                });
+                if (joinModal?.id) {
+                  setLocation(`/tournament/${joinModal.id}/register`);
+                  setJoinModal(null);
+                }
               }}
             >
               <div className="flex items-center gap-3">
