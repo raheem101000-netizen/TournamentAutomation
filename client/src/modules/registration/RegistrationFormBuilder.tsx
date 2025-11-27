@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -121,7 +121,7 @@ export default function RegistrationFormBuilder({
     }));
   };
 
-  const handleSave = async () => {
+  const buildConfig = () => {
     // Convert dropdown options from comma-separated string to JSON array
     const processedSteps = steps.map(step => {
       return {
@@ -153,6 +153,17 @@ export default function RegistrationFormBuilder({
       paymentInstructions: requiresPayment ? paymentInstructions : null,
       steps: processedSteps
     };
+    return config;
+  };
+
+  // Auto-save config to parent whenever steps or payment settings change
+  useEffect(() => {
+    const config = buildConfig();
+    onSave(config);
+  }, [steps, requiresPayment, entryFee, paymentUrl, paymentInstructions]);
+
+  const handleSave = async () => {
+    const config = buildConfig();
     
     if (tournamentId !== "new") {
       await fetch(`/api/tournaments/${tournamentId}/registration/config`, {
