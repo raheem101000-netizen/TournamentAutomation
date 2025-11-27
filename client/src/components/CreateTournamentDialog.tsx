@@ -14,7 +14,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Users, Grid3x3, Repeat, FileText } from "lucide-react";
+import { Trophy, Grid3x3, Repeat, FileText } from "lucide-react";
 import type { InsertTournament } from "@shared/schema";
 import RegistrationFormBuilder from "@/modules/registration/RegistrationFormBuilder";
 import { RegistrationPlatformProvider, defaultPlatformAdapter } from "@/modules/registration/platform-adapter";
@@ -44,8 +44,6 @@ export default function CreateTournamentDialog({
   const [region, setRegion] = useState("");
   const [format, setFormat] = useState<"round_robin" | "single_elimination" | "swiss">("single_elimination");
   const [swissRounds, setSwissRounds] = useState(3);
-  const [teamInput, setTeamInput] = useState("");
-  const [teams, setTeams] = useState<string[]>([]);
   const [enableRegistration, setEnableRegistration] = useState(false);
   const [registrationConfig, setRegistrationConfig] = useState<RegistrationFormConfig | undefined>();
 
@@ -76,17 +74,6 @@ export default function CreateTournamentDialog({
       pros: ["Balanced competition", "No elimination", "Flexible duration"],
     },
   ];
-
-  const handleAddTeam = () => {
-    if (teamInput.trim() && !teams.includes(teamInput.trim())) {
-      setTeams([...teams, teamInput.trim()]);
-      setTeamInput("");
-    }
-  };
-
-  const handleRemoveTeam = (index: number) => {
-    setTeams(teams.filter((_, i) => i !== index));
-  };
 
   const handleSubmit = () => {
     onSubmit({
@@ -121,8 +108,6 @@ export default function CreateTournamentDialog({
     setRegion("");
     setFormat("single_elimination");
     setSwissRounds(3);
-    setTeamInput("");
-    setTeams([]);
     setEnableRegistration(false);
     setRegistrationConfig(undefined);
     onOpenChange(false);
