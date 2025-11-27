@@ -32,7 +32,17 @@ export default function RegistrationFormBuilder({
         stepNumber: 1,
         stepTitle: "Team Information",
         stepDescription: "Basic team details",
-        fields: []
+        fields: [
+          {
+            id: "field-team-name",
+            fieldType: "text",
+            fieldLabel: "Team Name",
+            fieldPlaceholder: "Enter your team name",
+            isRequired: 1,
+            dropdownOptions: null,
+            displayOrder: 0
+          }
+        ]
       }
     ]
   );
