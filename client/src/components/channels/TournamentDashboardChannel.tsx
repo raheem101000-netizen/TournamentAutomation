@@ -640,6 +640,16 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
               </Card>
             )}
           </TabsContent>
+
+          <TabsContent value="registration">
+            {registrationConfig && selectedTournamentId && (
+              <RegistrationFormBuilder
+                tournamentId={selectedTournamentId}
+                initialConfig={registrationConfig}
+                onSave={(config) => updateRegistrationConfigMutation.mutate(config)}
+              />
+            )}
+          </TabsContent>
         </Tabs>
 
 
