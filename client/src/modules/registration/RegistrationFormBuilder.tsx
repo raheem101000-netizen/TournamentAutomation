@@ -121,12 +121,9 @@ export default function RegistrationFormBuilder({
     }));
   };
 
-  const handleSave = () => {
-    console.log('[DEBUG] Current steps state:', JSON.stringify(steps, null, 2));
-    
+  const handleSave = async () => {
     // Convert dropdown options from comma-separated string to JSON array
     const processedSteps = steps.map(step => {
-      console.log(`[DEBUG] Processing step ${step.id}: ${step.fields.length} fields`);
       return {
         ...step,
         fields: step.fields.map((field, idx) => {
@@ -142,7 +139,6 @@ export default function RegistrationFormBuilder({
                 )
               : null
           };
-          console.log(`[DEBUG] Field ${field.id}: ${field.fieldLabel}`);
           return processedField;
         })
       };
@@ -157,7 +153,15 @@ export default function RegistrationFormBuilder({
       paymentInstructions: requiresPayment ? paymentInstructions : null,
       steps: processedSteps
     };
-    console.log('[DEBUG] Final config:', JSON.stringify(config, null, 2));
+    
+    if (tournamentId !== "new") {
+      await fetch(`/api/tournaments/${tournamentId}/registration/config`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(config)
+      });
+    }
+    
     onSave(config);
   };
 
