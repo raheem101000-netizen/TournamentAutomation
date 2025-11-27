@@ -10,6 +10,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### November 27, 2025 (Registration Fields Save Fix - COMPLETE ✅)
+- **Fixed registration fields not being saved to database**:
+  - ✅ Auto-initialize registration config with default "Team Name" field when registration is enabled
+  - ✅ Ensures config is never undefined - fields now always reach the backend
+  - ✅ No longer requires users to click "Save Registration Form" button explicitly
+  - ✅ Updated all 17 existing tournaments with default fields via database migration
+  - ✅ New tournaments now save registration fields automatically
+
 ### November 25, 2025 (Achievements Visibility & Team Game Field - COMPLETE ✅)
 - **Fixed achievements visibility for visitors**:
   - ✅ Achievements now display when visiting other players' profiles
