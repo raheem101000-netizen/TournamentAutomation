@@ -52,55 +52,56 @@ export default function TournamentRegistrationForm({
 
   // Build dynamic schema based on fetched fields
   const dynamicSchema = useMemo(() => {
-    if (!config?.steps) return null;
-
     const schemaObj: Record<string, any> = {
       teamName: z.string().min(1, "Team name is required"),
       contactEmail: z.string().email("Valid email required").optional(),
     };
 
-    // Add fields for each step
-    config.steps.forEach((step) => {
-      step.fields.forEach((field) => {
-        let fieldSchema: any;
+    // Add fields for each step if config exists
+    if (config?.steps) {
+      config.steps.forEach((step) => {
+        step.fields.forEach((field) => {
+          let fieldSchema: any;
 
-        if (field.fieldType === "text") {
-          fieldSchema = z.string();
-          if (field.isRequired) {
-            fieldSchema = fieldSchema.min(1, `${field.fieldLabel} is required`);
-          } else {
-            fieldSchema = fieldSchema.optional();
+          if (field.fieldType === "text") {
+            fieldSchema = z.string();
+            if (field.isRequired) {
+              fieldSchema = fieldSchema.min(1, `${field.fieldLabel} is required`);
+            } else {
+              fieldSchema = fieldSchema.optional();
+            }
+          } else if (field.fieldType === "dropdown") {
+            fieldSchema = z.string();
+            if (field.isRequired) {
+              fieldSchema = fieldSchema.min(1, `${field.fieldLabel} is required`);
+            } else {
+              fieldSchema = fieldSchema.optional();
+            }
+          } else if (field.fieldType === "yesno") {
+            fieldSchema = z.string();
+            if (field.isRequired) {
+              fieldSchema = fieldSchema.min(1, `${field.fieldLabel} is required`);
+            } else {
+              fieldSchema = fieldSchema.optional();
+            }
           }
-        } else if (field.fieldType === "dropdown") {
-          fieldSchema = z.string();
-          if (field.isRequired) {
-            fieldSchema = fieldSchema.min(1, `${field.fieldLabel} is required`);
-          } else {
-            fieldSchema = fieldSchema.optional();
-          }
-        } else if (field.fieldType === "yesno") {
-          fieldSchema = z.string();
-          if (field.isRequired) {
-            fieldSchema = fieldSchema.min(1, `${field.fieldLabel} is required`);
-          } else {
-            fieldSchema = fieldSchema.optional();
-          }
-        }
 
-        schemaObj[field.id] = fieldSchema;
+          schemaObj[field.id] = fieldSchema;
+        });
       });
-    });
+    }
 
     return z.object(schemaObj);
   }, [config]);
 
-  type FormData = z.infer<typeof dynamicSchema> & {
+  type FormData = {
     teamName: string;
     contactEmail?: string;
+    [key: string]: any;
   };
 
   const form = useForm<FormData>({
-    resolver: dynamicSchema ? zodResolver(dynamicSchema) : undefined,
+    resolver: zodResolver(dynamicSchema),
     defaultValues: {
       teamName: "",
       contactEmail: user?.email || "",
@@ -313,7 +314,7 @@ export default function TournamentRegistrationForm({
                 <FormField
                   key={field.id}
                   control={form.control}
-                  name={field.id}
+                  name={field.id as keyof FormData}
                   render={({ field: formField }) => (
                     <FormItem>
                       <FormLabel>
