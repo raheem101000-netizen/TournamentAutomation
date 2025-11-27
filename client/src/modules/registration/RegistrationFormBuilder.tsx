@@ -112,6 +112,22 @@ export default function RegistrationFormBuilder({
   };
 
   const handleSave = () => {
+    // Convert dropdown options from comma-separated string to JSON array
+    const processedSteps = steps.map(step => ({
+      ...step,
+      fields: step.fields.map(field => ({
+        ...field,
+        dropdownOptions: field.fieldType === "dropdown" && field.dropdownOptions
+          ? JSON.stringify(
+              field.dropdownOptions
+                .split(",")
+                .map((opt: string) => opt.trim())
+                .filter((opt: string) => opt.length > 0)
+            )
+          : null
+      }))
+    }));
+
     const config: RegistrationFormConfig = {
       id: initialConfig?.id || `config-${Date.now()}`,
       tournamentId,
@@ -119,7 +135,7 @@ export default function RegistrationFormBuilder({
       entryFee: requiresPayment && entryFee ? parseInt(entryFee) : null,
       paymentUrl: requiresPayment ? paymentUrl : null,
       paymentInstructions: requiresPayment ? paymentInstructions : null,
-      steps
+      steps: processedSteps
     };
     onSave(config);
   };
