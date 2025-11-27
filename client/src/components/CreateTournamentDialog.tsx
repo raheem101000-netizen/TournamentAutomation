@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -52,6 +52,40 @@ export default function CreateTournamentDialog({
   const handleRegistrationChange = useCallback((config: RegistrationFormConfig) => {
     setRegistrationConfig(config);
   }, []);
+
+  // Auto-initialize registration config with defaults when registration is enabled
+  useEffect(() => {
+    if (enableRegistration && !registrationConfig) {
+      const defaultConfig: RegistrationFormConfig = {
+        id: `config-${Date.now()}`,
+        tournamentId: "new",
+        requiresPayment: 0,
+        entryFee: null,
+        paymentUrl: null,
+        paymentInstructions: null,
+        steps: [
+          {
+            id: "step-1",
+            stepNumber: 1,
+            stepTitle: "Team Information",
+            stepDescription: "Basic team details",
+            fields: [
+              {
+                id: "field-team-name",
+                fieldType: "text",
+                fieldLabel: "Team Name",
+                fieldPlaceholder: "Enter your team name",
+                isRequired: 1,
+                dropdownOptions: null,
+                displayOrder: 0
+              }
+            ]
+          }
+        ]
+      };
+      setRegistrationConfig(defaultConfig);
+    }
+  }, [enableRegistration, registrationConfig]);
 
   const formats = [
     {
