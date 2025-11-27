@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2, ChevronRight, ChevronLeft } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   Select,
@@ -43,7 +43,6 @@ export default function TournamentRegistrationForm({
 }: TournamentRegistrationFormProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
   // Fetch registration config with steps and fields
   const { data: config, isLoading: configLoading } = useQuery<RegistrationConfig>({
@@ -94,10 +93,9 @@ export default function TournamentRegistrationForm({
     return z.object(schemaObj);
   }, [config]);
 
-  type FormData = {
+  type FormData = Record<string, any> & {
     teamName: string;
     contactEmail?: string;
-    [key: string]: any;
   };
 
   const form = useForm<FormData>({
@@ -157,82 +155,21 @@ export default function TournamentRegistrationForm({
     );
   }
 
-  if (!config || config.steps.length === 0) {
-    // Fallback to basic form if no config
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Register for Tournament</CardTitle>
-          <CardDescription>{tournamentName}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit((data) => registerMutation.mutate(data as FormData))} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="teamName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Team Name</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter your team name"
-                        {...field}
-                        data-testid="input-register-team-name"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="contactEmail"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Contact Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="your@email.com"
-                        {...field}
-                        data-testid="input-register-email"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button
-                type="submit"
-                disabled={registerMutation.isPending}
-                className="w-full"
-                data-testid="button-register-submit"
-              >
-                {registerMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Registering...
-                  </>
-                ) : (
-                  "Register Team"
-                )}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const currentStep = config.steps[currentStepIndex];
-  const isLastStep = currentStepIndex === config.steps.length - 1;
-  const isFirstStep = currentStepIndex === 0;
-
-  // Sort fields by display order
-  const sortedFields = [...currentStep.fields].sort(
-    (a, b) => a.displayOrder - b.displayOrder
-  );
+  // Collect all fields from all steps and sort by display order
+  const allFields = useMemo(() => {
+    if (!config?.steps) return [];
+    const fields: (RegistrationField & { stepTitle: string; stepNumber: number })[] = [];
+    config.steps.forEach((step) => {
+      step.fields.forEach((field) => {
+        fields.push({
+          ...field,
+          stepTitle: step.stepTitle,
+          stepNumber: step.stepNumber,
+        });
+      });
+    });
+    return fields.sort((a, b) => a.displayOrder - b.displayOrder);
+  }, [config]);
 
   const onSubmit = (data: FormData) => {
     if (!user) {
@@ -243,161 +180,138 @@ export default function TournamentRegistrationForm({
       });
       return;
     }
-
-    if (isLastStep) {
-      registerMutation.mutate(data);
-    } else {
-      setCurrentStepIndex(currentStepIndex + 1);
-    }
+    registerMutation.mutate(data);
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{currentStep.stepTitle || "Registration"}</CardTitle>
-        <CardDescription>
-          {currentStep.stepDescription || tournamentName}
-          {config.steps.length > 1 && (
-            <div className="mt-2 text-xs font-medium">
-              Step {currentStepIndex + 1} of {config.steps.length}
-            </div>
-          )}
-        </CardDescription>
+        <CardTitle>Register for Tournament</CardTitle>
+        <CardDescription>{tournamentName}</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Show team name and email on first step only */}
-            {isFirstStep && (
-              <>
-                <FormField
-                  control={form.control}
-                  name="teamName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Team Name</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter your team name"
-                          {...field}
-                          data-testid="input-register-team-name"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="contactEmail"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Contact Email</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="your@email.com"
-                          {...field}
-                          data-testid="input-register-email"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </>
+            {/* Basic fields */}
+            <FormField
+              control={form.control}
+              name="teamName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Team Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter your team name"
+                      {...field}
+                      data-testid="input-register-team-name"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="contactEmail"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contact Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="email"
+                      placeholder="your@email.com"
+                      {...field}
+                      data-testid="input-register-email"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Dynamic fields from all steps */}
+            {allFields.length > 0 && (
+              <div className="space-y-6 border-t pt-6">
+                {allFields.map((field) => (
+                  <FormField
+                    key={field.id}
+                    control={form.control}
+                    name={field.id}
+                    render={({ field: formField }) => (
+                      <FormItem>
+                        <FormLabel>
+                          {field.fieldLabel}
+                          {field.isRequired && <span className="text-destructive ml-1">*</span>}
+                        </FormLabel>
+                        <FormControl>
+                          {field.fieldType === "text" && (
+                            <Input
+                              placeholder={field.fieldPlaceholder || ""}
+                              {...formField}
+                              value={formField.value || ""}
+                              onChange={formField.onChange}
+                              data-testid={`input-${field.id}`}
+                            />
+                          )}
+                          {field.fieldType === "dropdown" && (
+                            <Select
+                              value={formField.value || ""}
+                              onValueChange={formField.onChange}
+                            >
+                              <SelectTrigger data-testid={`select-${field.id}`}>
+                                <SelectValue
+                                  placeholder={field.fieldPlaceholder || "Select an option"}
+                                />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {field.dropdownOptions &&
+                                  JSON.parse(field.dropdownOptions).map((option: string) => (
+                                    <SelectItem key={option} value={option}>
+                                      {option}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                          {field.fieldType === "yesno" && (
+                            <Select
+                              value={formField.value || ""}
+                              onValueChange={formField.onChange}
+                            >
+                              <SelectTrigger data-testid={`select-${field.id}`}>
+                                <SelectValue placeholder="Select an option" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="yes">Yes</SelectItem>
+                                <SelectItem value="no">No</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ))}
+              </div>
             )}
 
-            {/* Dynamic fields for current step */}
-            <div className="space-y-4">
-              {sortedFields.map((field) => (
-                <FormField
-                  key={field.id}
-                  control={form.control}
-                  name={field.id as keyof FormData}
-                  render={({ field: formField }) => (
-                    <FormItem>
-                      <FormLabel>
-                        {field.fieldLabel}
-                        {field.isRequired && <span className="text-destructive ml-1">*</span>}
-                      </FormLabel>
-                      <FormControl>
-                        {field.fieldType === "text" && (
-                          <Input
-                            placeholder={field.fieldPlaceholder || ""}
-                            {...formField}
-                            data-testid={`input-${field.id}`}
-                          />
-                        )}
-                        {field.fieldType === "dropdown" && (
-                          <Select value={formField.value || ""} onValueChange={formField.onChange}>
-                            <SelectTrigger data-testid={`select-${field.id}`}>
-                              <SelectValue
-                                placeholder={field.fieldPlaceholder || "Select an option"}
-                              />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {field.dropdownOptions && 
-                                JSON.parse(field.dropdownOptions).map((option: string) => (
-                                  <SelectItem key={option} value={option}>
-                                    {option}
-                                  </SelectItem>
-                                ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                        {field.fieldType === "yesno" && (
-                          <Select value={formField.value || ""} onValueChange={formField.onChange}>
-                            <SelectTrigger data-testid={`select-${field.id}`}>
-                              <SelectValue placeholder="Select an option" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="yes">Yes</SelectItem>
-                              <SelectItem value="no">No</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ))}
-            </div>
-
-            {/* Navigation buttons */}
-            <div className="flex gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setCurrentStepIndex(Math.max(0, currentStepIndex - 1))}
-                disabled={isFirstStep || registerMutation.isPending}
-                data-testid="button-previous-step"
-              >
-                <ChevronLeft className="w-4 h-4 mr-2" />
-                Previous
-              </Button>
-              <Button
-                type="submit"
-                disabled={registerMutation.isPending}
-                className="flex-1"
-                data-testid={isLastStep ? "button-register-submit" : "button-next-step"}
-              >
-                {registerMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {isLastStep ? "Registering..." : "Processing..."}
-                  </>
-                ) : isLastStep ? (
-                  "Register Team"
-                ) : (
-                  <>
-                    Next
-                    <ChevronRight className="w-4 h-4 ml-2" />
-                  </>
-                )}
-              </Button>
-            </div>
+            {/* Submit button */}
+            <Button
+              type="submit"
+              disabled={registerMutation.isPending}
+              className="w-full"
+              data-testid="button-register-submit"
+            >
+              {registerMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Registering...
+                </>
+              ) : (
+                "Register Team"
+              )}
+            </Button>
           </form>
         </Form>
       </CardContent>
