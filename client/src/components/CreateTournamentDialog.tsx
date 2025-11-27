@@ -53,6 +53,7 @@ export default function CreateTournamentDialog({
   const latestConfigRef = useRef<RegistrationFormConfig | undefined>();
 
   const handleRegistrationChange = useCallback((config: RegistrationFormConfig) => {
+    console.log('[CREATE-DIALOG] Registration config updated:', JSON.stringify(config, null, 2));
     // Store in both state (for UI) and ref (for guaranteed latest value on submit)
     latestConfigRef.current = config;
     setRegistrationConfig(config);
