@@ -112,22 +112,31 @@ export default function RegistrationFormBuilder({
   };
 
   const handleSave = () => {
+    console.log('[DEBUG] Current steps state:', JSON.stringify(steps, null, 2));
+    
     // Convert dropdown options from comma-separated string to JSON array
-    const processedSteps = steps.map(step => ({
-      ...step,
-      fields: step.fields.map((field, idx) => ({
-        ...field,
-        displayOrder: idx,
-        dropdownOptions: field.fieldType === "dropdown" && field.dropdownOptions
-          ? JSON.stringify(
-              field.dropdownOptions
-                .split(",")
-                .map((opt: string) => opt.trim())
-                .filter((opt: string) => opt.length > 0)
-            )
-          : null
-      }))
-    }));
+    const processedSteps = steps.map(step => {
+      console.log(`[DEBUG] Processing step ${step.id}: ${step.fields.length} fields`);
+      return {
+        ...step,
+        fields: step.fields.map((field, idx) => {
+          const processedField = {
+            ...field,
+            displayOrder: idx,
+            dropdownOptions: field.fieldType === "dropdown" && field.dropdownOptions
+              ? JSON.stringify(
+                  field.dropdownOptions
+                    .split(",")
+                    .map((opt: string) => opt.trim())
+                    .filter((opt: string) => opt.length > 0)
+                )
+              : null
+          };
+          console.log(`[DEBUG] Field ${field.id}: ${field.fieldLabel}`);
+          return processedField;
+        })
+      };
+    });
 
     const config: RegistrationFormConfig = {
       id: initialConfig?.id || `config-${Date.now()}`,
@@ -138,7 +147,7 @@ export default function RegistrationFormBuilder({
       paymentInstructions: requiresPayment ? paymentInstructions : null,
       steps: processedSteps
     };
-    console.log('[DEBUG] Registration config being saved:', JSON.stringify(config, null, 2));
+    console.log('[DEBUG] Final config:', JSON.stringify(config, null, 2));
     onSave(config);
   };
 
