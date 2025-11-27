@@ -34,6 +34,7 @@ import StandingsTable from "@/components/StandingsTable";
 import MatchCard from "@/components/MatchCard";
 import SubmitScoreDialog from "@/components/SubmitScoreDialog";
 import ImageUploadField from "@/components/ImageUploadField";
+import RegistrationFormBuilder from "@/modules/registration/RegistrationFormBuilder";
 import type { Tournament, InsertTournament, Team, Match } from "@shared/schema";
 import type { RegistrationFormConfig } from "@/modules/registration/types";
 import { useState, useEffect } from "react";
@@ -147,6 +148,31 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
   const { data: selectedTournamentMatches = [] } = useQuery<Match[]>({
     queryKey: [`/api/tournaments/${selectedTournamentId}/matches`],
     enabled: !!selectedTournamentId,
+  });
+
+  const { data: registrationConfig } = useQuery<RegistrationFormConfig>({
+    queryKey: [`/api/tournaments/${selectedTournamentId}/registration/config`],
+    enabled: !!selectedTournamentId,
+  });
+
+  const updateRegistrationConfigMutation = useMutation({
+    mutationFn: async (config: RegistrationFormConfig) => {
+      return apiRequest('PUT', `/api/tournaments/${selectedTournamentId}/registration/config`, config);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/registration/config`] });
+      toast({
+        title: "Registration updated",
+        description: "Registration form configuration has been saved.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const serverTournaments = allTournaments.filter(t => t.serverId === serverId);
@@ -335,13 +361,14 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full grid grid-cols-6">
+          <TabsList className="w-full grid grid-cols-4 lg:grid-cols-7">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="bracket">Bracket</TabsTrigger>
             <TabsTrigger value="standings">Standings</TabsTrigger>
             <TabsTrigger value="matches">Matches</TabsTrigger>
             <TabsTrigger value="participants">Participants</TabsTrigger>
             <TabsTrigger value="teams">Teams</TabsTrigger>
+            <TabsTrigger value="registration">Registration</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
