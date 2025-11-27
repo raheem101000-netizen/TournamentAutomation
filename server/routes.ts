@@ -649,75 +649,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Delete all existing steps and their fields for this config
       const existingSteps = await storage.getStepsByConfig(config.id);
-      
-      for (const step of registrationConfig.steps) {
-        const existingStep = existingSteps.find(s => s.id === step.id);
-        
-        if (existingStep) {
-          await storage.updateRegistrationStep(step.id, {
-            stepTitle: step.stepTitle,
-            stepDescription: step.stepDescription,
-            stepNumber: step.stepNumber
-          });
-          
-          const existingFields = await storage.getFieldsByStep(step.id);
-          const existingFieldIds = new Set(existingFields.map(f => f.id));
-          const incomingFieldIds = new Set(step.fields.map(f => f.id));
-          
-          for (const field of existingFields) {
-            if (!incomingFieldIds.has(field.id)) {
-              await storage.deleteRegistrationField(field.id);
-            }
-          }
-          
-          for (const field of step.fields) {
-            if (existingFieldIds.has(field.id)) {
-              await storage.updateRegistrationField(field.id, {
-                fieldType: field.fieldType,
-                fieldLabel: field.fieldLabel,
-                fieldPlaceholder: field.fieldPlaceholder,
-                isRequired: field.isRequired,
-                dropdownOptions: field.dropdownOptions,
-                displayOrder: field.displayOrder
-              });
-            } else {
-              const fieldData = {
-                stepId: step.id,
-                fieldType: field.fieldType,
-                fieldLabel: field.fieldLabel,
-                fieldPlaceholder: field.fieldPlaceholder,
-                isRequired: field.isRequired,
-                dropdownOptions: field.dropdownOptions,
-                displayOrder: field.displayOrder
-              };
-              const validatedField = insertRegistrationFieldSchema.parse(fieldData);
-              await storage.createRegistrationField(validatedField);
-            }
-          }
-        } else {
-          const stepData = {
-            configId: config.id,
-            stepNumber: step.stepNumber,
-            stepTitle: step.stepTitle,
-            stepDescription: step.stepDescription
-          };
-          const validatedStep = insertRegistrationStepSchema.parse(stepData);
-          const createdStep = await storage.createRegistrationStep(validatedStep);
+      for (const step of existingSteps) {
+        const fields = await storage.getFieldsByStep(step.id);
+        for (const field of fields) {
+          await storage.deleteRegistrationField(field.id);
+        }
+        await storage.deleteRegistrationStep(step.id);
+      }
 
-          for (const field of step.fields) {
-            const fieldData = {
-              stepId: createdStep.id,
-              fieldType: field.fieldType,
-              fieldLabel: field.fieldLabel,
-              fieldPlaceholder: field.fieldPlaceholder,
-              isRequired: field.isRequired,
-              dropdownOptions: field.dropdownOptions,
-              displayOrder: field.displayOrder
-            };
-            const validatedField = insertRegistrationFieldSchema.parse(fieldData);
-            await storage.createRegistrationField(validatedField);
-          }
+      // Create all new steps from the organizer's config
+      for (const step of registrationConfig.steps) {
+        const stepData = {
+          configId: config.id,
+          stepNumber: step.stepNumber,
+          stepTitle: step.stepTitle,
+          stepDescription: step.stepDescription
+        };
+        const validatedStep = insertRegistrationStepSchema.parse(stepData);
+        const createdStep = await storage.createRegistrationStep(validatedStep);
+
+        // Create all fields for this step
+        for (const field of step.fields) {
+          const fieldData = {
+            stepId: createdStep.id,
+            fieldType: field.fieldType,
+            fieldLabel: field.fieldLabel,
+            fieldPlaceholder: field.fieldPlaceholder,
+            isRequired: field.isRequired,
+            dropdownOptions: field.dropdownOptions,
+            displayOrder: field.displayOrder
+          };
+          const validatedField = insertRegistrationFieldSchema.parse(fieldData);
+          await storage.createRegistrationField(validatedField);
         }
       }
 
