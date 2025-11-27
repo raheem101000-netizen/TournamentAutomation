@@ -34,6 +34,7 @@ import CreateTournament from "@/pages/create-tournament";
 import ChatRoom from "@/pages/chat-room";
 import TeamBuilder from "@/pages/team-builder";
 import TournamentMatch from "@/pages/tournament-match";
+import TournamentRegister from "@/pages/tournament-register";
 import AdminPanel from "@/pages/admin-panel";
 import { User, Search, Bell, Trophy, Server, MessageSquare } from "lucide-react";
 import { initializeApp } from "../../lib/initializeApp";
