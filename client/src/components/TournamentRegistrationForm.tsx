@@ -26,7 +26,7 @@ interface RegistrationConfig {
   entryFee: string | null;
   paymentUrl: string | null;
   paymentInstructions: string | null;
-  steps: (RegistrationStep & { fields: RegistrationField[] })[];
+  steps: RegistrationStep[];
 }
 
 interface TournamentRegistrationFormProps {
@@ -43,45 +43,17 @@ export default function TournamentRegistrationForm({
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Fetch registration config with steps and fields
+  // Fetch registration config with steps
   const { data: config, isLoading: configLoading } = useQuery<RegistrationConfig | null>({
     queryKey: [`/api/tournaments/${tournamentId}/registration/config`],
   });
 
-  // Build dynamic schema based on fetched fields
+  // Build dynamic schema - one text input per step
   const schemaObj: Record<string, any> = {};
 
-  // Add fields for each step if config exists
   if (config?.steps) {
     config.steps.forEach((step) => {
-      step.fields.forEach((field) => {
-        let fieldSchema: any;
-
-        if (field.fieldType === "text") {
-          fieldSchema = z.string();
-          if (field.isRequired) {
-            fieldSchema = fieldSchema.min(1, `${field.fieldLabel} is required`);
-          } else {
-            fieldSchema = fieldSchema.optional();
-          }
-        } else if (field.fieldType === "dropdown") {
-          fieldSchema = z.string();
-          if (field.isRequired) {
-            fieldSchema = fieldSchema.min(1, `${field.fieldLabel} is required`);
-          } else {
-            fieldSchema = fieldSchema.optional();
-          }
-        } else if (field.fieldType === "yesno") {
-          fieldSchema = z.string();
-          if (field.isRequired) {
-            fieldSchema = fieldSchema.min(1, `${field.fieldLabel} is required`);
-          } else {
-            fieldSchema = fieldSchema.optional();
-          }
-        }
-
-        schemaObj[field.id] = fieldSchema;
-      });
+      schemaObj[step.id] = z.string().min(1, `${step.stepTitle} is required`);
     });
   }
 
@@ -92,7 +64,7 @@ export default function TournamentRegistrationForm({
   const form = useForm<FormData>({
     resolver: zodResolver(dynamicSchema),
     defaultValues: Object.fromEntries(
-      config?.steps.flatMap((s) => s.fields).map((f) => [f.id, ""]) || []
+      config?.steps.map((s) => [s.id, ""]) || []
     ),
   });
 
@@ -145,7 +117,18 @@ export default function TournamentRegistrationForm({
     );
   }
 
-  // Collect all fields from all steps and sort by display order
+  // Show each step as a form section
+  if (!config?.steps || config.steps.length === 0) {
+    return (
+      <Card>
+        <CardContent className="pt-6 text-center">
+          <p className="text-muted-foreground text-sm">Registration is not available for this tournament</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // This was the old field collection code - now replaced with simpler step-based rendering
   const allFields = config.steps
     ? config.steps
         .flatMap((step) =>
