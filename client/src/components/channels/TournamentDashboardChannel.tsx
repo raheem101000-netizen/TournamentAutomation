@@ -387,7 +387,6 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
             <TabsTrigger value="matches" className="whitespace-nowrap">Matches</TabsTrigger>
             <TabsTrigger value="participants" className="whitespace-nowrap">Participants</TabsTrigger>
             <TabsTrigger value="teams" className="whitespace-nowrap">Teams</TabsTrigger>
-            <TabsTrigger value="registration" className="whitespace-nowrap">Registration</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
@@ -657,19 +656,6 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                   No teams registered yet
                 </p>
               </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="registration">
-            {registrationConfig && selectedTournamentId && (
-              <RegistrationFormBuilder
-                tournamentId={selectedTournamentId}
-                initialConfig={registrationConfig}
-                onSave={(config) => {
-                  console.log('[DASHBOARD] onSave callback received, tournamentId:', selectedTournamentId, 'config:', config);
-                  updateRegistrationConfigMutation.mutate(config);
-                }}
-              />
             )}
           </TabsContent>
         </Tabs>
