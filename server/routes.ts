@@ -1068,6 +1068,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Team name is required" });
       }
 
+      // Get registration config for payment status
+      const config = await storage.getRegistrationConfigByTournament(tournamentId);
+
       const existingTeams = await storage.getTeamsByTournament(tournamentId);
       const existingRegistrations = await storage.getRegistrationsByTournament(tournamentId);
       
@@ -1139,7 +1142,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (registrationStatus === "approved") {
         await storage.createTeam({
-          name: registrationData.teamName,
+          name: teamName,
           tournamentId: tournament.id,
         });
       }
