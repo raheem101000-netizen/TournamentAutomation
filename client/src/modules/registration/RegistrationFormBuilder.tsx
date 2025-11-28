@@ -161,7 +161,7 @@ export default function RegistrationFormBuilder({
     const config = buildConfig();
     console.log('[AUTO-SAVE] Config updated:', JSON.stringify(config, null, 2));
     onSave(config);
-  }, [steps, requiresPayment, entryFee, paymentUrl, paymentInstructions, onSave, buildConfig]);
+  }, [steps, requiresPayment, entryFee, paymentUrl, paymentInstructions, onSave]);
 
   const handleSave = () => {
     const config = buildConfig();
