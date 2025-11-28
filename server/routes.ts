@@ -1039,6 +1039,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registration submission routes
   app.post("/api/tournaments/:tournamentId/registrations", async (req, res) => {
     try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "You must be logged in to register" });
+      }
+
       const tournamentId = req.params.tournamentId;
       
       const tournament = await storage.getTournament(tournamentId);
@@ -1046,7 +1050,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Tournament not found" });
       }
 
-      const { responses, paymentProofUrl, paymentTransactionId, ...registrationData} = req.body;
+      const { responses, paymentProofUrl, paymentTransactionId } = req.body;
+
+      // Get the registration config to find the team name field
+      const config = await storage.getRegistrationConfigByTournament(tournamentId);
+      
+      // Find the field ID that contains "team name" (case-insensitive)
+      let teamNameFieldId: string | null = null;
+      let teamName: string | null = null;
+      
+      if (config) {
+        for (const step of config.steps) {
+          for (const field of step.fields) {
+            if (field.fieldLabel.toLowerCase().includes("team")) {
+              teamNameFieldId = field.id;
+              break;
+            }
+          }
+          if (teamNameFieldId) break;
+        }
+      }
+
+      // Get team name from responses if field found
+      if (teamNameFieldId && responses && responses[teamNameFieldId]) {
+        teamName = String(responses[teamNameFieldId]).trim();
+      }
+
+      if (!teamName) {
+        return res.status(400).json({ error: "Team name is required" });
+      }
 
       const existingTeams = await storage.getTeamsByTournament(tournamentId);
       const existingRegistrations = await storage.getRegistrationsByTournament(tournamentId);
@@ -1061,7 +1093,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(409).json({ error: "Tournament is full" });
       }
 
-      const teamNameLower = registrationData.teamName?.toLowerCase();
+      const teamNameLower = teamName.toLowerCase();
       const teamNameExistsInTeams = existingTeams.some(
         team => team.name.toLowerCase() === teamNameLower
       );
@@ -1073,8 +1105,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (teamNameExistsInTeams || teamNameExistsInRegistrations) {
         return res.status(409).json({ error: "Team name already exists in this tournament" });
       }
-
-      const config = await storage.getRegistrationConfigByTournament(tournamentId);
       
       let paymentStatus = "pending";
       let registrationStatus = "submitted";
@@ -1089,7 +1119,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const registration = await storage.createRegistration({
-        ...registrationData,
+        userId: req.session.userId,
+        teamName,
         tournamentId,
         status: registrationStatus,
         paymentStatus,
