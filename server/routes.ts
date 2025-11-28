@@ -901,6 +901,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "pending",
       });
 
+      // Create message thread notification for the match
+      const matchMessage = `Match: ${team1.name} vs ${team2.name}`;
+      await storage.createMessageThread({
+        participantName: matchMessage,
+        lastMessage: `New match created in ${tournament.name}. Chat with your opponent here!`,
+        lastMessageTime: new Date(),
+        unreadCount: 1,
+      });
+
       res.status(201).json(newMatch);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
