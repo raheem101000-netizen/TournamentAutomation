@@ -380,13 +380,13 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full h-auto inline-flex flex-row flex-nowrap bg-transparent p-0 gap-1">
-            <TabsTrigger value="overview" className="whitespace-nowrap rounded-md">Overview</TabsTrigger>
-            <TabsTrigger value="bracket" className="whitespace-nowrap rounded-md">Bracket</TabsTrigger>
-            <TabsTrigger value="standings" className="whitespace-nowrap rounded-md">Standings</TabsTrigger>
-            <TabsTrigger value="matches" className="whitespace-nowrap rounded-md">Matches</TabsTrigger>
-            <TabsTrigger value="participants" className="whitespace-nowrap rounded-md">Participants</TabsTrigger>
-            <TabsTrigger value="teams" className="whitespace-nowrap rounded-md">Teams</TabsTrigger>
+          <TabsList className="w-full h-auto inline-flex flex-row flex-nowrap bg-transparent p-0 gap-2">
+            <TabsTrigger value="overview" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Overview</TabsTrigger>
+            <TabsTrigger value="bracket" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Bracket</TabsTrigger>
+            <TabsTrigger value="standings" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Standings</TabsTrigger>
+            <TabsTrigger value="matches" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Matches</TabsTrigger>
+            <TabsTrigger value="participants" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Participants</TabsTrigger>
+            <TabsTrigger value="teams" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Teams</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
