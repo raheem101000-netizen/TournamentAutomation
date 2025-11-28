@@ -380,14 +380,14 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full grid grid-cols-4 lg:grid-cols-7">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="bracket">Bracket</TabsTrigger>
-            <TabsTrigger value="standings">Standings</TabsTrigger>
-            <TabsTrigger value="matches">Matches</TabsTrigger>
-            <TabsTrigger value="participants">Participants</TabsTrigger>
-            <TabsTrigger value="teams">Teams</TabsTrigger>
-            <TabsTrigger value="registration">Registration</TabsTrigger>
+          <TabsList className="w-full flex flex-nowrap overflow-x-auto">
+            <TabsTrigger value="overview" className="whitespace-nowrap">Overview</TabsTrigger>
+            <TabsTrigger value="bracket" className="whitespace-nowrap">Bracket</TabsTrigger>
+            <TabsTrigger value="standings" className="whitespace-nowrap">Standings</TabsTrigger>
+            <TabsTrigger value="matches" className="whitespace-nowrap">Matches</TabsTrigger>
+            <TabsTrigger value="participants" className="whitespace-nowrap">Participants</TabsTrigger>
+            <TabsTrigger value="teams" className="whitespace-nowrap">Teams</TabsTrigger>
+            <TabsTrigger value="registration" className="whitespace-nowrap">Registration</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
