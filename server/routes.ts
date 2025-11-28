@@ -1052,28 +1052,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { responses, paymentProofUrl, paymentTransactionId } = req.body;
 
-      // Get the registration config to find the team name field
+      // Get the registration config to find the team name step
       const config = await storage.getRegistrationConfigByTournament(tournamentId);
       
-      // Find the field ID that contains "team name" (case-insensitive)
-      let teamNameFieldId: string | null = null;
+      // Find the first step (it will have the team name)
       let teamName: string | null = null;
       
-      if (config) {
-        for (const step of config.steps) {
-          for (const field of step.fields) {
-            if (field.fieldLabel.toLowerCase().includes("team")) {
-              teamNameFieldId = field.id;
-              break;
-            }
-          }
-          if (teamNameFieldId) break;
+      if (config && config.steps && config.steps.length > 0) {
+        const firstStepId = config.steps[0].id;
+        if (responses && responses[firstStepId]) {
+          teamName = String(responses[firstStepId]).trim();
         }
-      }
-
-      // Get team name from responses if field found
-      if (teamNameFieldId && responses && responses[teamNameFieldId]) {
-        teamName = String(responses[teamNameFieldId]).trim();
       }
 
       if (!teamName) {

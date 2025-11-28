@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -8,16 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import type { RegistrationStep, RegistrationField } from "@shared/schema";
+import { Loader2 } from "lucide-react";
+import type { RegistrationStep } from "@shared/schema";
 
 interface RegistrationConfig {
   id: string;
@@ -128,19 +122,6 @@ export default function TournamentRegistrationForm({
     );
   }
 
-  // This was the old field collection code - now replaced with simpler step-based rendering
-  const allFields = config.steps
-    ? config.steps
-        .flatMap((step) =>
-          step.fields.map((field) => ({
-            ...field,
-            stepTitle: step.stepTitle,
-            stepNumber: step.stepNumber,
-          }))
-        )
-        .sort((a, b) => a.displayOrder - b.displayOrder)
-    : [];
-
   const onSubmit = (data: FormData) => {
     if (!user) {
       toast({
@@ -162,92 +143,34 @@ export default function TournamentRegistrationForm({
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Show registration steps that organizer created */}
-            {config.steps && config.steps.length > 0 ? (
-              <div className="space-y-6">
-                {config.steps.map((step) => (
-                  <div key={step.id} className="border-l-2 border-primary/30 pl-4 py-2">
-                    <h3 className="font-semibold text-sm mb-1">{step.stepTitle}</h3>
-                    {step.stepDescription && (
-                      <p className="text-xs text-muted-foreground mb-3">{step.stepDescription}</p>
-                    )}
-                    
-                    {/* Fields for this step */}
-                    {step.fields && step.fields.length > 0 ? (
-                      <div className="space-y-3">
-                        {step.fields
-                          .sort((a, b) => a.displayOrder - b.displayOrder)
-                          .map((field) => (
-                            <FormField
-                              key={field.id}
-                              control={form.control}
-                              name={field.id}
-                              render={({ field: formField }) => (
-                                <FormItem>
-                                  <FormLabel>
-                                    {field.fieldLabel}
-                                    {field.isRequired && <span className="text-destructive ml-1">*</span>}
-                                  </FormLabel>
-                                  <FormControl>
-                                    {field.fieldType === "text" ? (
-                                      <Input
-                                        placeholder={field.fieldPlaceholder || ""}
-                                        {...formField}
-                                        value={formField.value || ""}
-                                        onChange={formField.onChange}
-                                        data-testid={`input-${field.id}`}
-                                      />
-                                    ) : field.fieldType === "dropdown" ? (
-                                      <Select
-                                        value={formField.value || ""}
-                                        onValueChange={formField.onChange}
-                                      >
-                                        <SelectTrigger data-testid={`select-${field.id}`}>
-                                          <SelectValue
-                                            placeholder={field.fieldPlaceholder || "Select an option"}
-                                          />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          {field.dropdownOptions &&
-                                            JSON.parse(field.dropdownOptions).map((option: string) => (
-                                              <SelectItem key={option} value={option}>
-                                                {option}
-                                              </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                      </Select>
-                                    ) : field.fieldType === "yesno" ? (
-                                      <Select
-                                        value={formField.value || ""}
-                                        onValueChange={formField.onChange}
-                                      >
-                                        <SelectTrigger data-testid={`select-${field.id}`}>
-                                          <SelectValue placeholder="Select an option" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="yes">Yes</SelectItem>
-                                          <SelectItem value="no">No</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    ) : null}
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          ))}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-muted-foreground italic">No fields configured for this step yet</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-4 text-muted-foreground">
-                <p className="text-sm">No registration steps configured for this tournament</p>
-              </div>
-            )}
+            {/* Show one text input per step */}
+            <div className="space-y-4">
+              {config.steps.map((step) => (
+                <FormField
+                  key={step.id}
+                  control={form.control}
+                  name={step.id}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{step.stepTitle}</FormLabel>
+                      {step.stepDescription && (
+                        <p className="text-xs text-muted-foreground">{step.stepDescription}</p>
+                      )}
+                      <FormControl>
+                        <Input
+                          placeholder={`Enter ${step.stepTitle.toLowerCase()}`}
+                          {...field}
+                          value={field.value || ""}
+                          onChange={field.onChange}
+                          data-testid={`input-${step.id}`}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ))}
+            </div>
 
             {/* Submit button */}
             <Button
