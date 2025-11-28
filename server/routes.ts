@@ -1052,20 +1052,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { responses, paymentProofUrl, paymentTransactionId } = req.body;
 
-      // Get the registration config to find the team name step
-      const config = await storage.getRegistrationConfigByTournament(tournamentId);
-      
-      // Find the first step (it will have the team name)
+      // Team name comes from the first response in the form
       let teamName: string | null = null;
       
-      if (config && config.steps && config.steps.length > 0) {
-        const firstStepId = config.steps[0].id;
-        if (responses && responses[firstStepId]) {
-          teamName = String(responses[firstStepId]).trim();
+      if (responses && typeof responses === 'object') {
+        // Get the first value from responses (which is the team name from first step)
+        const responseValues = Object.values(responses) as (string | undefined)[];
+        if (responseValues.length > 0 && responseValues[0]) {
+          teamName = String(responseValues[0]).trim();
         }
       }
 
       if (!teamName) {
+        console.error("[REGISTRATION] Team name extraction failed. Responses:", responses);
         return res.status(400).json({ error: "Team name is required" });
       }
 
