@@ -247,6 +247,8 @@ export const channelMessages = pgTable("channel_messages", {
 
 export const messageThreads = pgTable("message_threads", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  matchId: varchar("match_id"),
   participantName: text("participant_name").notNull(),
   participantAvatar: text("participant_avatar"),
   lastMessage: text("last_message").notNull(),

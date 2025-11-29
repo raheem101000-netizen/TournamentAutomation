@@ -558,6 +558,10 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(messageThreads).orderBy(messageThreads.lastMessageTime);
   }
 
+  async getMessageThreadsByUser(userId: string): Promise<MessageThread[]> {
+    return await db.select().from(messageThreads).where(eq(messageThreads.userId, userId)).orderBy(messageThreads.lastMessageTime);
+  }
+
   async createMessageThread(data: InsertMessageThread): Promise<MessageThread> {
     const [thread] = await db.insert(messageThreads).values(data).returning();
     return thread;

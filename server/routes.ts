@@ -901,14 +901,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "pending",
       });
 
-      // Create message thread notification for the match
+      // Get all participants from both teams
+      const registrations = await storage.getRegistrationsByTournament(tournament.id);
+      const team1Participants = registrations.filter(r => r.teamName === team1.name);
+      const team2Participants = registrations.filter(r => r.teamName === team2.name);
+      const allParticipants = [...team1Participants, ...team2Participants];
+
+      // Create message thread notification for each participant
       const matchMessage = `Match: ${team1.name} vs ${team2.name}`;
-      await storage.createMessageThread({
-        participantName: matchMessage,
-        lastMessage: `New match created in ${tournament.name}. Chat with your opponent here!`,
-        lastMessageTime: new Date(),
-        unreadCount: 1,
-      });
+      const threadMessage = `New match created in ${tournament.name}. Chat with your opponent here!`;
+      
+      for (const participant of allParticipants) {
+        await storage.createMessageThread({
+          userId: participant.userId,
+          matchId: newMatch.id,
+          participantName: matchMessage,
+          lastMessage: threadMessage,
+          lastMessageTime: new Date(),
+          unreadCount: 1,
+        });
+      }
 
       res.status(201).json(newMatch);
     } catch (error: any) {
@@ -2150,7 +2162,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Message threads routes (Direct messages / Group chats)
   app.get("/api/message-threads", async (req, res) => {
     try {
-      const threads = await storage.getAllMessageThreads();
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const threads = await storage.getMessageThreadsByUser(req.session.userId);
       res.json(threads);
     } catch (error: any) {
       console.error("Error fetching message threads:", error);
@@ -2165,6 +2180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const validatedData = insertMessageThreadSchema.parse({
+        userId: req.session.userId,
         participantName: req.body.participantName,
         participantAvatar: req.body.participantAvatar || null,
         lastMessage: req.body.lastMessage || "",
