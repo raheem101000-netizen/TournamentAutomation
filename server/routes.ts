@@ -930,20 +930,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         console.log("[MATCH-CREATION] New match created:", matchToReturn.id);
-        console.log("[MATCH-CREATION] Creating message thread with matchId:", matchToReturn.id);
-
-        // Create message thread for the new match
-        const threadData = {
-          matchId: matchToReturn.id,
-          participantName: matchMessage,
-          lastMessage: threadMessage,
-          lastMessageTime: new Date(),
-          unreadCount: 1,
-        };
-        console.log("[MATCH-CREATION] Thread data to create:", threadData);
         
-        const createdThread = await storage.createMessageThread(threadData);
-        console.log("[MATCH-CREATION] Message thread created:", createdThread.id, "matchId field:", createdThread.matchId);
+        // Get all team members from both teams
+        const team1Members = await storage.getTeamMembersByTeamId(team1Id);
+        const team2Members = await storage.getTeamMembersByTeamId(team2Id);
+        const allParticipants = [...team1Members, ...team2Members];
+        
+        console.log("[MATCH-CREATION] Team1 has", team1Members.length, "members, Team2 has", team2Members.length, "members");
+        
+        // Create message thread for EACH participant so they all see it in their inbox
+        for (const participant of allParticipants) {
+          const threadData = {
+            userId: participant.userId,
+            matchId: matchToReturn.id,
+            participantName: matchMessage,
+            lastMessage: threadMessage,
+            lastMessageTime: new Date(),
+            unreadCount: 1,
+          };
+          
+          try {
+            await storage.createMessageThread(threadData);
+            console.log("[MATCH-CREATION] Thread created for userId:", participant.userId, "matchId:", matchToReturn.id);
+          } catch (error) {
+            console.error("[MATCH-CREATION] Failed to create thread for userId:", participant.userId, error);
+          }
+        }
       }
 
       res.status(201).json(matchToReturn);
