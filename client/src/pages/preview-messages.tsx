@@ -442,8 +442,10 @@ export default function PreviewMessages() {
                       </Avatar>
                     )}
                     <div className={`max-w-[75%] ${isOwn ? 'order-2' : 'order-1'}`}>
-                      {!isOwn && (
+                      {!isOwn ? (
                         <p className="text-xs font-semibold mb-1 px-3" data-testid={`text-sender-${msg.userId}`}>{msg.displayName || msg.username}</p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground mb-1 px-3">You</p>
                       )}
                       <Card className={`p-3 ${isOwn ? 'bg-primary text-primary-foreground' : ''}`}>
                         {msg.imageUrl && (
@@ -458,6 +460,12 @@ export default function PreviewMessages() {
                       </Card>
                       <p className="text-xs text-muted-foreground mt-1 px-3">{formatTime(msg.createdAt)}</p>
                     </div>
+                    {isOwn && (
+                      <Avatar className="h-8 w-8 flex-shrink-0 mt-1" data-testid={`avatar-sender-${msg.userId}`}>
+                        <AvatarImage src={msg.avatarUrl} />
+                        <AvatarFallback>{(msg.displayName || msg.username || 'U')[0].toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                    )}
                   </div>
                 );
               })
