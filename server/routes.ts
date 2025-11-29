@@ -706,6 +706,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/teams/:id", async (req, res) => {
+    try {
+      const team = await storage.getTeam(req.params.id);
+      if (!team) {
+        return res.status(404).json({ error: "Team not found" });
+      }
+      const updatedTeam = await storage.updateTeam(req.params.id, req.body);
+      res.json(updatedTeam);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   // Match routes
   app.get("/api/tournaments/:tournamentId/matches", async (req, res) => {
     try {
