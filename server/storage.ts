@@ -565,6 +565,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getMessageThreadsForParticipant(userId: string): Promise<MessageThread[]> {
+    console.log("[MSG-THREADS] Starting getMessageThreadsForParticipant for user:", userId);
+    
     // Get all tournaments where user has approved registrations  
     const userTournaments = await db
       .select({ tournamentId: registrations.tournamentId })
@@ -576,19 +578,25 @@ export class DatabaseStorage implements IStorage {
         )
       );
 
+    console.log("[MSG-THREADS] User tournaments found:", userTournaments.length, userTournaments);
+
     // Get direct message threads for this user (always include these)
     const directThreads = await db
       .select()
       .from(messageThreads)
       .where(eq(messageThreads.userId, userId));
 
+    console.log("[MSG-THREADS] Direct threads found:", directThreads.length);
+
     if (userTournaments.length === 0) {
+      console.log("[MSG-THREADS] No tournaments, returning direct threads only");
       return directThreads.sort(
         (a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime()
       );
     }
 
     const tournamentIds = userTournaments.map(t => t.tournamentId);
+    console.log("[MSG-THREADS] Tournament IDs:", tournamentIds);
 
     // Get all teams in those tournaments - simplified with or logic
     let teamIds: string[] = [];
@@ -597,47 +605,60 @@ export class DatabaseStorage implements IStorage {
         .select({ id: teams.id })
         .from(teams)
         .where(eq(teams.tournamentId, tournamentId));
+      console.log("[MSG-THREADS] Teams in tournament", tournamentId, ":", tournamentTeams.length);
       teamIds.push(...tournamentTeams.map(t => t.id));
     }
 
+    console.log("[MSG-THREADS] Total team IDs:", teamIds);
+
     if (teamIds.length === 0) {
+      console.log("[MSG-THREADS] No teams found, returning direct threads only");
       return directThreads.sort(
         (a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime()
       );
     }
 
-    // Get all message threads for matches involving user's teams using raw query
-    const matchThreadsResult = await db.all(
-      sql`SELECT DISTINCT mt.* FROM ${messageThreads} mt 
-          JOIN ${matches} m ON mt.${messageThreads.matchId} = m.id 
-          WHERE (m.${matches.team1Id} = ANY($1::text[]) OR m.${matches.team2Id} = ANY($1::text[]))`,
-      [teamIds]
-    );
+    // Get all message threads for matches involving user's teams using Drizzle ORM
+    console.log("[MSG-THREADS] Querying for match threads with teamIds:", teamIds);
+    
+    try {
+      const matchThreadsResult = await db
+        .selectDistinct()
+        .from(messageThreads)
+        .innerJoin(matches, eq(messageThreads.matchId, matches.id))
+        .where(
+          sql`(${matches.team1Id} IN (${sql.raw(teamIds.map(() => '?').join(','))}) OR ${matches.team2Id} IN (${sql.raw(teamIds.map(() => '?').join(','))}))`
+        );
 
-    const matchThreads = (matchThreadsResult as any[]).map(row => ({
-      id: row.id,
-      userId: row.user_id,
-      matchId: row.match_id,
-      participantName: row.participant_name,
-      participantAvatar: row.participant_avatar,
-      lastMessage: row.last_message,
-      lastMessageTime: row.last_message_time,
-      unreadCount: row.unread_count,
-    }));
+      console.log("[MSG-THREADS] Match threads raw result:", matchThreadsResult.length);
+      
+      const matchThreads = (matchThreadsResult as any[]).map(row => row.message_threads as MessageThread);
+      console.log("[MSG-THREADS] Mapped match threads:", matchThreads.length);
 
-    // Combine and deduplicate threads
-    const allThreads = [...directThreads, ...matchThreads];
-    const uniqueThreadsMap = new Map();
-    allThreads.forEach(thread => {
-      if (!uniqueThreadsMap.has(thread.id)) {
-        uniqueThreadsMap.set(thread.id, thread);
-      }
-    });
+      // Combine and deduplicate threads
+      const allThreads = [...directThreads, ...matchThreads];
+      console.log("[MSG-THREADS] Combined threads before dedup:", allThreads.length);
+      
+      const uniqueThreadsMap = new Map();
+      allThreads.forEach(thread => {
+        if (!uniqueThreadsMap.has(thread.id)) {
+          uniqueThreadsMap.set(thread.id, thread);
+        }
+      });
 
-    // Sort by lastMessageTime desc
-    return Array.from(uniqueThreadsMap.values()).sort(
-      (a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime()
-    ) as MessageThread[];
+      const finalThreads = Array.from(uniqueThreadsMap.values()).sort(
+        (a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime()
+      ) as MessageThread[];
+      
+      console.log("[MSG-THREADS] Final threads to return:", finalThreads.length);
+      return finalThreads;
+    } catch (error) {
+      console.error("[MSG-THREADS] Error fetching match threads:", error);
+      console.log("[MSG-THREADS] Falling back to direct threads only");
+      return directThreads.sort(
+        (a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime()
+      );
+    }
   }
 
   async createMessageThread(data: InsertMessageThread): Promise<MessageThread> {
