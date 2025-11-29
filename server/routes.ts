@@ -1002,19 +1002,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/matches/:matchId/messages", async (req, res) => {
     try {
       const messages = await storage.getChatMessagesByMatch(req.params.matchId);
-      // Enrich messages with sender displayName from users table
+      // Enrich messages with sender displayName and avatarUrl from users table
       const enrichedMessages = await Promise.all(
         messages.map(async (msg) => {
           if (msg.userId) {
             const sender = await storage.getUser(msg.userId);
+            const displayName = sender?.displayName?.trim() || sender?.username || "Unknown";
             return {
               ...msg,
-              senderDisplayName: sender?.displayName || sender?.username || "Unknown",
+              displayName: displayName,
+              avatarUrl: sender?.avatarUrl || undefined,
             };
           }
           return msg;
         })
       );
+      console.log("[MATCH-MSG-ENRICHMENT] Enriched messages:", JSON.stringify(enrichedMessages.slice(0, 2), null, 2));
       res.json(enrichedMessages);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
