@@ -163,6 +163,11 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
     enabled: !!selectedTournamentId,
   });
 
+  const { data: registrations = [] } = useQuery<any[]>({
+    queryKey: [`/api/tournaments/${selectedTournamentId}/registrations`],
+    enabled: !!selectedTournamentId,
+  });
+
   const updateRegistrationConfigMutation = useMutation({
     mutationFn: async (config: RegistrationFormConfig) => {
       console.log('[MUTATION] Starting save for tournament:', selectedTournamentId);
@@ -385,6 +390,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
             <TabsTrigger value="bracket" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Bracket</TabsTrigger>
             <TabsTrigger value="standings" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Standings</TabsTrigger>
             <TabsTrigger value="matches" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Matches</TabsTrigger>
+            <TabsTrigger value="registrations" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Registrations</TabsTrigger>
             <TabsTrigger value="participants" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Participants</TabsTrigger>
             <TabsTrigger value="teams" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Teams</TabsTrigger>
           </TabsList>
@@ -553,6 +559,63 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
               <Card className="p-8">
                 <p className="text-center text-muted-foreground">
                   No matches scheduled yet
+                </p>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="registrations">
+            {registrations.length > 0 ? (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  {registrations.length} registration{registrations.length !== 1 ? 's' : ''}
+                </p>
+                <div className="space-y-2">
+                  {registrations.map((reg) => (
+                    <Card key={reg.id}>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                        <div className="flex items-center gap-3 flex-1">
+                          {reg.userAvatar && (
+                            <img 
+                              src={reg.userAvatar} 
+                              alt={reg.userUsername}
+                              className="w-10 h-10 rounded-full object-cover"
+                              data-testid={`img-avatar-${reg.userId}`}
+                            />
+                          )}
+                          <div className="flex-1">
+                            <Button 
+                              variant="link" 
+                              className="p-0 h-auto text-base font-semibold"
+                              onClick={() => {
+                                // Navigate to user profile
+                                window.location.href = `/profile/${reg.userId}`;
+                              }}
+                              data-testid={`button-view-profile-${reg.userId}`}
+                            >
+                              @{reg.userUsername}
+                            </Button>
+                            <p className="text-sm text-muted-foreground">
+                              Team: {reg.teamName}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge variant={
+                          reg.status === 'approved' ? 'default' : 
+                          reg.status === 'submitted' ? 'secondary' : 
+                          'outline'
+                        }>
+                          {reg.status.charAt(0).toUpperCase() + reg.status.slice(1)}
+                        </Badge>
+                      </CardHeader>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <Card className="p-8">
+                <p className="text-center text-muted-foreground">
+                  No registrations yet
                 </p>
               </Card>
             )}
