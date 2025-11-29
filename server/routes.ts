@@ -891,35 +891,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const allMatches = await storage.getMatchesByTournament(tournament.id);
-      const maxRound = Math.max(...allMatches.map(m => m.round || 1), 0);
       
-      const newMatch = await storage.createMatch({
-        tournamentId: tournament.id,
-        team1Id,
-        team2Id,
-        round: maxRound + 1,
-        status: "pending",
-      });
+      // Check if a match already exists between these two teams
+      const existingMatch = allMatches.find(m => 
+        (m.team1Id === team1Id && m.team2Id === team2Id) || 
+        (m.team1Id === team2Id && m.team2Id === team1Id)
+      );
 
-      // Update or create message thread notification for the match
+      let matchToReturn;
       const matchMessage = `Match: ${team1.name} vs ${team2.name}`;
-      const threadMessage = `New match created in ${tournament.name}. Chat with your opponent here!`;
-      
-      // Check if message thread already exists for this match
-      const allThreads = await storage.getAllMessageThreads();
-      const existingThread = allThreads.find(t => t.matchId === newMatch.id);
-      
-      if (existingThread) {
-        // Update existing thread
-        await storage.updateMessageThread(existingThread.id, {
-          lastMessage: threadMessage,
-          lastMessageTime: new Date(),
-          unreadCount: (existingThread.unreadCount || 0) + 1,
-        });
+      const threadMessage = `Match updated in ${tournament.name}. Chat with your opponent here!`;
+
+      if (existingMatch) {
+        // Update existing match and its message thread
+        matchToReturn = existingMatch;
+        
+        // Find and update the message thread for this match
+        const allThreads = await storage.getAllMessageThreads();
+        const matchThread = allThreads.find(t => t.matchId === existingMatch.id);
+        
+        if (matchThread) {
+          await storage.updateMessageThread(matchThread.id, {
+            lastMessage: threadMessage,
+            lastMessageTime: new Date(),
+            unreadCount: (matchThread.unreadCount || 0) + 1,
+          });
+        }
       } else {
-        // Create new thread for the match
+        // Create new match and message thread
+        const maxRound = Math.max(...allMatches.map(m => m.round || 1), 0);
+        
+        matchToReturn = await storage.createMatch({
+          tournamentId: tournament.id,
+          team1Id,
+          team2Id,
+          round: maxRound + 1,
+          status: "pending",
+        });
+
+        // Create message thread for the new match
         await storage.createMessageThread({
-          matchId: newMatch.id,
+          matchId: matchToReturn.id,
           participantName: matchMessage,
           lastMessage: threadMessage,
           lastMessageTime: new Date(),
@@ -927,7 +939,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      res.status(201).json(newMatch);
+      res.status(201).json(matchToReturn);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
