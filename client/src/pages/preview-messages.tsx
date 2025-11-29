@@ -446,7 +446,8 @@ export default function PreviewMessages() {
 
                         // Get proper initials (e.g., "Eli" -> "EL", "Raheem" -> "RA", "John Doe" -> "JD")
                         const getInitials = () => {
-                          const name = msg.displayName?.trim() || msg.username?.trim() || '';
+                          // Use enriched displayName first, fallback to username, then message username
+                          const name = (msg as any).displayName?.trim() || msg.username?.trim() || '';
                           if (!name) return 'U';
                           const parts = name.split(' ').filter((p: string) => p);
                           if (parts.length > 1) {
@@ -456,7 +457,7 @@ export default function PreviewMessages() {
                         };
 
                         // Get sender name to display
-                        const senderName = msg.displayName?.trim() || msg.username?.trim() || 'Unknown User';
+                        const senderName = (msg as any).displayName?.trim() || msg.username?.trim() || 'Unknown User';
                         const senderUsername = msg.username?.trim() || '';
 
                         if (isSystem) {

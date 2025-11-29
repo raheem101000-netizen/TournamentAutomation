@@ -2316,15 +2316,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         messages.map(async (msg) => {
           if (msg.userId) {
             const sender = await storage.getUser(msg.userId);
+            const displayName = sender?.displayName?.trim() || sender?.username || msg.username;
             return {
               ...msg,
               avatarUrl: sender?.avatarUrl || undefined,
-              displayName: (sender?.displayName?.trim()) || sender?.username || msg.username,
+              displayName: displayName,
+              username: msg.username,
             };
           }
           return msg;
         })
       );
+      console.log("[THREAD-MSG-ENRICHMENT] Enriched messages:", JSON.stringify(enrichedMessages.slice(0, 2), null, 2));
       res.json(enrichedMessages);
     } catch (error: any) {
       console.error("Error fetching thread messages:", error);
