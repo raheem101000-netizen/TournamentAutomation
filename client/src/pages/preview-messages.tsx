@@ -418,18 +418,17 @@ export default function PreviewMessages() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto">
-          <div className="container max-w-lg mx-auto px-4 py-4">
-            <Card className="flex flex-col">
-              <CardHeader className="pb-4">
-                <CardTitle className="font-display flex items-center gap-2">
-                  Match Chat
-                  <Badge variant="outline" className="font-normal">
-                    {threadMessages.length} messages
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4 p-0 px-6 pb-6 max-h-96">
+        <main className="flex-1 flex flex-col overflow-hidden">
+          <Card className="h-full flex flex-col">
+            <CardHeader className="pb-4">
+              <CardTitle className="font-display flex items-center gap-2">
+                Match Chat
+                <Badge variant="outline" className="font-normal">
+                  {threadMessages.length} messages
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col gap-4 p-0 px-6 pb-6">
                 <ScrollArea className="flex-1 pr-4">
                   <div className="space-y-4">
                     {messagesLoading ? (
@@ -557,9 +556,8 @@ export default function PreviewMessages() {
                     </Button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+            </CardContent>
+          </Card>
         </main>
       </div>
     );
