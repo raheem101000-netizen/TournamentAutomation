@@ -934,30 +934,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         console.log("[MATCH-CREATION] New match created:", matchToReturn.id);
         
-        // Get all team members from both teams
-        const team1Members = await storage.getMembersByTeam(team1Id);
-        const team2Members = await storage.getMembersByTeam(team2Id);
-        const allParticipants = [...team1Members, ...team2Members];
+        // Create ONE shared message thread per match (not per participant)
+        const sharedThreadData = {
+          userId: undefined, // No userId - this is a shared thread
+          matchId: matchToReturn.id,
+          participantName: matchMessage,
+          lastMessage: threadMessage,
+          lastMessageTime: new Date(),
+          unreadCount: 0,
+        };
         
-        console.log("[MATCH-CREATION] Team1 has", team1Members.length, "members, Team2 has", team2Members.length, "members");
-        
-        // Create message thread for EACH participant so they all see it in their inbox
-        for (const participant of allParticipants) {
-          const threadData = {
-            userId: participant.userId,
-            matchId: matchToReturn.id,
-            participantName: matchMessage,
-            lastMessage: threadMessage,
-            lastMessageTime: new Date(),
-            unreadCount: 1,
-          };
-          
-          try {
-            await storage.createMessageThread(threadData);
-            console.log("[MATCH-CREATION] Thread created for userId:", participant.userId, "matchId:", matchToReturn.id);
-          } catch (error) {
-            console.error("[MATCH-CREATION] Failed to create thread for userId:", participant.userId, error);
-          }
+        try {
+          await storage.createMessageThread(sharedThreadData);
+          console.log("[MATCH-CREATION] Shared thread created for matchId:", matchToReturn.id);
+        } catch (error) {
+          console.error("[MATCH-CREATION] Failed to create shared thread for matchId:", matchToReturn.id, error);
         }
       }
 
