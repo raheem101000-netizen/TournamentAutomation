@@ -932,8 +932,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("[MATCH-CREATION] New match created:", matchToReturn.id);
         
         // Get all team members from both teams
-        const team1Members = await storage.getTeamMembersByTeamId(team1Id);
-        const team2Members = await storage.getTeamMembersByTeamId(team2Id);
+        const team1Members = await storage.getMembersByTeam(team1Id);
+        const team2Members = await storage.getMembersByTeam(team2Id);
         const allParticipants = [...team1Members, ...team2Members];
         
         console.log("[MATCH-CREATION] Team1 has", team1Members.length, "members, Team2 has", team2Members.length, "members");
