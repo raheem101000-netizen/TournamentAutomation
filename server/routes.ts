@@ -1201,9 +1201,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (registrationStatus === "approved") {
-        await storage.createTeam({
+        const team = await storage.createTeam({
           name: teamName,
           tournamentId: tournament.id,
+        });
+        // Add registering user as team member
+        await storage.createTeamMember({
+          teamId: team.id,
+          userId: req.session.userId,
         });
       }
 
@@ -1244,9 +1249,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (req.body.paymentStatus === "verified" && registration.status === "submitted") {
-        await storage.createTeam({
+        const team = await storage.createTeam({
           name: registration.teamName,
           tournamentId: registration.tournamentId,
+        });
+        // Add registering user as team member
+        await storage.createTeamMember({
+          teamId: team.id,
+          userId: registration.userId,
         });
 
         await storage.updateRegistration(registration.id, { status: "approved" });
