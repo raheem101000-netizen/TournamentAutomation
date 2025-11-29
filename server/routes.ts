@@ -132,7 +132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   httpServer.on('upgrade', async (request, socket, head) => {
     const pathname = new URL(request.url || "", `http://${request.headers.host}`).pathname;
     
-    if (pathname === '/ws/chat' || pathname === '/ws/channel') {
+    if (pathname === '/ws/chat' || pathname === '/ws/channel' || pathname === '/ws/match') {
       // Verify authentication before upgrading
       const userInfo = await getSessionUserId(request);
       
