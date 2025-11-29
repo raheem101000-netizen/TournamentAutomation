@@ -448,7 +448,7 @@ export default function PreviewMessages() {
                         const getInitials = () => {
                           const name = msg.displayName?.trim() || msg.username?.trim() || '';
                           if (!name) return 'U';
-                          const parts = name.split(' ').filter(p => p);
+                          const parts = name.split(' ').filter((p: string) => p);
                           if (parts.length > 1) {
                             return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
                           }
