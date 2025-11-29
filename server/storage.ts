@@ -662,7 +662,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createMessageThread(data: InsertMessageThread): Promise<MessageThread> {
+    console.log("[STORAGE] Creating message thread with data:", data);
     const [thread] = await db.insert(messageThreads).values(data).returning();
+    console.log("[STORAGE] Message thread created, returned data:", {
+      id: thread.id,
+      matchId: thread.matchId,
+      userId: thread.userId,
+      participantName: thread.participantName,
+    });
     return thread;
   }
 

@@ -929,14 +929,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status: "pending",
         });
 
+        console.log("[MATCH-CREATION] New match created:", matchToReturn.id);
+        console.log("[MATCH-CREATION] Creating message thread with matchId:", matchToReturn.id);
+
         // Create message thread for the new match
-        await storage.createMessageThread({
+        const threadData = {
           matchId: matchToReturn.id,
           participantName: matchMessage,
           lastMessage: threadMessage,
           lastMessageTime: new Date(),
           unreadCount: 1,
-        });
+        };
+        console.log("[MATCH-CREATION] Thread data to create:", threadData);
+        
+        const createdThread = await storage.createMessageThread(threadData);
+        console.log("[MATCH-CREATION] Message thread created:", createdThread.id, "matchId field:", createdThread.matchId);
       }
 
       res.status(201).json(matchToReturn);
