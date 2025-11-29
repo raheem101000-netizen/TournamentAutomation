@@ -46,6 +46,7 @@ interface ThreadMessage {
   username: string;
   message: string;
   createdAt: string;
+  imageUrl?: string;
 }
 
 interface User {
@@ -437,6 +438,14 @@ export default function PreviewMessages() {
                         <p className="text-xs text-muted-foreground mb-1 px-3">{msg.username}</p>
                       )}
                       <Card className={`p-3 ${isOwn ? 'bg-primary text-primary-foreground' : ''}`}>
+                        {msg.imageUrl && (
+                          <img 
+                            src={msg.imageUrl} 
+                            alt="Message image"
+                            className="max-w-full rounded-md mb-2"
+                            data-testid={`img-message-${msg.id}`}
+                          />
+                        )}
                         <p className="text-sm">{msg.message}</p>
                       </Card>
                       <p className="text-xs text-muted-foreground mt-1 px-3">{formatTime(msg.createdAt)}</p>
