@@ -419,7 +419,7 @@ export default function PreviewMessages() {
         </header>
 
         <main className="flex-1 flex flex-col overflow-hidden">
-          <Card className="h-full flex flex-col">
+          <Card className="flex flex-col min-h-0">
             <CardHeader className="pb-4">
               <CardTitle className="font-display flex items-center gap-2">
                 Match Chat
@@ -428,7 +428,7 @@ export default function PreviewMessages() {
                 </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 flex flex-col gap-4 p-0 px-6 pb-6">
+            <CardContent className="flex-1 flex flex-col gap-4 p-0 px-6 pb-6 min-h-0">
                 <ScrollArea className="flex-1 pr-4">
                   <div className="space-y-4">
                     {messagesLoading ? (
@@ -463,12 +463,12 @@ export default function PreviewMessages() {
                           >
                             <Avatar className="h-8 w-8">
                               <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                                {msg.displayName ? msg.displayName[0].toUpperCase() : msg.username ? msg.username[0].toUpperCase() : "U"}
+                                {msg.displayName?.[0]?.toUpperCase() || msg.username?.[0]?.toUpperCase() || "U"}
                               </AvatarFallback>
                             </Avatar>
                             <div className={`flex flex-col gap-1 max-w-[70%] ${isOwn ? 'items-end' : ''}`}>
                               <span className="text-xs text-muted-foreground">
-                                {msg.displayName || msg.username || "Unknown"}
+                                {msg.displayName?.trim() || msg.username?.trim() || "Unknown User"}
                               </span>
                               <div 
                                 className={`rounded-md overflow-hidden ${
