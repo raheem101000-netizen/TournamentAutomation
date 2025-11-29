@@ -495,7 +495,7 @@ export default function PreviewMessages() {
                                 />
                               )}
                               {msg.message && (
-                                <p className={`text-sm ${isOwn ? 'text-primary-foreground' : 'text-foreground'}`}>{msg.message}</p>
+                                <p className="text-sm text-foreground">{msg.message}</p>
                               )}
                             </div>
                           </div>
