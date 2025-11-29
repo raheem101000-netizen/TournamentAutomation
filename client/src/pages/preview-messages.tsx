@@ -4,7 +4,7 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -419,8 +419,19 @@ export default function PreviewMessages() {
         </header>
 
         <main className="flex-1 flex flex-col overflow-hidden">
-          <ScrollArea className="flex-1">
-            <div className="container max-w-lg mx-auto px-4 py-4 space-y-4">
+          <div className="flex-1 flex flex-col">
+            <Card className="h-full flex flex-col">
+              <CardHeader className="pb-4">
+                <CardTitle className="font-display flex items-center gap-2">
+                  Match Chat
+                  <Badge variant="outline" className="font-normal">
+                    {threadMessages.length} messages
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col gap-4 p-0 px-6 pb-6">
+                <ScrollArea className="flex-1 pr-4">
+                  <div className="space-y-4">
               {messagesLoading ? (
                 <div className="flex justify-center py-8">
                   <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -485,66 +496,71 @@ export default function PreviewMessages() {
                   );
                 })
               )}
-            </div>
-          </ScrollArea>
-        </main>
+                  </div>
+                </ScrollArea>
 
-        <div className="sticky bottom-0 border-t bg-background">
-          <div className="container max-w-lg mx-auto px-4 py-3">
-            <div className="flex items-center gap-2">
-              <Button 
-                size="icon" 
-                variant="ghost" 
-                onClick={handleFileUpload}
-                data-testid="button-attach-file"
-              >
-                <Paperclip className="w-5 h-5" />
-              </Button>
-              <Button 
-                size="icon" 
-                variant="ghost"
-                onClick={handleImageUpload}
-                data-testid="button-attach-image"
-              >
-                <ImageIcon className="w-5 h-5" />
-              </Button>
-              <Input
-                placeholder="Type a message..."
-                value={messageInput}
-                onChange={(e) => setMessageInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                className="flex-1"
-                data-testid="input-message"
-              />
-              <Button size="icon" variant="ghost" data-testid="button-emoji">
-                <Smile className="w-5 h-5" />
-              </Button>
-              <Button
-                size="icon"
-                onClick={handleSendMessage}
-                disabled={!messageInput.trim()}
-                data-testid="button-send-message"
-              >
-                <Send className="w-5 h-5" />
-              </Button>
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              className="hidden"
-              onChange={handleFileSelected}
-              data-testid="input-file-upload"
-            />
-            <input
-              ref={imageInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageSelected}
-              data-testid="input-image-upload"
-            />
+                <div className="space-y-2">
+                  {imageInputRef.current?.files?.[0] && (
+                    <div className="relative inline-block">
+                      <img 
+                        src={URL.createObjectURL(imageInputRef.current.files[0])} 
+                        alt="Preview" 
+                        className="max-h-32 rounded-md border"
+                      />
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                        onClick={() => {
+                          if (imageInputRef.current) {
+                            imageInputRef.current.value = '';
+                          }
+                        }}
+                        data-testid="button-remove-image"
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      ref={imageInputRef}
+                      onChange={handleImageSelected}
+                      data-testid="input-file-upload"
+                    />
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={() => imageInputRef.current?.click()}
+                      data-testid="button-upload-image"
+                    >
+                      <ImageIcon className="w-4 h-4" />
+                    </Button>
+                    <Input
+                      placeholder="Type a message or attach an image..."
+                      value={messageInput}
+                      onChange={(e) => setMessageInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                      className="flex-1"
+                      data-testid="input-message"
+                    />
+                    <Button 
+                      size="icon" 
+                      onClick={handleSendMessage}
+                      disabled={!messageInput.trim()}
+                      data-testid="button-send-message"
+                    >
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </div>
+        </main>
       </div>
     );
   }
