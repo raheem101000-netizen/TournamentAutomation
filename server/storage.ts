@@ -565,7 +565,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getMessageThreadsForParticipant(userId: string): Promise<MessageThread[]> {
-    // Get all tournaments where user has approved registrations
+    // Get all tournaments where user has approved registrations  
     const userTournaments = await db
       .select({ tournamentId: registrations.tournamentId })
       .from(registrations)
@@ -576,71 +576,68 @@ export class DatabaseStorage implements IStorage {
         )
       );
 
+    // Get direct message threads for this user (always include these)
+    const directThreads = await db
+      .select()
+      .from(messageThreads)
+      .where(eq(messageThreads.userId, userId));
+
     if (userTournaments.length === 0) {
-      // No approved registrations, only return direct message threads
-      return await db
-        .select()
-        .from(messageThreads)
-        .where(eq(messageThreads.userId, userId))
-        .orderBy(messageThreads.lastMessageTime);
+      return directThreads.sort(
+        (a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime()
+      );
     }
 
     const tournamentIds = userTournaments.map(t => t.tournamentId);
 
-    // Get all teams in those tournaments
-    const userTeams = await db
-      .select({ id: teams.id })
-      .from(teams)
-      .where(sql`${teams.tournamentId} IN (${sql.raw(tournamentIds.map(() => '?').join(','))})`);
-
-    if (userTeams.length === 0) {
-      // User has registrations but no teams (shouldn't happen normally)
-      return await db
-        .select()
-        .from(messageThreads)
-        .where(eq(messageThreads.userId, userId))
-        .orderBy(messageThreads.lastMessageTime);
+    // Get all teams in those tournaments - simplified with or logic
+    let teamIds: string[] = [];
+    for (const tournamentId of tournamentIds) {
+      const tournamentTeams = await db
+        .select({ id: teams.id })
+        .from(teams)
+        .where(eq(teams.tournamentId, tournamentId));
+      teamIds.push(...tournamentTeams.map(t => t.id));
     }
 
-    const teamIds = userTeams.map(t => t.id);
+    if (teamIds.length === 0) {
+      return directThreads.sort(
+        (a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime()
+      );
+    }
 
-    // Get all matches involving those teams and their message threads
-    const matchThreads = await db
-      .selectDistinct()
-      .from(messageThreads)
-      .innerJoin(matches, eq(messageThreads.matchId, matches.id))
-      .where(
-        sql`${matches.team1Id} IN (${sql.raw(teamIds.map(() => '?').join(','))}) OR ${matches.team2Id} IN (${sql.raw(teamIds.map(() => '?').join(','))})`
-      )
-      .orderBy(messageThreads.lastMessageTime);
+    // Get all message threads for matches involving user's teams using raw query
+    const matchThreadsResult = await db.all(
+      sql`SELECT DISTINCT mt.* FROM ${messageThreads} mt 
+          JOIN ${matches} m ON mt.${messageThreads.matchId} = m.id 
+          WHERE (m.${matches.team1Id} = ANY($1::text[]) OR m.${matches.team2Id} = ANY($1::text[]))`,
+      [teamIds]
+    );
 
-    // Get direct message threads for this user
-    const directThreads = await db
-      .select()
-      .from(messageThreads)
-      .where(eq(messageThreads.userId, userId))
-      .orderBy(messageThreads.lastMessageTime);
+    const matchThreads = (matchThreadsResult as any[]).map(row => ({
+      id: row.id,
+      userId: row.user_id,
+      matchId: row.match_id,
+      participantName: row.participant_name,
+      participantAvatar: row.participant_avatar,
+      lastMessage: row.last_message,
+      lastMessageTime: row.last_message_time,
+      unreadCount: row.unread_count,
+    }));
 
     // Combine and deduplicate threads
-    const combinedThreads = [
-      ...matchThreads.map(mt => mt.message_threads),
-      ...directThreads,
-    ];
-
-    // Remove duplicates by ID
+    const allThreads = [...directThreads, ...matchThreads];
     const uniqueThreadsMap = new Map();
-    combinedThreads.forEach(thread => {
+    allThreads.forEach(thread => {
       if (!uniqueThreadsMap.has(thread.id)) {
         uniqueThreadsMap.set(thread.id, thread);
       }
     });
 
     // Sort by lastMessageTime desc
-    const sortedThreads = Array.from(uniqueThreadsMap.values()).sort(
+    return Array.from(uniqueThreadsMap.values()).sort(
       (a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime()
-    );
-
-    return sortedThreads as MessageThread[];
+    ) as MessageThread[];
   }
 
   async createMessageThread(data: InsertMessageThread): Promise<MessageThread> {
