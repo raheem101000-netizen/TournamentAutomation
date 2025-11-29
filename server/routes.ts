@@ -219,6 +219,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Validate using schema and ensure matchId from URL is used
           const validatedData = insertChatMessageSchema.parse({
             matchId: matchId, // Use matchId from connection URL for security
+            userId: userInfo.userId, // Include authenticated user ID
             teamId: messageData.teamId || null, // Optional field
             message: messageData.message,
             imageUrl: messageData.imageUrl || null, // Optional field
