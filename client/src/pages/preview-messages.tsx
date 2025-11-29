@@ -26,6 +26,7 @@ interface Chat {
   timestamp: string;
   unread: number;
   members: number;
+  matchId?: string; // If present, this is a match chat using chatMessages API
 }
 
 interface MessageThread {
@@ -35,6 +36,7 @@ interface MessageThread {
   lastMessage: string;
   lastMessageTime: string;
   unreadCount: number;
+  matchId?: string; // If present, this is a match chat
 }
 
 interface ThreadMessage {
@@ -111,6 +113,7 @@ function threadToChat(thread: MessageThread): Chat {
     timestamp: formatTime(thread.lastMessageTime),
     unread: thread.unreadCount,
     members: 0,
+    matchId: thread.matchId, // Pass through matchId if present
   };
 }
 
@@ -154,10 +157,24 @@ export default function PreviewMessages() {
     queryKey: ["/api/message-threads"],
   });
 
-  // Fetch messages for selected thread
-  const { data: threadMessages = [], isLoading: messagesLoading } = useQuery<ThreadMessage[]>({
-    queryKey: ["/api/message-threads", selectedChat?.id, "messages"],
+  // Fetch messages for selected thread or match
+  // If selectedChat has a matchId, fetch from match API, otherwise from thread API
+  const { data: threadMessages = [], isLoading: messagesLoading } = useQuery<any[]>({
+    queryKey: selectedChat?.matchId 
+      ? ["/api/matches", selectedChat.matchId, "messages"]
+      : ["/api/message-threads", selectedChat?.id, "messages"],
     enabled: !!selectedChat,
+    queryFn: async () => {
+      if (!selectedChat) return [];
+      
+      const url = selectedChat.matchId
+        ? `/api/matches/${selectedChat.matchId}/messages`
+        : `/api/message-threads/${selectedChat.id}/messages`;
+      
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to fetch messages");
+      return response.json();
+    },
   });
 
   const acceptedChats = threads.map(threadToChat);
@@ -171,10 +188,24 @@ export default function PreviewMessages() {
     mutationFn: async (message: string) => {
       if (!selectedChat) throw new Error("No chat selected");
       
-      const response = await fetch(`/api/message-threads/${selectedChat.id}/messages`, {
+      // Use correct API endpoint based on chat type
+      const url = selectedChat.matchId
+        ? `/api/matches/${selectedChat.matchId}/messages`
+        : `/api/message-threads/${selectedChat.id}/messages`;
+      
+      // For match chat, include userId and username
+      const body = selectedChat.matchId
+        ? { 
+            userId: currentUser?.id,
+            username: currentUser?.username,
+            message 
+          }
+        : { message };
+      
+      const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify(body),
       });
       
       if (!response.ok) {
@@ -188,10 +219,16 @@ export default function PreviewMessages() {
       toast({
         title: "Message sent!",
       });
-      // Refetch messages after sending
-      queryClient.invalidateQueries({ 
-        queryKey: ["/api/message-threads", selectedChat?.id, "messages"] 
-      });
+      // Refetch messages after sending - use correct queryKey based on chat type
+      if (selectedChat?.matchId) {
+        queryClient.invalidateQueries({ 
+          queryKey: ["/api/matches", selectedChat.matchId, "messages"] 
+        });
+      } else {
+        queryClient.invalidateQueries({ 
+          queryKey: ["/api/message-threads", selectedChat?.id, "messages"] 
+        });
+      }
     },
     onError: () => {
       toast({
