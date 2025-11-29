@@ -418,9 +418,9 @@ export default function PreviewMessages() {
           </div>
         </header>
 
-        <main className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-1 flex flex-col">
-            <Card className="h-full flex flex-col">
+        <main className="flex-1 overflow-y-auto">
+          <div className="container max-w-lg mx-auto px-4 py-4">
+            <Card className="flex flex-col">
               <CardHeader className="pb-4">
                 <CardTitle className="font-display flex items-center gap-2">
                   Match Chat
@@ -429,7 +429,7 @@ export default function PreviewMessages() {
                   </Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col gap-4 p-0 px-6 pb-6">
+              <CardContent className="flex flex-col gap-4 p-0 px-6 pb-6 max-h-96">
                 <ScrollArea className="flex-1 pr-4">
                   <div className="space-y-4">
                     {messagesLoading ? (
