@@ -214,6 +214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Handle incoming messages
       ws.on("message", async (data) => {
         try {
+          console.log(`[WS-MATCH] Received message in match ${matchId} from user ${userInfo.userId}`);
           const messageData = JSON.parse(data.toString());
           
           // Validate using schema and ensure matchId from URL is used
@@ -227,15 +228,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Save message to storage
           const savedMessage = await storage.createChatMessage(validatedData);
+          console.log(`[WS-MATCH] Saved message with userId: ${savedMessage.userId}`);
 
           // Enrich message before broadcasting
           const enrichedMessage = await enrichChatMessage(savedMessage);
+          console.log(`[WS-MATCH] Enriched message displayName: ${enrichedMessage.displayName}`);
 
           // Broadcast to all connections in this match with consistent format
           const broadcastPayload = {
             type: "new_message",
             message: enrichedMessage,
           };
+          console.log(`[WS-MATCH] Broadcasting to ${matchConnections.get(matchId)?.size || 0} connections`);
           broadcastToMatch(matchId, broadcastPayload);
         } catch (error: any) {
           console.error("Error handling WebSocket message:", error);
@@ -280,6 +284,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   const broadcastToMatch = (matchId: string, data: any) => {
+    console.log(`[BROADCAST] Sending to match ${matchId}:`, JSON.stringify(data, null, 2));
     const connections = matchConnections.get(matchId);
     if (connections) {
       const message = JSON.stringify(data);
