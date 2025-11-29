@@ -486,25 +486,17 @@ export default function PreviewMessages() {
                               <span className="text-xs text-muted-foreground">
                                 {senderName}
                               </span>
-                              <div 
-                                className={`rounded-md overflow-hidden ${
-                                  isOwn 
-                                    ? 'bg-primary text-primary-foreground' 
-                                    : 'bg-muted'
-                                }`}
-                              >
-                                {msg.imageUrl && (
-                                  <img 
-                                    src={msg.imageUrl} 
-                                    alt="Shared image" 
-                                    className="max-w-full h-auto max-h-60 object-contain"
-                                    data-testid={`img-message-${msg.id}`}
-                                  />
-                                )}
-                                {msg.message && (
-                                  <p className="text-sm px-3 py-2">{msg.message}</p>
-                                )}
-                              </div>
+                              {msg.imageUrl && (
+                                <img 
+                                  src={msg.imageUrl} 
+                                  alt="Shared image" 
+                                  className="max-w-full h-auto max-h-60 object-contain rounded-md"
+                                  data-testid={`img-message-${msg.id}`}
+                                />
+                              )}
+                              {msg.message && (
+                                <p className={`text-sm ${isOwn ? 'text-primary-foreground' : 'text-foreground'}`}>{msg.message}</p>
+                              )}
                             </div>
                           </div>
                         );
