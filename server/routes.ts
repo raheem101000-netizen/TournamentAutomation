@@ -227,10 +227,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Save message to storage
           const savedMessage = await storage.createChatMessage(validatedData);
 
+          // Enrich message before broadcasting
+          const enrichedMessage = await enrichChatMessage(savedMessage);
+
           // Broadcast to all connections in this match with consistent format
           const broadcastPayload = {
             type: "new_message",
-            message: savedMessage,
+            message: enrichedMessage,
           };
           broadcastToMatch(matchId, broadcastPayload);
         } catch (error: any) {
@@ -248,6 +251,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  const enrichChatMessage = async (msg: any) => {
+    if (msg.userId) {
+      const sender = await storage.getUser(msg.userId);
+      const displayName = sender?.displayName?.trim() || sender?.username || "Unknown";
+      return {
+        ...msg,
+        displayName: displayName,
+        avatarUrl: sender?.avatarUrl || undefined,
+      };
+    }
+    return {
+      ...msg,
+      displayName: "Unknown",
+    };
+  };
 
   const broadcastToMatch = (matchId: string, data: any) => {
     const connections = matchConnections.get(matchId);
@@ -1035,9 +1054,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       const message = await storage.createChatMessage(validatedData);
 
+      // Enrich message before broadcasting
+      const enrichedMessage = await enrichChatMessage(message);
+
       broadcastToMatch(req.params.matchId, {
         type: "new_message",
-        message,
+        message: enrichedMessage,
       });
 
       res.status(201).json(message);
