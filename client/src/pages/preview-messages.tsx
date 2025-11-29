@@ -12,8 +12,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Search, Plus, Users, Send, ArrowLeft, Edit, Check, X, Image as ImageIcon, Paperclip, Smile, Loader2 } from "lucide-react";
+import { Search, Plus, Users, Send, ArrowLeft, Edit, Check, X, Image as ImageIcon, Paperclip, Smile, Loader2, AlertCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 
 interface Chat {
@@ -417,56 +419,75 @@ export default function PreviewMessages() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto container max-w-lg mx-auto px-4 py-4">
-          <div className="space-y-4">
-            {messagesLoading ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : threadMessages.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>No messages yet. Start the conversation!</p>
-              </div>
-            ) : (
-              threadMessages.map((msg) => {
-                const isOwn = msg.userId === currentUser?.id;
-                return (
-                  <div
-                    key={msg.id}
-                    className={`flex gap-2 ${isOwn ? 'justify-end' : 'justify-start'}`}
-                  >
-                    {!isOwn && (
-                      <Avatar className="h-8 w-8 flex-shrink-0 mt-1" data-testid={`avatar-sender-${msg.userId}`}>
+        <main className="flex-1 flex flex-col overflow-hidden">
+          <ScrollArea className="flex-1">
+            <div className="container max-w-lg mx-auto px-4 py-4 space-y-4">
+              {messagesLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : threadMessages.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No messages yet. Start the conversation!</p>
+                </div>
+              ) : (
+                threadMessages.map((msg) => {
+                  const isOwn = msg.userId === currentUser?.id;
+                  const isSystem = false; // Can add system message support later
+                  
+                  if (isSystem) {
+                    return (
+                      <div key={msg.id} className="flex justify-center">
+                        <Badge variant="outline" className="gap-2 py-1">
+                          <AlertCircle className="w-3 h-3" />
+                          {msg.message}
+                        </Badge>
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <div 
+                      key={msg.id} 
+                      className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : ''}`}
+                      data-testid={`message-${msg.id}`}
+                    >
+                      <Avatar className="h-8 w-8 flex-shrink-0">
                         <AvatarImage src={msg.avatarUrl} />
-                        <AvatarFallback>{(msg.displayName || msg.username || 'U')[0].toUpperCase()}</AvatarFallback>
+                        <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                          {(msg.displayName || msg.username || 'U')[0].toUpperCase()}
+                        </AvatarFallback>
                       </Avatar>
-                    )}
-                    <div className={`max-w-[75%] ${isOwn ? 'order-2' : 'order-1'}`}>
-                      <p className="text-xs font-semibold mb-1 px-3" data-testid={`text-sender-${msg.userId}`}>{msg.displayName || msg.username}</p>
-                      <Card className={`p-3 ${isOwn ? 'bg-primary text-primary-foreground' : ''}`}>
-                        {msg.imageUrl && (
-                          <img 
-                            src={msg.imageUrl} 
-                            alt="Message image"
-                            className="max-w-full rounded-md mb-2"
-                            data-testid={`img-message-${msg.id}`}
-                          />
-                        )}
-                        <p className="text-sm">{msg.message}</p>
-                      </Card>
-                      <p className="text-xs text-muted-foreground mt-1 px-3">{formatTime(msg.createdAt)}</p>
+                      <div className={`flex flex-col gap-1 max-w-[70%] ${isOwn ? 'items-end' : ''}`}>
+                        <span className="text-xs text-muted-foreground">
+                          {msg.displayName || msg.username}
+                        </span>
+                        <div 
+                          className={`rounded-md overflow-hidden ${
+                            isOwn 
+                              ? 'bg-primary text-primary-foreground' 
+                              : 'bg-muted'
+                          }`}
+                        >
+                          {msg.imageUrl && (
+                            <img 
+                              src={msg.imageUrl} 
+                              alt="Shared image" 
+                              className="max-w-full h-auto max-h-60 object-contain"
+                              data-testid={`img-message-${msg.id}`}
+                            />
+                          )}
+                          {msg.message && (
+                            <p className="text-sm px-3 py-2">{msg.message}</p>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    {isOwn && (
-                      <Avatar className="h-8 w-8 flex-shrink-0 mt-1" data-testid={`avatar-sender-${msg.userId}`}>
-                        <AvatarImage src={msg.avatarUrl} />
-                        <AvatarFallback>{(msg.displayName || msg.username || 'U')[0].toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
+                  );
+                })
+              )}
+            </div>
+          </ScrollArea>
         </main>
 
         <div className="sticky bottom-0 border-t bg-background">
