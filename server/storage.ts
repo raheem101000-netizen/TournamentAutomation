@@ -618,37 +618,31 @@ export class DatabaseStorage implements IStorage {
       );
     }
 
-    // Get all message threads for matches involving user's teams using Drizzle ORM
-    console.log("[MSG-THREADS] Querying for match threads with teamIds:", teamIds);
+    // Get all shared match threads (where userId IS NULL and matchId IS NOT NULL)
+    // These are shared conversations accessible to all match participants
+    console.log("[MSG-THREADS] Querying for shared match threads");
     
     try {
-      const matchThreadsResult = await db
-        .selectDistinct()
+      const matchThreads = await db
+        .select()
         .from(messageThreads)
-        .innerJoin(matches, eq(messageThreads.matchId, matches.id))
         .where(
-          sql`(${matches.team1Id} IN (${sql.raw(teamIds.map(() => '?').join(','))}) OR ${matches.team2Id} IN (${sql.raw(teamIds.map(() => '?').join(','))}))`
+          and(
+            sql`${messageThreads.matchId} IS NOT NULL`,
+            sql`${messageThreads.userId} IS NULL`
+          )
         );
 
-      console.log("[MSG-THREADS] Match threads raw result:", matchThreadsResult.length);
-      
-      const matchThreads = (matchThreadsResult as any[]).map(row => row.message_threads as MessageThread);
-      console.log("[MSG-THREADS] Mapped match threads:", matchThreads.length);
+      console.log("[MSG-THREADS] Shared match threads found:", matchThreads.length);
 
-      // Combine and deduplicate threads
+      // Combine direct threads + shared match threads
       const allThreads = [...directThreads, ...matchThreads];
-      console.log("[MSG-THREADS] Combined threads before dedup:", allThreads.length);
-      
-      const uniqueThreadsMap = new Map();
-      allThreads.forEach(thread => {
-        if (!uniqueThreadsMap.has(thread.id)) {
-          uniqueThreadsMap.set(thread.id, thread);
-        }
-      });
+      console.log("[MSG-THREADS] Combined threads:", allThreads.length);
 
-      const finalThreads = Array.from(uniqueThreadsMap.values()).sort(
+      // Sort by most recent last message
+      const finalThreads = allThreads.sort(
         (a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime()
-      ) as MessageThread[];
+      );
       
       console.log("[MSG-THREADS] Final threads to return:", finalThreads.length);
       return finalThreads;
