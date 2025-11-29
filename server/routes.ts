@@ -901,19 +901,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "pending",
       });
 
-      // Get all participants from both teams
-      const registrations = await storage.getRegistrationsByTournament(tournament.id);
-      const team1Participants = registrations.filter(r => r.teamName === team1.name);
-      const team2Participants = registrations.filter(r => r.teamName === team2.name);
-      const allParticipants = [...team1Participants, ...team2Participants];
-
-      // Create message thread notification for each participant
+      // Update or create message thread notification for the match
       const matchMessage = `Match: ${team1.name} vs ${team2.name}`;
       const threadMessage = `New match created in ${tournament.name}. Chat with your opponent here!`;
       
-      for (const participant of allParticipants) {
+      // Check if message thread already exists for this match
+      const allThreads = await storage.getAllMessageThreads();
+      const existingThread = allThreads.find(t => t.matchId === newMatch.id);
+      
+      if (existingThread) {
+        // Update existing thread
+        await storage.updateMessageThread(existingThread.id, {
+          lastMessage: threadMessage,
+          lastMessageTime: new Date(),
+          unreadCount: (existingThread.unreadCount || 0) + 1,
+        });
+      } else {
+        // Create new thread for the match
         await storage.createMessageThread({
-          userId: participant.userId,
           matchId: newMatch.id,
           participantName: matchMessage,
           lastMessage: threadMessage,
