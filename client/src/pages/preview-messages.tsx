@@ -432,70 +432,70 @@ export default function PreviewMessages() {
               <CardContent className="flex-1 flex flex-col gap-4 p-0 px-6 pb-6">
                 <ScrollArea className="flex-1 pr-4">
                   <div className="space-y-4">
-              {messagesLoading ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : threadMessages.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>No messages yet. Start the conversation!</p>
-                </div>
-              ) : (
-                threadMessages.map((msg) => {
-                  const isOwn = msg.userId === currentUser?.id;
-                  const isSystem = false; // Can add system message support later
-                  
-                  if (isSystem) {
-                    return (
-                      <div key={msg.id} className="flex justify-center">
-                        <Badge variant="outline" className="gap-2 py-1">
-                          <AlertCircle className="w-3 h-3" />
-                          {msg.message}
-                        </Badge>
+                    {messagesLoading ? (
+                      <div className="flex justify-center py-8">
+                        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                       </div>
-                    );
-                  }
-                  
-                  return (
-                    <div 
-                      key={msg.id} 
-                      className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : ''}`}
-                      data-testid={`message-${msg.id}`}
-                    >
-                      <Avatar className="h-8 w-8 flex-shrink-0">
-                        <AvatarImage src={msg.avatarUrl} />
-                        <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                          {(msg.displayName || msg.username || 'U')[0].toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className={`flex flex-col gap-1 max-w-[70%] ${isOwn ? 'items-end' : ''}`}>
-                        <span className="text-xs text-muted-foreground">
-                          {msg.displayName || msg.username}
-                        </span>
-                        <div 
-                          className={`rounded-md overflow-hidden ${
-                            isOwn 
-                              ? 'bg-primary text-primary-foreground' 
-                              : 'bg-muted'
-                          }`}
-                        >
-                          {msg.imageUrl && (
-                            <img 
-                              src={msg.imageUrl} 
-                              alt="Shared image" 
-                              className="max-w-full h-auto max-h-60 object-contain"
-                              data-testid={`img-message-${msg.id}`}
-                            />
-                          )}
-                          {msg.message && (
-                            <p className="text-sm px-3 py-2">{msg.message}</p>
-                          )}
-                        </div>
+                    ) : threadMessages.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p>No messages yet. Start the conversation!</p>
                       </div>
-                    </div>
-                  );
-                })
-              )}
+                    ) : (
+                      threadMessages.map((msg) => {
+                        const isOwn = msg.userId === currentUser?.id;
+                        const isSystem = false; // Can add system message support later
+                        
+                        if (isSystem) {
+                          return (
+                            <div key={msg.id} className="flex justify-center">
+                              <Badge variant="outline" className="gap-2 py-1">
+                                <AlertCircle className="w-3 h-3" />
+                                {msg.message}
+                              </Badge>
+                            </div>
+                          );
+                        }
+                        
+                        return (
+                          <div 
+                            key={msg.id} 
+                            className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : ''}`}
+                            data-testid={`message-${msg.id}`}
+                          >
+                            <Avatar className="h-8 w-8 flex-shrink-0">
+                              <AvatarImage src={msg.avatarUrl} />
+                              <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                                {(msg.displayName || msg.username || 'U')[0].toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className={`flex flex-col gap-1 max-w-[70%] ${isOwn ? 'items-end' : ''}`}>
+                              <span className="text-xs text-muted-foreground">
+                                {msg.displayName || msg.username}
+                              </span>
+                              <div 
+                                className={`rounded-md overflow-hidden ${
+                                  isOwn 
+                                    ? 'bg-primary text-primary-foreground' 
+                                    : 'bg-muted'
+                                }`}
+                              >
+                                {msg.imageUrl && (
+                                  <img 
+                                    src={msg.imageUrl} 
+                                    alt="Shared image" 
+                                    className="max-w-full h-auto max-h-60 object-contain"
+                                    data-testid={`img-message-${msg.id}`}
+                                  />
+                                )}
+                                {msg.message && (
+                                  <p className="text-sm px-3 py-2">{msg.message}</p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </ScrollArea>
 
