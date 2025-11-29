@@ -26,9 +26,13 @@ export default function MatchChatPanel({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const getTeamById = (id: string | null) => teams.find(t => t.id === id);
-  const getTeamInitials = (name: string) => {
-    return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  const getInitials = (name: string) => {
+    if (!name) return 'U';
+    const parts = name.split(' ').filter((p: string) => p);
+    if (parts.length > 1) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -73,8 +77,8 @@ export default function MatchChatPanel({
         <ScrollArea className="flex-1 pr-4">
           <div className="space-y-4">
             {messages.map((msg) => {
-              const team = getTeamById(msg.teamId);
               const isSystem = msg.isSystem === 1;
+              const senderName = (msg as any).displayName?.trim() || "Unknown";
               const isCurrentTeam = msg.teamId === currentTeamId;
 
               if (isSystem) {
@@ -96,12 +100,12 @@ export default function MatchChatPanel({
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                      {team ? getTeamInitials(team.name) : "??"}
+                      {getInitials(senderName)}
                     </AvatarFallback>
                   </Avatar>
                   <div className={`flex flex-col gap-1 max-w-[70%] ${isCurrentTeam ? 'items-end' : ''}`}>
                     <span className="text-xs text-muted-foreground">
-                      {team?.name || "Unknown"}
+                      {senderName}
                     </span>
                     <div 
                       className={`rounded-md overflow-hidden ${
