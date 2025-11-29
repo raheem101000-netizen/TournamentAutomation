@@ -1,4 +1,5 @@
 import { useState, useRef, ChangeEvent } from "react";
+import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Input } from "@/components/ui/input";
@@ -444,6 +445,21 @@ export default function PreviewMessages() {
                         const isOwn = msg.userId === currentUser?.id;
                         const isSystem = false;
 
+                        // Get proper initials (e.g., "Eli" -> "EL", "Raheem" -> "RA", "John Doe" -> "JD")
+                        const getInitials = () => {
+                          const name = msg.displayName?.trim() || msg.username?.trim() || '';
+                          if (!name) return 'U';
+                          const parts = name.split(' ').filter(p => p);
+                          if (parts.length > 1) {
+                            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                          }
+                          return name.substring(0, 2).toUpperCase();
+                        };
+
+                        // Get sender name to display
+                        const senderName = msg.displayName?.trim() || msg.username?.trim() || 'Unknown User';
+                        const senderUsername = msg.username?.trim() || '';
+
                         if (isSystem) {
                           return (
                             <div key={msg.id} className="flex justify-center">
@@ -455,20 +471,31 @@ export default function PreviewMessages() {
                           );
                         }
 
+                        // Avatar with clickable profile link
+                        const avatarElement = (
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                              {getInitials()}
+                            </AvatarFallback>
+                          </Avatar>
+                        );
+
                         return (
                           <div 
                             key={msg.id} 
                             className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : ''}`}
                             data-testid={`message-${msg.id}`}
                           >
-                            <Avatar className="h-8 w-8">
-                              <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                                {msg.displayName?.[0]?.toUpperCase() || msg.username?.[0]?.toUpperCase() || "U"}
-                              </AvatarFallback>
-                            </Avatar>
+                            {senderUsername ? (
+                              <Link href={`/user/${senderUsername}`} className="hover:opacity-80 transition-opacity">
+                                {avatarElement}
+                              </Link>
+                            ) : (
+                              avatarElement
+                            )}
                             <div className={`flex flex-col gap-1 max-w-[70%] ${isOwn ? 'items-end' : ''}`}>
                               <span className="text-xs text-muted-foreground">
-                                {msg.displayName?.trim() || msg.username?.trim() || "Unknown User"}
+                                {senderName}
                               </span>
                               <div 
                                 className={`rounded-md overflow-hidden ${
