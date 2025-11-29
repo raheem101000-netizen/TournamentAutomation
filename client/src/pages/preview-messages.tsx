@@ -442,28 +442,8 @@ export default function PreviewMessages() {
                     ) : (
                       threadMessages.map((msg) => {
                         const isOwn = msg.userId === currentUser?.id;
-                        const isSystem = false; // Can add system message support later
-                        
-                        // Get initials for avatar fallback
-                        const getInitials = () => {
-                          const name = msg.displayName?.trim() || msg.username?.trim() || '';
-                          if (name) {
-                            // Get first letter of first name and last name if available
-                            const parts = name.split(' ');
-                            if (parts.length > 1) {
-                              return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-                            }
-                            return name.substring(0, 2).toUpperCase();
-                          }
-                          // Fallback: use first letter of userId if available
-                          return (msg.userId?.[0] || 'U').toUpperCase();
-                        };
-                        
-                        // Get display name
-                        const getSenderName = () => {
-                          return msg.displayName?.trim() || msg.username?.trim() || 'Unknown User';
-                        };
-                        
+                        const isSystem = false;
+
                         if (isSystem) {
                           return (
                             <div key={msg.id} className="flex justify-center">
@@ -474,22 +454,21 @@ export default function PreviewMessages() {
                             </div>
                           );
                         }
-                        
+
                         return (
                           <div 
                             key={msg.id} 
                             className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : ''}`}
                             data-testid={`message-${msg.id}`}
                           >
-                            <Avatar className="h-8 w-8 flex-shrink-0">
-                              <AvatarImage src={msg.avatarUrl || undefined} alt={getSenderName()} />
+                            <Avatar className="h-8 w-8">
                               <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                                {getInitials()}
+                                {msg.displayName ? msg.displayName[0].toUpperCase() : msg.username ? msg.username[0].toUpperCase() : "U"}
                               </AvatarFallback>
                             </Avatar>
                             <div className={`flex flex-col gap-1 max-w-[70%] ${isOwn ? 'items-end' : ''}`}>
                               <span className="text-xs text-muted-foreground">
-                                {getSenderName()}
+                                {msg.displayName || msg.username || "Unknown"}
                               </span>
                               <div 
                                 className={`rounded-md overflow-hidden ${
