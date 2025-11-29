@@ -1221,7 +1221,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/tournaments/:tournamentId/registrations", async (req, res) => {
     try {
       const registrations = await storage.getRegistrationsByTournament(req.params.tournamentId);
-      res.json(registrations);
+      
+      // Join registrations with user data to return real usernames
+      const registrationsWithUsers = await Promise.all(
+        registrations.map(async (reg) => {
+          const user = await storage.getUser(reg.userId);
+          return {
+            ...reg,
+            userUsername: user?.username || user?.displayName || 'Unknown',
+            userDisplayName: user?.displayName || 'Unknown',
+            userAvatar: user?.avatarUrl || null,
+          };
+        })
+      );
+      
+      res.json(registrationsWithUsers);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -1235,7 +1249,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const responses = await storage.getResponsesByRegistration(registration.id);
-      res.json({ ...registration, responses });
+      const user = await storage.getUser(registration.userId);
+      
+      res.json({ 
+        ...registration, 
+        responses,
+        userUsername: user?.username || user?.displayName || 'Unknown',
+        userDisplayName: user?.displayName || 'Unknown',
+        userAvatar: user?.avatarUrl || null,
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
