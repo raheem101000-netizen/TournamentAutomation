@@ -9,7 +9,7 @@ import { Send, AlertCircle, Image as ImageIcon, X } from "lucide-react";
 import type { ChatMessage, Team } from "@shared/schema";
 
 interface MatchChatPanelProps {
-  messages: (ChatMessage & { imageUrl?: string })[];
+  messages: (ChatMessage & { imageUrl?: string; displayName?: string; avatarUrl?: string })[];
   teams: Team[];
   currentTeamId?: string;
   onSendMessage: (message: string, image?: File) => void;
