@@ -1,5 +1,4 @@
 import { useState, useRef, ChangeEvent } from "react";
-import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Input } from "@/components/ui/input";
@@ -471,28 +470,17 @@ export default function PreviewMessages() {
                           );
                         }
 
-                        // Avatar with clickable profile link
-                        const avatarElement = (
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                              {getInitials()}
-                            </AvatarFallback>
-                          </Avatar>
-                        );
-
                         return (
                           <div 
                             key={msg.id} 
                             className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : ''}`}
                             data-testid={`message-${msg.id}`}
                           >
-                            {senderUsername ? (
-                              <Link href={`/user/${senderUsername}`} className="hover:opacity-80 transition-opacity">
-                                {avatarElement}
-                              </Link>
-                            ) : (
-                              avatarElement
-                            )}
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                                {getInitials()}
+                              </AvatarFallback>
+                            </Avatar>
                             <div className={`flex flex-col gap-1 max-w-[70%] ${isOwn ? 'items-end' : ''}`}>
                               <span className="text-xs text-muted-foreground">
                                 {senderName}
