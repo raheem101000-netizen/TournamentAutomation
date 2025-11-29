@@ -742,34 +742,6 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
 
           <TabsContent value="teams">
             {selectedTournamentTeams.length > 0 ? (
-              <div className="space-y-2">
-                {selectedTournamentTeams.map((team) => (
-                  <Card key={team.id}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle>{team.name}</CardTitle>
-                            >
-                              {selectedTeam2Id === team.id ? <Check className="h-4 w-4 mr-1" /> : ""}
-                              Select
-                            </Button>
-                          </div>
-                        </CardContent>
-                      )}
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <Card className="p-8">
-                <p className="text-center text-muted-foreground">
-                  No participants yet
-                </p>
-              </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="teams">
-            {selectedTournamentTeams.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {selectedTournamentTeams.map((team) => (
                   <Card key={team.id}>
