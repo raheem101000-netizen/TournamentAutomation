@@ -126,9 +126,14 @@ export default function TournamentMatch() {
       try {
         const data = JSON.parse(event.data);
         if (data.type === "new_message") {
+          console.log("[WS-RECEIVE] New message from server:", data.message);
+          console.log("[WS-RECEIVE] Message displayName:", data.message.displayName);
+          console.log("[WS-RECEIVE] Message userId:", data.message.userId);
           setMessages((prev) => {
             if (prev.some((m) => m.id === data.message.id)) return prev;
-            return [...prev, data.message];
+            const updated = [...prev, data.message];
+            console.log("[WS-RECEIVE] Messages state after update:", updated);
+            return updated;
           });
         }
       } catch (error) {
