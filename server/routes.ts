@@ -2311,7 +2311,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/message-threads/:id/messages", async (req, res) => {
     try {
       const messages = await storage.getThreadMessages(req.params.id);
-      res.json(messages);
+      // Enrich messages with sender avatarUrl and displayName from users table
+      const enrichedMessages = await Promise.all(
+        messages.map(async (msg) => {
+          if (msg.userId) {
+            const sender = await storage.getUser(msg.userId);
+            return {
+              ...msg,
+              avatarUrl: sender?.avatarUrl || undefined,
+              displayName: sender?.displayName || sender?.username || msg.username,
+            };
+          }
+          return msg;
+        })
+      );
+      res.json(enrichedMessages);
     } catch (error: any) {
       console.error("Error fetching thread messages:", error);
       res.status(500).json({ error: error.message });
