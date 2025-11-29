@@ -254,15 +254,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const enrichChatMessage = async (msg: any) => {
+    console.log(`[ENRICH] Processing message ID ${msg.id}, userId: ${msg.userId}`);
     if (msg.userId) {
-      const sender = await storage.getUser(msg.userId);
-      const displayName = sender?.displayName?.trim() || sender?.username || "Unknown";
-      return {
-        ...msg,
-        displayName: displayName,
-        avatarUrl: sender?.avatarUrl || undefined,
-      };
+      try {
+        const sender = await storage.getUser(msg.userId);
+        console.log(`[ENRICH] Found user for ${msg.userId}:`, sender ? `${sender.displayName}/${sender.username}` : "NOT FOUND");
+        const displayName = sender?.displayName?.trim() || sender?.username || "Unknown";
+        const enriched = {
+          ...msg,
+          displayName: displayName,
+          avatarUrl: sender?.avatarUrl || undefined,
+        };
+        console.log(`[ENRICH] Enriched message with displayName: ${displayName}`);
+        return enriched;
+      } catch (error) {
+        console.error(`[ENRICH] Error enriching message for userId ${msg.userId}:`, error);
+        return { ...msg, displayName: "Unknown" };
+      }
     }
+    console.log(`[ENRICH] No userId in message, returning Unknown`);
     return {
       ...msg,
       displayName: "Unknown",
