@@ -873,6 +873,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/tournaments/:tournamentId/matches/custom", async (req, res) => {
     try {
       const { team1Id, team2Id } = req.body;
+      console.log("[MATCH-CREATION] Endpoint called with team1Id:", team1Id, "team2Id:", team2Id);
       const tournament = await storage.getTournament(req.params.tournamentId);
 
       if (!tournament) {
@@ -891,12 +892,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const allMatches = await storage.getMatchesByTournament(tournament.id);
+      console.log("[MATCH-CREATION] Total existing matches in tournament:", allMatches.length);
       
       // Check if a match already exists between these two teams
       const existingMatch = allMatches.find(m => 
         (m.team1Id === team1Id && m.team2Id === team2Id) || 
         (m.team1Id === team2Id && m.team2Id === team1Id)
       );
+      console.log("[MATCH-CREATION] Existing match found:", !!existingMatch);
 
       let matchToReturn;
       const matchMessage = `Match: ${team1.name} vs ${team2.name}`;
