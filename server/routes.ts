@@ -768,7 +768,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (loserTeam) {
             await storage.updateTeam(loserId, {
               losses: (loserTeam.losses ?? 0) + 1,
-              isRemoved: 1,
             });
           }
         }
@@ -851,14 +850,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Find and remove loser
+      // Record loss for loser
       const loserId = validTeams.find((id) => id !== winnerId);
       if (loserId) {
         const loserTeam = await storage.getTeam(loserId);
         if (loserTeam) {
           await storage.updateTeam(loserId, {
             losses: (loserTeam.losses ?? 0) + 1,
-            isRemoved: 1,
           });
         }
       }

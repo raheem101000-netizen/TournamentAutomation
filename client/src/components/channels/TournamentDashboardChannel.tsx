@@ -270,8 +270,8 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
       queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/matches`] });
       queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/teams`] });
       toast({
-        title: "Winner selected",
-        description: "Match winner has been recorded and loser removed from tournament.",
+        title: "Winner recorded",
+        description: "Match result has been saved. Use the Participants tab to manually eliminate teams.",
       });
       setWinnerMatchId(null);
       setPendingWinnerId(null);
@@ -649,23 +649,105 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                           <Badge variant="outline">{team.losses}L</Badge>
                         </div>
                       </CardHeader>
-                      {!team.isRemoved && (
-                        <CardContent>
-                          <div className="flex gap-2">
+                      <CardContent>
+                        <div className="flex gap-2 flex-wrap">
+                          {!team.isRemoved && (
+                            <>
+                              <Button 
+                                size="sm" 
+                                variant={selectedTeam1Id === team.id ? "default" : "outline"}
+                                onClick={() => setSelectedTeam1Id(selectedTeam1Id === team.id ? null : team.id)}
+                                data-testid={`button-select-team1-${team.id}`}
+                              >
+                                {selectedTeam1Id === team.id ? <Check className="h-4 w-4 mr-1" /> : ""}
+                                Select 1
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant={selectedTeam2Id === team.id ? "default" : "outline"}
+                                onClick={() => setSelectedTeam2Id(selectedTeam2Id === team.id ? null : team.id)}
+                                data-testid={`button-select-team2-${team.id}`}
+                              >
+                                {selectedTeam2Id === team.id ? <Check className="h-4 w-4 mr-1" /> : ""}
+                                Select 2
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="destructive"
+                                onClick={() => {
+                                  // Update team to set isRemoved
+                                  apiRequest('PATCH', `/api/teams/${team.id}`, {
+                                    isRemoved: 1,
+                                  }).then(() => {
+                                    queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/teams`] });
+                                    toast({
+                                      title: "Team eliminated",
+                                      description: `${team.name} has been eliminated from the tournament.`,
+                                    });
+                                  }).catch((error) => {
+                                    toast({
+                                      title: "Error",
+                                      description: error.message,
+                                      variant: "destructive",
+                                    });
+                                  });
+                                }}
+                                data-testid={`button-eliminate-${team.id}`}
+                              >
+                                Eliminate
+                              </Button>
+                            </>
+                          )}
+                          {team.isRemoved && (
                             <Button 
                               size="sm" 
-                              variant={selectedTeam1Id === team.id ? "default" : "outline"}
-                              onClick={() => setSelectedTeam1Id(selectedTeam1Id === team.id ? null : team.id)}
-                              data-testid={`button-select-team1-${team.id}`}
+                              variant="outline"
+                              onClick={() => {
+                                // Restore team
+                                apiRequest('PATCH', `/api/teams/${team.id}`, {
+                                  isRemoved: 0,
+                                }).then(() => {
+                                  queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${selectedTournamentId}/teams`] });
+                                  toast({
+                                    title: "Team restored",
+                                    description: `${team.name} has been restored to the tournament.`,
+                                  });
+                                }).catch((error) => {
+                                  toast({
+                                    title: "Error",
+                                    description: error.message,
+                                    variant: "destructive",
+                                  });
+                                });
+                              }}
+                              data-testid={`button-restore-${team.id}`}
                             >
-                              {selectedTeam1Id === team.id ? <Check className="h-4 w-4 mr-1" /> : ""}
-                              Select
+                              Restore
                             </Button>
-                            <Button 
-                              size="sm" 
-                              variant={selectedTeam2Id === team.id ? "default" : "outline"}
-                              onClick={() => setSelectedTeam2Id(selectedTeam2Id === team.id ? null : team.id)}
-                              data-testid={`button-select-team2-${team.id}`}
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <Card className="p-8">
+                <p className="text-center text-muted-foreground">
+                  No teams registered yet
+                </p>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="teams">
+            {selectedTournamentTeams.length > 0 ? (
+              <div className="space-y-2">
+                {selectedTournamentTeams.map((team) => (
+                  <Card key={team.id}>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle>{team.name}</CardTitle>
                             >
                               {selectedTeam2Id === team.id ? <Check className="h-4 w-4 mr-1" /> : ""}
                               Select
