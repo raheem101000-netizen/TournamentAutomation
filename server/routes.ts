@@ -2312,14 +2312,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const messages = await storage.getThreadMessages(req.params.id);
       // Enrich messages with sender avatarUrl and displayName from users table
-      const enrichedMessages = await Promise.all(
+      const enrichedMessages: any[] = await Promise.all(
         messages.map(async (msg) => {
           if (msg.userId) {
             const sender = await storage.getUser(msg.userId);
             return {
               ...msg,
               avatarUrl: sender?.avatarUrl || undefined,
-              displayName: sender?.displayName || sender?.username || msg.username,
+              displayName: (sender?.displayName?.trim()) || sender?.username || msg.username,
             };
           }
           return msg;

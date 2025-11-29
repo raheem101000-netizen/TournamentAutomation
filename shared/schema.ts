@@ -265,6 +265,12 @@ export const threadMessages = pgTable("thread_messages", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Enriched version with user data
+export type EnrichedThreadMessage = typeof threadMessages.$inferSelect & {
+  displayName?: string;
+  avatarUrl?: string;
+};
+
 export const notifications = pgTable("notifications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   type: text("type", { enum: ["match_result", "friend_request", "tournament_alert", "system"] }).notNull(),
