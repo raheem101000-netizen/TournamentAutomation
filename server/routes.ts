@@ -359,9 +359,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Invalid email or password" });
       }
 
-      // Check if account is disabled
+      // If account is disabled, automatically reactivate it on successful login
       if (user.isDisabled === 1) {
-        return res.status(403).json({ error: "Account is disabled" });
+        await storage.updateUser(user.id, { isDisabled: 0 });
       }
 
       // Create session
