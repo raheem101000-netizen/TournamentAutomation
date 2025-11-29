@@ -2182,7 +2182,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.session.userId) {
         return res.status(401).json({ error: "Unauthorized" });
       }
-      const threads = await storage.getMessageThreadsByUser(req.session.userId);
+      // Get both direct message threads AND match threads for user's teams
+      const threads = await storage.getMessageThreadsForParticipant(req.session.userId);
       res.json(threads);
     } catch (error: any) {
       console.error("Error fetching message threads:", error);

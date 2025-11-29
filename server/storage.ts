@@ -186,6 +186,8 @@ export interface IStorage {
   
   // Mobile preview operations
   getAllMessageThreads(): Promise<MessageThread[]>;
+  getMessageThreadsByUser(userId: string): Promise<MessageThread[]>;
+  getMessageThreadsForParticipant(userId: string): Promise<MessageThread[]>;
   createMessageThread(data: InsertMessageThread): Promise<MessageThread>;
   getMessageThread(id: string): Promise<MessageThread | undefined>;
   updateMessageThread(id: string, data: Partial<MessageThread>): Promise<MessageThread | undefined>;
@@ -560,6 +562,85 @@ export class DatabaseStorage implements IStorage {
 
   async getMessageThreadsByUser(userId: string): Promise<MessageThread[]> {
     return await db.select().from(messageThreads).where(eq(messageThreads.userId, userId)).orderBy(messageThreads.lastMessageTime);
+  }
+
+  async getMessageThreadsForParticipant(userId: string): Promise<MessageThread[]> {
+    // Get all tournaments where user has approved registrations
+    const userTournaments = await db
+      .select({ tournamentId: registrations.tournamentId })
+      .from(registrations)
+      .where(
+        and(
+          eq(registrations.userId, userId),
+          eq(registrations.status, "approved")
+        )
+      );
+
+    if (userTournaments.length === 0) {
+      // No approved registrations, only return direct message threads
+      return await db
+        .select()
+        .from(messageThreads)
+        .where(eq(messageThreads.userId, userId))
+        .orderBy(messageThreads.lastMessageTime);
+    }
+
+    const tournamentIds = userTournaments.map(t => t.tournamentId);
+
+    // Get all teams in those tournaments
+    const userTeams = await db
+      .select({ id: teams.id })
+      .from(teams)
+      .where(sql`${teams.tournamentId} IN (${sql.raw(tournamentIds.map(() => '?').join(','))})`);
+
+    if (userTeams.length === 0) {
+      // User has registrations but no teams (shouldn't happen normally)
+      return await db
+        .select()
+        .from(messageThreads)
+        .where(eq(messageThreads.userId, userId))
+        .orderBy(messageThreads.lastMessageTime);
+    }
+
+    const teamIds = userTeams.map(t => t.id);
+
+    // Get all matches involving those teams and their message threads
+    const matchThreads = await db
+      .selectDistinct()
+      .from(messageThreads)
+      .innerJoin(matches, eq(messageThreads.matchId, matches.id))
+      .where(
+        sql`${matches.team1Id} IN (${sql.raw(teamIds.map(() => '?').join(','))}) OR ${matches.team2Id} IN (${sql.raw(teamIds.map(() => '?').join(','))})`
+      )
+      .orderBy(messageThreads.lastMessageTime);
+
+    // Get direct message threads for this user
+    const directThreads = await db
+      .select()
+      .from(messageThreads)
+      .where(eq(messageThreads.userId, userId))
+      .orderBy(messageThreads.lastMessageTime);
+
+    // Combine and deduplicate threads
+    const combinedThreads = [
+      ...matchThreads.map(mt => mt.message_threads),
+      ...directThreads,
+    ];
+
+    // Remove duplicates by ID
+    const uniqueThreadsMap = new Map();
+    combinedThreads.forEach(thread => {
+      if (!uniqueThreadsMap.has(thread.id)) {
+        uniqueThreadsMap.set(thread.id, thread);
+      }
+    });
+
+    // Sort by lastMessageTime desc
+    const sortedThreads = Array.from(uniqueThreadsMap.values()).sort(
+      (a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime()
+    );
+
+    return sortedThreads as MessageThread[];
   }
 
   async createMessageThread(data: InsertMessageThread): Promise<MessageThread> {
