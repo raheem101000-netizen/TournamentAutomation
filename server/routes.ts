@@ -1014,10 +1014,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
               avatarUrl: sender?.avatarUrl || undefined,
             };
           }
-          return msg;
+          return {
+            ...msg,
+            displayName: "Unknown",
+          };
         })
       );
-      console.log("[MATCH-MSG-ENRICHMENT] Enriched messages:", JSON.stringify(enrichedMessages.slice(0, 2), null, 2));
+      console.log("[MATCH-MSG-ENRICHMENT] Total messages enriched:", enrichedMessages.length, "- Sample:", JSON.stringify(enrichedMessages.slice(0, 1), null, 2));
       res.json(enrichedMessages);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
