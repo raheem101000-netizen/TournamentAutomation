@@ -444,6 +444,26 @@ export default function PreviewMessages() {
                         const isOwn = msg.userId === currentUser?.id;
                         const isSystem = false; // Can add system message support later
                         
+                        // Get initials for avatar fallback
+                        const getInitials = () => {
+                          const name = msg.displayName?.trim() || msg.username?.trim() || '';
+                          if (name) {
+                            // Get first letter of first name and last name if available
+                            const parts = name.split(' ');
+                            if (parts.length > 1) {
+                              return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                            }
+                            return name.substring(0, 2).toUpperCase();
+                          }
+                          // Fallback: use first letter of userId if available
+                          return (msg.userId?.[0] || 'U').toUpperCase();
+                        };
+                        
+                        // Get display name
+                        const getSenderName = () => {
+                          return msg.displayName?.trim() || msg.username?.trim() || 'Unknown User';
+                        };
+                        
                         if (isSystem) {
                           return (
                             <div key={msg.id} className="flex justify-center">
@@ -462,14 +482,14 @@ export default function PreviewMessages() {
                             data-testid={`message-${msg.id}`}
                           >
                             <Avatar className="h-8 w-8 flex-shrink-0">
-                              <AvatarImage src={msg.avatarUrl} />
+                              <AvatarImage src={msg.avatarUrl || undefined} alt={getSenderName()} />
                               <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                                {(msg.displayName || msg.username || 'U')[0].toUpperCase()}
+                                {getInitials()}
                               </AvatarFallback>
                             </Avatar>
                             <div className={`flex flex-col gap-1 max-w-[70%] ${isOwn ? 'items-end' : ''}`}>
                               <span className="text-xs text-muted-foreground">
-                                {msg.displayName || msg.username}
+                                {getSenderName()}
                               </span>
                               <div 
                                 className={`rounded-md overflow-hidden ${
