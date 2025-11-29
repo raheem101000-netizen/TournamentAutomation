@@ -1043,6 +1043,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (msg.userId) {
             const sender = await storage.getUser(msg.userId);
             const displayName = sender?.displayName?.trim() || sender?.username || "Unknown";
+            console.log(`[ENRICH-DETAIL] Message ${msg.id}: userId=${msg.userId}, displayName=${displayName}, sender=${JSON.stringify({id: sender?.id, displayName: sender?.displayName, username: sender?.username})}`);
             return {
               ...msg,
               displayName: displayName,
@@ -1055,7 +1056,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         })
       );
-      console.log("[MATCH-MSG-ENRICHMENT] Total messages enriched:", enrichedMessages.length, "- Sample:", JSON.stringify(enrichedMessages.slice(0, 1), null, 2));
+      console.log("[MATCH-MSG-ENRICHMENT] Total messages enriched:", enrichedMessages.length);
+      enrichedMessages.forEach((m, i) => {
+        console.log(`  [${i}] ${m.id}: displayName="${m.displayName}" message="${m.message}"`);
+      });
       res.json(enrichedMessages);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
