@@ -36,6 +36,7 @@ import TeamBuilder from "@/pages/team-builder";
 import TournamentMatch from "@/pages/tournament-match";
 import TournamentRegister from "@/pages/tournament-register";
 import AdminPanel from "@/pages/admin-panel";
+import Profile from "@/pages/profile";
 import { User, Search, Bell, Trophy, Server, MessageSquare } from "lucide-react";
 import { initializeApp } from "../../lib/initializeApp";
 
@@ -159,6 +160,10 @@ function Router() {
       </Route>
       <Route path="/admin/templates">
         {() => <ProtectedRoute component={PreviewAdminTemplates} />}
+      </Route>
+      
+      <Route path="/profile/:userId">
+        {() => <ProtectedRoute component={Profile} />}
       </Route>
       
       <Route path="/old" component={MobilePreviewHome} />
