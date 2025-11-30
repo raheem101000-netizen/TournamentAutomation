@@ -335,9 +335,6 @@ export default function TournamentMatch() {
                     <p>No messages yet. Start the conversation!</p>
                   </div>
                 ) : (
-                  <>
-                    {console.log(`[DASHBOARD-CHAT-RENDER] Rendering ${chatMessages.length} messages`)}
-                    <>
                   chatMessages.map((msg) => {
                     const isOwn = msg.userId === currentUser?.id;
 
@@ -393,8 +390,7 @@ export default function TournamentMatch() {
                         </div>
                       </div>
                     );
-                    </>
-                  </>
+                  })
                 )}
                 <div ref={messagesEndRef} />
               </div>
