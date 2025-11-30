@@ -216,10 +216,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const messageData = JSON.parse(data.toString());
           
+          // Get userId from authenticated user info
+          const userInfo = wsUserMap.get(ws);
+          if (!userInfo) {
+            ws.send(JSON.stringify({ error: "Unauthorized" }));
+            return;
+          }
+          
           // Validate using schema and ensure matchId from URL is used
           const validatedData = insertChatMessageSchema.parse({
             matchId: matchId, // Use matchId from connection URL for security
             teamId: messageData.teamId || null, // Optional field
+            userId: userInfo.userId, // Include userId from authenticated connection
             message: messageData.message,
             imageUrl: messageData.imageUrl || null, // Optional field
           });
@@ -227,10 +235,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Save message to storage
           const savedMessage = await storage.createChatMessage(validatedData);
 
-          // Broadcast to all connections in this match with consistent format
+          // Enrich message with username before broadcasting
+          const enrichedMessage: any = {
+            id: savedMessage.id,
+            matchId: savedMessage.matchId,
+            teamId: savedMessage.teamId,
+            userId: savedMessage.userId,
+            message: savedMessage.message,
+            imageUrl: savedMessage.imageUrl,
+            isSystem: savedMessage.isSystem,
+            createdAt: savedMessage.createdAt,
+          };
+          
+          if (savedMessage.userId) {
+            const sender = await storage.getUser(savedMessage.userId);
+            enrichedMessage.username = sender?.username || "Unknown";
+          } else {
+            enrichedMessage.username = "Unknown";
+          }
+
+          // Broadcast enriched message to all connections in this match
           const broadcastPayload = {
             type: "new_message",
-            message: savedMessage,
+            message: enrichedMessage,
           };
           broadcastToMatch(matchId, broadcastPayload);
         } catch (error: any) {
