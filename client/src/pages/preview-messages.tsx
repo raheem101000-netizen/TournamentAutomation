@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Search, Plus, Users, Send, ArrowLeft, Edit, Check, X, Image as ImageIcon, Paperclip, Smile, Loader2, AlertCircle } from "lucide-react";
+import { Search, Plus, Users, Send, ArrowLeft, Edit, Check, X, Image as ImageIcon, Paperclip, Smile, Loader2, AlertCircle, Trophy } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
@@ -580,6 +580,39 @@ export default function PreviewMessages() {
                     )}
                   </div>
                 </ScrollArea>
+
+                {/* Winner Selection for Match Chats */}
+                {selectedChat?.matchId && matchDetails && matchDetails.team1 && matchDetails.team2 && matchDetails.match?.status !== "completed" && (
+                  <div className="border-t pt-3">
+                    <p className="text-xs font-semibold text-muted-foreground mb-2">Select Winner</p>
+                    <div className="flex gap-2">
+                      {currentUser?.id === (matchDetails.team1 as any)?.managerId && (
+                        <Button
+                          onClick={() => setWinnerMutation.mutate(matchDetails.team1.id)}
+                          disabled={setWinnerMutation.isPending}
+                          className="flex-1"
+                          size="sm"
+                          data-testid={`button-select-winner-team1`}
+                        >
+                          <Trophy className="w-4 h-4 mr-1" />
+                          {matchDetails.team1.name} Wins
+                        </Button>
+                      )}
+                      {currentUser?.id === (matchDetails.team2 as any)?.managerId && (
+                        <Button
+                          onClick={() => setWinnerMutation.mutate(matchDetails.team2.id)}
+                          disabled={setWinnerMutation.isPending}
+                          className="flex-1"
+                          size="sm"
+                          data-testid={`button-select-winner-team2`}
+                        >
+                          <Trophy className="w-4 h-4 mr-1" />
+                          {matchDetails.team2.name} Wins
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   {imageInputRef.current?.files?.[0] && (
