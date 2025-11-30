@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Search, Plus, Users, Send, ArrowLeft, Edit, Check, X, Image as ImageIcon, Paperclip, Smile, Loader2, AlertCircle, Trophy } from "lucide-react";
+import { Search, Plus, Users, Send, ArrowLeft, Edit, Check, X, Image as ImageIcon, Paperclip, Smile, Loader2, AlertCircle, Trophy, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
@@ -316,6 +316,31 @@ export default function PreviewMessages() {
     onSuccess: () => {
       toast({ title: "Winner selected!" });
       queryClient.invalidateQueries({ queryKey: ["match-details", selectedChat?.matchId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/message-threads"] });
+      setSelectedChat(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const closeMatchChatMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedChat?.id) throw new Error("No chat selected");
+      const response = await fetch(`/api/message-threads/${selectedChat.id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to close match chat");
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Match chat closed!" });
+      queryClient.invalidateQueries({ queryKey: ["/api/message-threads"] });
+      setSelectedChat(null);
     },
     onError: (error: any) => {
       toast({
@@ -474,6 +499,18 @@ export default function PreviewMessages() {
                   <p className="text-xs text-muted-foreground">{selectedChat.members} members</p>
                 )}
               </div>
+              {selectedChat?.matchId && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => closeMatchChatMutation.mutate()}
+                  disabled={closeMatchChatMutation.isPending}
+                  data-testid="button-close-match-chat"
+                  title="Close match chat"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </Button>
+              )}
             </div>
           </div>
         </header>

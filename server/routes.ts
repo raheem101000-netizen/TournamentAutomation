@@ -915,6 +915,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Archive/close message thread endpoint
+  app.delete("/api/message-threads/:threadId", async (req, res) => {
+    try {
+      const thread = await storage.getMessageThread(req.params.threadId);
+      if (!thread) {
+        return res.status(404).json({ error: "Thread not found" });
+      }
+
+      // Delete all messages in the thread
+      const messages = await storage.getThreadMessages(req.params.threadId);
+      await Promise.all(messages.map((msg) => storage.deleteThreadMessage(msg.id)));
+
+      // Delete the thread itself
+      await storage.deleteMessageThread(req.params.threadId);
+
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Create custom match endpoint
   app.post("/api/tournaments/:tournamentId/matches/custom", async (req, res) => {
     try {
