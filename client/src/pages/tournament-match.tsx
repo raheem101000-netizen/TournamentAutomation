@@ -62,6 +62,7 @@ interface ChatMessage {
   imageUrl?: string;
   userId?: string;
   username?: string;
+  displayName?: string;
   isSystem: number;
   createdAt: string;
 }
@@ -411,7 +412,8 @@ export default function TournamentMatch() {
             {/* Messages */}
             <div className="flex-1 overflow-y-auto space-y-4 pr-2">
               {messages.map((msg) => {
-                const initials = (msg.username || "U")
+                const displayName = msg.displayName || msg.username || "Unknown";
+                const initials = displayName
                   .substring(0, 2)
                   .toUpperCase();
                 const timestamp = new Date(msg.createdAt).toLocaleTimeString(
@@ -437,7 +439,7 @@ export default function TournamentMatch() {
                     <div className="flex-1">
                       <div className="flex items-baseline gap-2">
                         <span className="text-sm font-semibold">
-                          {msg.username}
+                          {displayName}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {timestamp}
