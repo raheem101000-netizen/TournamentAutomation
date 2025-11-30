@@ -906,6 +906,9 @@ export default function PreviewMessages() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <h4 className="font-semibold text-sm">{achievement.title}</h4>
+                            {achievement.game && (
+                              <p className="text-xs text-muted-foreground">{achievement.game}</p>
+                            )}
                             <p className="text-xs text-muted-foreground">{achievement.description}</p>
                           </div>
                         </div>
