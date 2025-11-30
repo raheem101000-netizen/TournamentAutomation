@@ -98,7 +98,7 @@ export default function TournamentMatch() {
     queryKey: ["/api/auth/me"],
   });
 
-  // Fetch messages for this match - EXACT SAME CONFIG AS preview-messages.tsx
+  // Fetch messages for this match - with short staleTime to ensure fresh data
   const { data: messagesData = [], isLoading: messagesLoading } = useQuery<ChatMessage[]>({
     queryKey: ["/api/matches", matchId, "messages"],
     enabled: !!matchId,
@@ -108,6 +108,7 @@ export default function TournamentMatch() {
       if (!response.ok) throw new Error("Failed to fetch messages");
       return response.json();
     },
+    staleTime: 1000, // 1 second stale time so WebSocket refetch works immediately
   });
 
   const qc = useQueryClient();
@@ -139,8 +140,8 @@ export default function TournamentMatch() {
       try {
         const data = JSON.parse(event.data);
         if (data.type === "new_message") {
-          // Invalidate messages query to refetch with proper enrichment (userId)
-          qc.invalidateQueries({
+          // Force immediate refetch to get new message with userId enrichment
+          qc.refetchQueries({
             queryKey: ["/api/matches", matchId, "messages"],
           });
         }
