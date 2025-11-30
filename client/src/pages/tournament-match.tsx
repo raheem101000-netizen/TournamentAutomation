@@ -487,10 +487,15 @@ export default function TournamentMatch() {
           <CardContent className="flex flex-col gap-4 h-96">
             {/* Messages */}
             <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-              {messages.map((msg) => {
-                const displayName = msg.displayName || msg.username || "Unknown";
-                console.error("[RENDER-MSG] Rendering message:", { id: msg.id?.substring(0, 8), displayName, msg_displayName: msg.displayName, msg_username: msg.username, fullMsg: msg });
-                const initials = String(displayName || "U")
+              {messages.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  No messages yet
+                </div>
+              ) : (
+              messages.map((msg) => {
+                // Always use explicit fallback chain: displayName -> username -> "Unknown"
+                const senderName = msg.displayName?.trim() || msg.username?.trim() || "Unknown";
+                const initials = String(senderName || "U")
                   .substring(0, 2)
                   .toUpperCase();
                 const timestamp = new Date(msg.createdAt).toLocaleTimeString(
@@ -516,7 +521,7 @@ export default function TournamentMatch() {
                     <div className="flex-1">
                       <div className="flex items-baseline gap-2">
                         <span className="text-sm font-semibold" data-testid={`user-name-${msg.id}`}>
-                          {displayName}
+                          {senderName}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {timestamp}
@@ -533,7 +538,8 @@ export default function TournamentMatch() {
                     </div>
                   </div>
                 );
-              })}
+              })
+              )}
               <div ref={messagesEndRef} />
             </div>
 
