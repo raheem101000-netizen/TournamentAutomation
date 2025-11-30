@@ -8,6 +8,9 @@ import path from "path";
 
 const app = express();
 
+// Disable ETags globally to prevent 304 responses
+app.set('etag', false);
+
 declare module 'express-session' {
   interface SessionData {
     userId: string;
