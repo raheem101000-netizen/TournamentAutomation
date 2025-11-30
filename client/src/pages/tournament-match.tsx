@@ -338,9 +338,7 @@ export default function TournamentMatch() {
                   chatMessages.map((msg) => {
                     const isOwn = msg.userId === currentUser?.id;
 
-                    // Get proper initials (e.g., "Eli" -> "EL", "Raheem" -> "RA", "John Doe" -> "JD")
                     const getInitials = () => {
-                      // Use enriched displayName first, fallback to username
                       const name = (msg as any).displayName?.trim() || msg.username?.trim() || '';
                       if (!name) return 'U';
                       const parts = name.split(' ').filter((p: string) => p);
@@ -350,7 +348,6 @@ export default function TournamentMatch() {
                       return name.substring(0, 2).toUpperCase();
                     };
 
-                    // Get sender name to display (ALWAYS use this)
                     const senderName = (msg as any).displayName?.trim() || msg.username?.trim() || 'Unknown User';
 
                     return (
@@ -360,32 +357,32 @@ export default function TournamentMatch() {
                         data-testid={`message-${msg.id}`}
                       >
                         {msg.userId ? (
-                          <Link to={`/profile/${msg.userId}`} data-testid={`avatar-link-${msg.id}`}>
-                            <Avatar className="h-8 w-8 cursor-pointer hover-elevate" data-testid={`avatar-${msg.id}`}>
-                              <AvatarFallback className="bg-primary/10 text-primary text-xs" data-testid={`avatar-fallback-${msg.id}`}>
+                          <Link to={`/profile/${msg.userId}`}>
+                            <Avatar className="h-8 w-8 cursor-pointer hover-elevate">
+                              <AvatarFallback className="bg-primary/10 text-primary text-xs">
                                 {getInitials()}
                               </AvatarFallback>
                             </Avatar>
                           </Link>
                         ) : (
-                          <Avatar className="h-8 w-8" data-testid={`avatar-${msg.id}`}>
-                            <AvatarFallback className="bg-primary/10 text-primary text-xs" data-testid={`avatar-fallback-${msg.id}`}>
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback className="bg-primary/10 text-primary text-xs">
                               {getInitials()}
                             </AvatarFallback>
                           </Avatar>
                         )}
-                        <div className={`flex flex-col gap-1 max-w-[70%] ${isOwn ? 'items-end' : ''}`} data-testid={`message-content-${msg.id}`}>
+                        <div className={`flex flex-col gap-1 max-w-[70%] ${isOwn ? 'items-end' : ''}`}>
                           {msg.userId ? (
-                            <Link to={`/profile/${msg.userId}`} className="text-xs text-muted-foreground hover:underline cursor-pointer" data-testid={`username-link-${msg.id}`}>
+                            <Link to={`/profile/${msg.userId}`} className="text-xs text-muted-foreground hover:underline cursor-pointer">
                               {senderName}
                             </Link>
                           ) : (
-                            <span className="text-xs text-muted-foreground" data-testid={`username-text-${msg.id}`}>
+                            <span className="text-xs text-muted-foreground">
                               {senderName}
                             </span>
                           )}
                           {msg.message && (
-                            <p className="text-sm text-foreground" data-testid={`message-text-${msg.id}`}>{msg.message}</p>
+                            <p className="text-sm text-foreground">{msg.message}</p>
                           )}
                         </div>
                       </div>
