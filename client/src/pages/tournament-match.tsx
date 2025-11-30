@@ -52,16 +52,14 @@ interface MatchDetails {
   team2Players: any[];
 }
 
-interface ThreadMessage {
+interface ChatMessage {
   id: string;
-  threadId: string;
-  userId: string;
+  matchId: string;
+  userId?: string;
   username: string;
   message: string;
   createdAt: string;
   imageUrl?: string;
-  avatarUrl?: string;
-  displayName?: string;
 }
 
 interface User {
@@ -95,21 +93,10 @@ export default function TournamentMatch() {
     queryKey: ["/api/auth/me"],
   });
 
-  // Get or create message thread for this match
-  const { data: matchThread, isLoading: threadLoading } = useQuery<any>({
-    queryKey: ["/api/matches", matchId, "thread"],
+  // Fetch messages for the match
+  const { data: chatMessages = [], isLoading: messagesLoading } = useQuery<ChatMessage[]>({
+    queryKey: ["/api/matches", matchId, "messages"],
     enabled: !!matchId,
-    queryFn: async () => {
-      const response = await fetch(`/api/matches/${matchId}/thread`);
-      if (!response.ok) throw new Error("Failed to fetch thread");
-      return response.json();
-    },
-  });
-
-  // Fetch messages for the match thread
-  const { data: threadMessages = [], isLoading: messagesLoading } = useQuery<ThreadMessage[]>({
-    queryKey: ["/api/message-threads", matchThread?.id, "messages"],
-    enabled: !!matchThread && !!matchThread.id,
   });
 
   const qc = useQueryClient();
@@ -117,17 +104,19 @@ export default function TournamentMatch() {
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [threadMessages]);
+  }, [chatMessages]);
 
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
-      if (!matchThread?.id) throw new Error("No thread available");
-      
-      const response = await fetch(`/api/message-threads/${matchThread.id}/messages`, {
+      const response = await fetch(`/api/matches/${matchId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({
+          userId: currentUser?.id,
+          username: currentUser?.username,
+          message,
+        }),
       });
       
       if (!response.ok) throw new Error("Failed to send message");
@@ -136,8 +125,8 @@ export default function TournamentMatch() {
     onSuccess: () => {
       setMessageInput("");
       toast({ title: "Message sent!" });
-      qc.refetchQueries({
-        queryKey: ["/api/message-threads", matchThread?.id, "messages"],
+      qc.invalidateQueries({
+        queryKey: ["/api/matches", matchId, "messages"],
       });
     },
     onError: () => {
@@ -181,7 +170,7 @@ export default function TournamentMatch() {
     }
   };
 
-  if (matchLoading || threadLoading) {
+  if (matchLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -292,13 +281,13 @@ export default function TournamentMatch() {
           </CardContent>
         </Card>
 
-        {/* Match Chat - Using Message Thread System */}
+        {/* Match Chat */}
         <Card>
           <CardHeader className="pb-4">
             <CardTitle className="font-display flex items-center gap-2">
               Match Chat
               <Badge variant="outline" className="font-normal">
-                {threadMessages.length} messages
+                {chatMessages.length} messages
               </Badge>
             </CardTitle>
           </CardHeader>
@@ -309,17 +298,17 @@ export default function TournamentMatch() {
                   <div className="flex justify-center py-8">
                     <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                   </div>
-                ) : threadMessages.length === 0 ? (
+                ) : chatMessages.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <p>No messages yet. Start the conversation!</p>
                   </div>
                 ) : (
-                  threadMessages.map((msg) => {
+                  chatMessages.map((msg) => {
                     const isOwn = msg.userId === currentUser?.id;
 
                     // Get proper initials
                     const getInitials = () => {
-                      const name = (msg as any).displayName?.trim() || msg.username?.trim() || '';
+                      const name = msg.username?.trim() || '';
                       if (!name) return 'U';
                       const parts = name.split(' ').filter((p: string) => p);
                       if (parts.length > 1) {
@@ -328,7 +317,7 @@ export default function TournamentMatch() {
                       return name.substring(0, 2).toUpperCase();
                     };
 
-                    const senderName = (msg as any).displayName?.trim() || msg.username?.trim() || 'Unknown User';
+                    const senderName = msg.username?.trim() || 'Unknown User';
 
                     return (
                       <div 
@@ -339,7 +328,6 @@ export default function TournamentMatch() {
                         {msg.userId ? (
                           <Link to={`/profile/${msg.userId}`}>
                             <Avatar className="h-8 w-8 cursor-pointer hover-elevate">
-                              {msg.avatarUrl && <AvatarImage src={msg.avatarUrl} alt={senderName} />}
                               <AvatarFallback className="bg-primary/10 text-primary text-xs">
                                 {getInitials()}
                               </AvatarFallback>
@@ -347,7 +335,6 @@ export default function TournamentMatch() {
                           </Link>
                         ) : (
                           <Avatar className="h-8 w-8">
-                            {msg.avatarUrl && <AvatarImage src={msg.avatarUrl} alt={senderName} />}
                             <AvatarFallback className="bg-primary/10 text-primary text-xs">
                               {getInitials()}
                             </AvatarFallback>
