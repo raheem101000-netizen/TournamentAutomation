@@ -645,46 +645,34 @@ export default function PreviewMessages() {
                 </ScrollArea>
 
                 {/* Winner Selection for Match Chats */}
-                {selectedChat?.matchId && (
-                  <>
-                    {matchDetailsLoading ? (
-                      <div className="border-t pt-3 flex justify-center">
-                        <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                      </div>
-                    ) : matchDetails ? (
-                      matchDetails.status !== "completed" && (
-                        <div className="border-t pt-3">
-                          <p className="text-xs font-semibold text-muted-foreground mb-2">Select Winner</p>
-                          <div className="flex gap-2">
-                            {currentUser?.id === (matchDetails.team1 as any)?.managerId && matchDetails.team1 && (
-                              <Button
-                                onClick={() => setWinnerMutation.mutate(matchDetails.team1.id)}
-                                disabled={setWinnerMutation.isPending}
-                                className="flex-1"
-                                size="sm"
-                                data-testid={`button-select-winner-team1`}
-                              >
-                                <Trophy className="w-4 h-4 mr-1" />
-                                {matchDetails.team1.name} Wins
-                              </Button>
-                            )}
-                            {currentUser?.id === (matchDetails.team2 as any)?.managerId && matchDetails.team2 && (
-                              <Button
-                                onClick={() => setWinnerMutation.mutate(matchDetails.team2.id)}
-                                disabled={setWinnerMutation.isPending}
-                                className="flex-1"
-                                size="sm"
-                                data-testid={`button-select-winner-team2`}
-                              >
-                                <Trophy className="w-4 h-4 mr-1" />
-                                {matchDetails.team2.name} Wins
-                              </Button>
-                            )}
-                          </div>
+                {selectedChat?.matchId && matchDetails && matchDetails.team1 && matchDetails.team2 && (
+                  <div className="border-t pt-3 space-y-2">
+                    {matchDetails.status !== "completed" && (
+                      <>
+                        <p className="text-xs font-semibold text-muted-foreground">Select Winner:</p>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => setWinnerMutation.mutate(matchDetails.team1.id)}
+                            disabled={setWinnerMutation.isPending}
+                            className="flex-1"
+                            data-testid="button-team1-wins"
+                          >
+                            <Trophy className="w-4 h-4 mr-2" />
+                            {matchDetails.team1.name}
+                          </Button>
+                          <Button
+                            onClick={() => setWinnerMutation.mutate(matchDetails.team2.id)}
+                            disabled={setWinnerMutation.isPending}
+                            className="flex-1"
+                            data-testid="button-team2-wins"
+                          >
+                            <Trophy className="w-4 h-4 mr-2" />
+                            {matchDetails.team2.name}
+                          </Button>
                         </div>
-                      )
-                    ) : null}
-                  </>
+                      </>
+                    )}
+                  </div>
                 )}
 
                 <div className="space-y-2">
