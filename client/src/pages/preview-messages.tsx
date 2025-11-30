@@ -175,9 +175,25 @@ export default function PreviewMessages() {
           console.error("[MATCH-DETAILS] Error:", response.status);
           return null;
         }
-        const data = await response.json();
-        console.log("[MATCH-DETAILS] Loaded:", data);
-        return data;
+        const match = await response.json();
+        console.log("[MATCH-DETAILS] Match loaded:", match);
+        
+        // Fetch full team details
+        const [team1Response, team2Response] = await Promise.all([
+          fetch(`/api/teams/${match.team1Id}`),
+          fetch(`/api/teams/${match.team2Id}`),
+        ]);
+        
+        const team1 = team1Response.ok ? await team1Response.json() : null;
+        const team2 = team2Response.ok ? await team2Response.json() : null;
+        
+        console.log("[MATCH-DETAILS] Teams loaded:", { team1, team2 });
+        
+        return {
+          ...match,
+          team1,
+          team2,
+        };
       } catch (error) {
         console.error("[MATCH-DETAILS] Fetch error:", error);
         return null;
