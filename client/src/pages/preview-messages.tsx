@@ -165,7 +165,7 @@ export default function PreviewMessages() {
 
   // Fetch match details when viewing a match chat
   const { data: matchDetails } = useQuery<any>({
-    queryKey: selectedChat?.matchId ? ["match-details", selectedChat.matchId] : [],
+    queryKey: ["match-details", selectedChat?.matchId || "none"],
     enabled: !!selectedChat?.matchId,
     queryFn: async () => {
       if (!selectedChat?.matchId) return null;
