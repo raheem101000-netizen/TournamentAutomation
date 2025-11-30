@@ -199,8 +199,16 @@ export default function PreviewMessages() {
 
   const acceptedChats = threads.map(threadToChat);
   
+  // Separate personal chats from match chats
+  const personalChats = acceptedChats.filter(chat => !chat.matchId);
+  const matchChats = acceptedChats.filter(chat => !!chat.matchId);
+  
   // Filter chats based on search term
-  const filteredChats = acceptedChats.filter(chat =>
+  const filteredPersonalChats = personalChats.filter(chat =>
+    chat.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  const filteredMatchChats = matchChats.filter(chat =>
     chat.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -633,13 +641,21 @@ export default function PreviewMessages() {
       </header>
 
       <main className="container max-w-lg mx-auto px-4 py-2">
-        <Tabs defaultValue="accepted" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="accepted" data-testid="tab-accepted">
-              Accepted
-              {acceptedChats.filter(c => c.unread > 0).length > 0 && (
+        <Tabs defaultValue="personal" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-4">
+            <TabsTrigger value="personal" data-testid="tab-personal">
+              Personal
+              {personalChats.filter(c => c.unread > 0).length > 0 && (
                 <Badge variant="destructive" className="ml-2">
-                  {acceptedChats.reduce((sum, c) => sum + c.unread, 0)}
+                  {personalChats.reduce((sum, c) => sum + c.unread, 0)}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="matches" data-testid="tab-matches">
+              Match Chats
+              {matchChats.filter(c => c.unread > 0).length > 0 && (
+                <Badge variant="destructive" className="ml-2">
+                  {matchChats.reduce((sum, c) => sum + c.unread, 0)}
                 </Badge>
               )}
             </TabsTrigger>
@@ -653,21 +669,21 @@ export default function PreviewMessages() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="accepted" className="space-y-1">
+          <TabsContent value="personal" className="space-y-1">
             {isLoading ? (
               <Card className="p-8 flex items-center justify-center">
                 <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
               </Card>
-            ) : filteredChats.length === 0 ? (
+            ) : filteredPersonalChats.length === 0 ? (
               <Card>
                 <div className="p-8 text-center">
                   <p className="text-sm text-muted-foreground">
-                    {searchTerm ? "No conversations match your search" : "No conversations yet"}
+                    {searchTerm ? "No personal messages match your search" : "No personal messages yet"}
                   </p>
                 </div>
               </Card>
             ) : (
-              filteredChats.map((chat) => (
+              filteredPersonalChats.map((chat) => (
                 <Card
                   key={chat.id}
                   className="p-4 hover-elevate cursor-pointer border-0 shadow-none"
@@ -708,6 +724,61 @@ export default function PreviewMessages() {
                             </Badge>
                           )}
                         </div>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+                          {chat.timestamp}
+                        </span>
+                      </div>
+                      <p className={`text-sm truncate ${chat.unread > 0 ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                        {chat.lastMessage}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            )}
+          </TabsContent>
+
+          <TabsContent value="matches" className="space-y-1">
+            {isLoading ? (
+              <Card className="p-8 flex items-center justify-center">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              </Card>
+            ) : filteredMatchChats.length === 0 ? (
+              <Card>
+                <div className="p-8 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    {searchTerm ? "No match chats match your search" : "No match chats yet"}
+                  </p>
+                </div>
+              </Card>
+            ) : (
+              filteredMatchChats.map((chat) => (
+                <Card
+                  key={chat.id}
+                  className="p-4 hover-elevate cursor-pointer border-0 shadow-none"
+                  onClick={() => setSelectedChat(chat)}
+                  data-testid={`match-chat-${chat.id}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-12 h-12">
+                      <AvatarFallback className="text-2xl bg-primary/10">
+                        ⚔️
+                      </AvatarFallback>
+                    </Avatar>
+                    {chat.unread > 0 && (
+                      <Badge
+                        variant="destructive"
+                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full p-0 flex items-center justify-center text-xs"
+                      >
+                        {chat.unread}
+                      </Badge>
+                    )}
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-semibold truncate">
+                          {chat.name}
+                        </h3>
                         <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
                           {chat.timestamp}
                         </span>
