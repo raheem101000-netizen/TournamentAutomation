@@ -4,7 +4,7 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Edit, Users, Trophy, Medal, Award, Star, Target, Plus, ArrowRight, Crown, Calendar, Shield, Zap } from "lucide-react";
+import { Settings, Edit, Users, Star, Plus, ArrowRight, Crown, Calendar } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Dialog,
@@ -15,6 +15,7 @@ import {
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import type { User } from "@shared/schema";
+import { getAchievementIcon, getAchievementColor } from "@/lib/achievement-utils";
 
 const mockUser = {
   username: "ProGamer2024",
@@ -164,32 +165,6 @@ export default function PreviewAccount() {
 
   // Use mock achievements when viewing a visitor profile, real achievements for own profile
   const userAchievements = !isOwnProfile ? mockAchievements : dbAchievements;
-
-  const getAchievementIcon = (iconUrl: string) => {
-    const iconMap: { [key: string]: any } = {
-      "champion": Trophy,
-      "runner-up": Medal,
-      "third-place": Medal,
-      "mvp": Award,
-      "top-scorer": Target,
-      "best-defense": Shield,
-      "rising-star": Zap,
-    };
-    return iconMap[iconUrl] || Trophy;
-  };
-
-  const getAchievementColor = (iconUrl: string) => {
-    const colorMap: { [key: string]: string } = {
-      "champion": "text-amber-500",
-      "runner-up": "text-slate-300",
-      "third-place": "text-amber-700",
-      "mvp": "text-purple-500",
-      "top-scorer": "text-red-500",
-      "best-defense": "text-green-500",
-      "rising-star": "text-yellow-500",
-    };
-    return colorMap[iconUrl] || "text-muted-foreground";
-  };
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">

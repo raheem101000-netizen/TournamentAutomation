@@ -13,10 +13,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Search, Plus, Users, Send, ArrowLeft, Edit, Check, X, Image as ImageIcon, Paperclip, Smile, Loader2, AlertCircle, Trophy, Trash2, MessageSquare, UserPlus, UserCheck, Medal, Award, Target, Shield, Zap } from "lucide-react";
+import { Search, Plus, Users, Send, ArrowLeft, Edit, Check, X, Image as ImageIcon, Paperclip, Smile, Loader2, AlertCircle, Trophy, Trash2, MessageSquare, UserPlus, UserCheck } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
+import { getAchievementIcon, getAchievementColor } from "@/lib/achievement-utils";
 
 interface Chat {
   id: string;
@@ -136,32 +137,6 @@ function formatTime(dateString: string): string {
   if (diffDays < 7) return `${diffDays}d ago`;
   
   return date.toLocaleDateString();
-}
-
-function getAchievementIcon(iconUrl: string) {
-  const iconMap: { [key: string]: any } = {
-    "champion": Trophy,
-    "runner-up": Medal,
-    "third-place": Medal,
-    "mvp": Award,
-    "top-scorer": Target,
-    "best-defense": Shield,
-    "rising-star": Zap,
-  };
-  return iconMap[iconUrl] || Trophy;
-}
-
-function getAchievementColor(iconUrl: string) {
-  const colorMap: { [key: string]: string } = {
-    "champion": "text-amber-500",
-    "runner-up": "text-slate-300",
-    "third-place": "text-amber-700",
-    "mvp": "text-purple-500",
-    "top-scorer": "text-red-500",
-    "best-defense": "text-green-500",
-    "rising-star": "text-yellow-500",
-  };
-  return colorMap[iconUrl] || "text-muted-foreground";
 }
 
 export default function PreviewMessages() {
