@@ -1036,13 +1036,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const message = await storage.createChatMessage(validatedData);
 
       // Enrich message with displayName before broadcasting
-      let enrichedMessage = { ...message };
+      let enrichedMessage = { ...message } as any;
       if (message.userId) {
         const sender = await storage.getUser(message.userId);
         enrichedMessage.displayName = sender?.displayName?.trim() || sender?.username || "Unknown";
+        enrichedMessage.username = sender?.username || undefined;
         enrichedMessage.avatarUrl = sender?.avatarUrl || undefined;
       } else {
         enrichedMessage.displayName = "Unknown";
+        enrichedMessage.username = undefined;
       }
 
       broadcastToMatch(req.params.matchId, {
