@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, MessageSquare } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface UserProfile {
   id: string;
@@ -30,7 +31,41 @@ export default function Profile() {
   const [match, params] = useRoute("/profile/:userId");
   const [, setLocation] = useLocation();
   const { user: currentUser } = useAuth();
+  const { toast } = useToast();
   const userId = params?.userId;
+
+  const handleMessage = async () => {
+    if (!userProfile) return;
+    
+    try {
+      // Create or get message thread
+      const response = await fetch("/api/message-threads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          participantName: userProfile.displayName || userProfile.username,
+          participantAvatar: userProfile.avatarUrl,
+        }),
+        credentials: "include",
+      });
+
+      if (!response.ok) throw new Error("Failed to create message thread");
+      const thread = await response.json();
+      
+      // Navigate to messages with this thread selected
+      setLocation(`/messages?threadId=${thread.id}`);
+      toast({
+        title: "Opening message thread",
+        description: `Chat with ${userProfile.displayName || userProfile.username}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to open message thread",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Fetch user profile
   const { data: userProfile, isLoading: userLoading } = useQuery<UserProfile>({
@@ -100,6 +135,12 @@ export default function Profile() {
                   <p className="text-sm text-muted-foreground mt-1">{userProfile.email}</p>
                 )}
               </div>
+              {!isOwnProfile && (
+                <Button onClick={handleMessage} data-testid="button-message-user">
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Message
+                </Button>
+              )}
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
