@@ -134,9 +134,14 @@ export default function TournamentMatch() {
       try {
         const data = JSON.parse(event.data);
         if (data.type === "new_message") {
+          const msg = data.message;
+          // Ensure displayName exists for WebSocket messages
+          if (!msg.displayName) {
+            msg.displayName = msg.username || "Unknown";
+          }
           setMessages((prev) => {
-            if (prev.some((m) => m.id === data.message.id)) return prev;
-            return [...prev, data.message];
+            if (prev.some((m) => m.id === msg.id)) return prev;
+            return [...prev, msg];
           });
         }
       } catch (error) {
@@ -422,7 +427,7 @@ export default function TournamentMatch() {
             {/* Messages */}
             <div className="flex-1 overflow-y-auto space-y-4 pr-2">
               {messages.map((msg) => {
-                const displayName = (msg.displayName && typeof msg.displayName === 'string' && msg.displayName.trim()) || (msg.username && msg.username.trim()) || "Unknown";
+                const displayName = msg.displayName || msg.username || "Unknown";
                 const initials = String(displayName || "U")
                   .substring(0, 2)
                   .toUpperCase();
