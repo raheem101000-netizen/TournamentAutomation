@@ -150,6 +150,8 @@ export default function PreviewMessages() {
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const [messageRequests, setMessageRequests] = useState<Chat[]>(mockMessageRequests);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
@@ -170,6 +172,18 @@ export default function PreviewMessages() {
     queryFn: async () => {
       if (!selectedChat?.matchId) return null;
       const response = await fetch(`/api/matches/${selectedChat.matchId}`);
+      if (!response.ok) return null;
+      return response.json();
+    },
+  });
+
+  // Fetch profile data when viewing profile modal
+  const { data: previewProfileData } = useQuery<any>({
+    queryKey: ["/api/users/username", selectedProfileId],
+    enabled: !!selectedProfileId && profileModalOpen,
+    queryFn: async () => {
+      if (!selectedProfileId) return null;
+      const response = await fetch(`/api/users/${selectedProfileId}`);
       if (!response.ok) return null;
       return response.json();
     },
@@ -582,13 +596,20 @@ export default function PreviewMessages() {
                             data-testid={`message-${msg.id}`}
                           >
                             {msg.userId ? (
-                              <Link to={`/profile/${msg.userId}`}>
+                              <button
+                                onClick={() => {
+                                  setSelectedProfileId(msg.userId);
+                                  setProfileModalOpen(true);
+                                }}
+                                className="p-0 border-0 bg-transparent cursor-pointer"
+                                data-testid={`button-avatar-${msg.id}`}
+                              >
                                 <Avatar className="h-8 w-8 cursor-pointer hover-elevate">
                                   <AvatarFallback className="bg-primary/10 text-primary text-xs">
                                     {getInitials()}
                                   </AvatarFallback>
                                 </Avatar>
-                              </Link>
+                              </button>
                             ) : (
                               <Avatar className="h-8 w-8">
                                 <AvatarFallback className="bg-primary/10 text-primary text-xs">
@@ -598,9 +619,16 @@ export default function PreviewMessages() {
                             )}
                             <div className={`flex flex-col gap-1 max-w-[70%] ${isOwn ? 'items-end' : ''}`}>
                               {msg.userId ? (
-                                <Link to={`/profile/${msg.userId}`} className="text-xs text-muted-foreground hover:underline cursor-pointer" data-testid={`user-link-${msg.id}`}>
+                                <button
+                                  onClick={() => {
+                                    setSelectedProfileId(msg.userId);
+                                    setProfileModalOpen(true);
+                                  }}
+                                  className="text-xs text-muted-foreground hover:underline cursor-pointer p-0 border-0 bg-transparent text-left"
+                                  data-testid={`user-link-${msg.id}`}
+                                >
                                   {senderName}
-                                </Link>
+                                </button>
                               ) : (
                                 <span className="text-xs text-muted-foreground">
                                   {senderName}
@@ -1055,6 +1083,45 @@ export default function PreviewMessages() {
               {createGroupMutation.isPending ? "Creating..." : "Create Group"}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Profile Preview Modal */}
+      <Dialog open={profileModalOpen} onOpenChange={setProfileModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>User Profile</DialogTitle>
+          </DialogHeader>
+          {previewProfileData ? (
+            <div className="space-y-4">
+              <div className="flex flex-col items-center gap-3">
+                <Avatar className="w-24 h-24">
+                  {previewProfileData.avatarUrl && (
+                    <AvatarImage src={previewProfileData.avatarUrl} alt={previewProfileData.displayName || previewProfileData.username} />
+                  )}
+                  <AvatarFallback className="bg-primary/10 text-primary text-2xl">
+                    {previewProfileData.displayName?.[0]?.toUpperCase() || previewProfileData.username?.[0]?.toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="text-center">
+                  <h3 className="font-semibold text-foreground">{previewProfileData.displayName || previewProfileData.username}</h3>
+                  {previewProfileData.displayName && (
+                    <p className="text-sm text-muted-foreground">@{previewProfileData.username}</p>
+                  )}
+                </div>
+              </div>
+              
+              <Link to={`/profile/${selectedProfileId}`}>
+                <Button className="w-full" data-testid="button-visit-profile">
+                  Visit Profile
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            <div className="flex justify-center py-8">
+              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
