@@ -79,7 +79,6 @@ export default function TournamentMatch() {
   const matchId = params?.matchId;
   const tournamentId = params?.tournamentId;
 
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [messageInput, setMessageInput] = useState("");
   const [messageImage, setMessageImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -113,16 +112,10 @@ export default function TournamentMatch() {
 
   const qc = useQueryClient();
 
-  useEffect(() => {
-    if (Array.isArray(messagesData)) {
-      setMessages(messagesData);
-    }
-  }, [messagesData]);
-
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messagesData]);
 
   // WebSocket connection
   useEffect(() => {
@@ -220,7 +213,7 @@ export default function TournamentMatch() {
       toast({
         title: "Message sent!",
       });
-      qc.invalidateQueries({
+      qc.refetchQueries({
         queryKey: ["/api/matches", matchId, "messages"],
       });
     },
@@ -462,7 +455,7 @@ export default function TournamentMatch() {
             <CardTitle className="font-display flex items-center gap-2">
               Match Chat
               <Badge variant="outline" className="font-normal">
-                {messages.length} messages
+                {messagesData.length} messages
               </Badge>
             </CardTitle>
           </CardHeader>
@@ -473,12 +466,12 @@ export default function TournamentMatch() {
                 <div className="flex justify-center py-8">
                   <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                 </div>
-              ) : messages.length === 0 ? (
+              ) : messagesData.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <p>No messages yet. Start the conversation!</p>
                 </div>
               ) : (
-                messages.map((msg: ChatMessage) => {
+                messagesData.map((msg: ChatMessage) => {
                   const isOwn = msg.userId === currentUser?.id;
                   const isSystem = false;
 
