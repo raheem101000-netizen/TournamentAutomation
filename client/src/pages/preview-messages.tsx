@@ -1,5 +1,6 @@
 import { useState, useRef, ChangeEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -477,15 +478,31 @@ export default function PreviewMessages() {
                             className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : ''}`}
                             data-testid={`message-${msg.id}`}
                           >
-                            <Avatar className="h-8 w-8">
-                              <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                                {getInitials()}
-                              </AvatarFallback>
-                            </Avatar>
+                            {msg.userId ? (
+                              <Link to={`/profile/${msg.userId}`}>
+                                <Avatar className="h-8 w-8 cursor-pointer hover-elevate">
+                                  <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                                    {getInitials()}
+                                  </AvatarFallback>
+                                </Avatar>
+                              </Link>
+                            ) : (
+                              <Avatar className="h-8 w-8">
+                                <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                                  {getInitials()}
+                                </AvatarFallback>
+                              </Avatar>
+                            )}
                             <div className={`flex flex-col gap-1 max-w-[70%] ${isOwn ? 'items-end' : ''}`}>
-                              <span className="text-xs text-muted-foreground">
-                                {senderName}
-                              </span>
+                              {msg.userId ? (
+                                <Link to={`/profile/${msg.userId}`} className="text-xs text-muted-foreground hover:underline cursor-pointer" data-testid={`user-link-${msg.id}`}>
+                                  {senderName}
+                                </Link>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">
+                                  {senderName}
+                                </span>
+                              )}
                               {msg.imageUrl && (
                                 <img 
                                   src={msg.imageUrl} 
