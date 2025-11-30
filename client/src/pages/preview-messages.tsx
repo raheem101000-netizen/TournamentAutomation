@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Search, Plus, Users, Send, ArrowLeft, Edit, Check, X, Image as ImageIcon, Paperclip, Smile, Loader2, AlertCircle, Trophy, Trash2, MessageSquare, UserPlus, UserCheck } from "lucide-react";
+import { Search, Plus, Users, Send, ArrowLeft, Edit, Check, X, Image as ImageIcon, Paperclip, Smile, Loader2, AlertCircle, Trophy, Trash2, MessageSquare, UserPlus, UserCheck, Medal, Award, Target, Shield, Zap } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
@@ -136,6 +136,32 @@ function formatTime(dateString: string): string {
   if (diffDays < 7) return `${diffDays}d ago`;
   
   return date.toLocaleDateString();
+}
+
+function getAchievementIcon(iconUrl: string) {
+  const iconMap: { [key: string]: any } = {
+    "champion": Trophy,
+    "runner-up": Medal,
+    "third-place": Medal,
+    "mvp": Award,
+    "top-scorer": Target,
+    "best-defense": Shield,
+    "rising-star": Zap,
+  };
+  return iconMap[iconUrl] || Trophy;
+}
+
+function getAchievementColor(iconUrl: string) {
+  const colorMap: { [key: string]: string } = {
+    "champion": "text-amber-500",
+    "runner-up": "text-slate-300",
+    "third-place": "text-amber-700",
+    "mvp": "text-purple-500",
+    "top-scorer": "text-red-500",
+    "best-defense": "text-green-500",
+    "rising-star": "text-yellow-500",
+  };
+  return colorMap[iconUrl] || "text-muted-foreground";
 }
 
 export default function PreviewMessages() {
@@ -908,15 +934,12 @@ export default function PreviewMessages() {
                     <h3 className="text-sm font-semibold mb-3">Achievements</h3>
                     <div className="grid grid-cols-1 gap-3">
                       {previewAchievements.map((achievement: any) => {
-                        const isValidUrl = achievement.iconUrl && (achievement.iconUrl.startsWith('http://') || achievement.iconUrl.startsWith('https://') || achievement.iconUrl.startsWith('/'));
+                        const IconComponent = getAchievementIcon(achievement.iconUrl);
+                        const colorClass = getAchievementColor(achievement.iconUrl);
                         return (
                         <div key={achievement.id} className="flex gap-3 p-3 rounded-lg bg-muted/50">
                           <div className="flex-shrink-0 flex items-center justify-center w-8 h-8">
-                            {isValidUrl ? (
-                              <img src={achievement.iconUrl} alt={achievement.title} className="w-8 h-8 object-cover rounded" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                            ) : (
-                              <Trophy className="w-5 h-5 text-amber-500" />
-                            )}
+                            <IconComponent className={`w-5 h-5 ${colorClass}`} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <h4 className="font-semibold text-sm">{achievement.title}</h4>
