@@ -618,8 +618,8 @@ export default function PreviewMessages() {
                   </div>
                 </ScrollArea>
 
-                {/* Winner Selection for Match Chats */}
-                {selectedChat?.matchId && matchDetails && matchDetails.status !== "completed" && (
+                {/* Winner Selection for Match Chats - Available for all matches (including completed for round-robin/swiss formats) */}
+                {selectedChat?.matchId && matchDetails && (
                   <div className="border-t pt-3 space-y-2">
                     <p className="text-xs font-semibold text-muted-foreground">Select Winner:</p>
                     <div className="flex gap-2">
