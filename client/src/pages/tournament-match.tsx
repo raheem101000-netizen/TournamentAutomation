@@ -428,8 +428,15 @@ export default function TournamentMatch() {
                 </div>
               ) : (
                 messages.map((msg: ChatMessage) => {
-                  const senderName = msg.username || "Unknown";
+                  // Use same logic as participant view: check displayName first, then username
+                  const senderName = (msg as any).displayName?.trim() || msg.username?.trim() || 'Unknown User';
                   const initials = senderName.substring(0, 2).toUpperCase();
+                  
+                  // Debug logging to see what data we're receiving
+                  if (!msg.username && !msg.displayName) {
+                    console.warn(`[MATCH-CHAT-DEBUG] Message ${msg.id} has no username or displayName:`, msg);
+                  }
+                  
                   const timestamp = new Date(msg.createdAt).toLocaleTimeString(
                     "en-US",
                     {
