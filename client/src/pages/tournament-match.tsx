@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useRoute, useLocation, Link } from "wouter";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -26,7 +27,7 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Send, X, ChevronLeft, Trophy, Upload as UploadIcon, AlertCircle } from "lucide-react";
+import { Send, X, ChevronLeft, Trophy, Upload as UploadIcon, AlertCircle, Loader2, Image as ImageIcon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -92,8 +93,13 @@ export default function TournamentMatch() {
     enabled: !!matchId && !!tournamentId,
   });
 
-  // Fetch messages - with automatic refetching every 2 seconds to ensure userId is always present
-  const { data: messagesData = [] } = useQuery<ChatMessage[]>({
+  // Fetch current user
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/auth/me"],
+  });
+
+  // Fetch messages for this match - EXACT SAME CONFIG AS preview-messages.tsx
+  const { data: messagesData = [], isLoading: messagesLoading } = useQuery<ChatMessage[]>({
     queryKey: ["/api/matches", matchId, "messages"],
     enabled: !!matchId,
     queryFn: async () => {
@@ -102,12 +108,10 @@ export default function TournamentMatch() {
       if (!response.ok) throw new Error("Failed to fetch messages");
       return response.json();
     },
-    staleTime: 0, // Always consider data stale to refetch frequently
-    refetchInterval: 2000, // Refetch every 2 seconds
   });
 
   useEffect(() => {
-    if (Array.isArray(messagesData) && messagesData.length > 0) {
+    if (Array.isArray(messagesData)) {
       setMessages(messagesData);
     }
   }, [messagesData]);
