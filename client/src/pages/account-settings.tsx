@@ -171,6 +171,9 @@ export default function AccountSettings() {
         title: "Account disabled",
         description: "Your account has been disabled.",
       });
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 1000);
     },
   });
 
@@ -186,6 +189,23 @@ export default function AccountSettings() {
         title: "Account deleted",
         description: "Your account has been permanently deleted.",
       });
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 1000);
+    },
+  });
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", "/api/auth/logout", {});
+    },
+    onSuccess: () => {
+      queryClient.clear();
+      toast({
+        title: "Logged out",
+        description: "You have been logged out.",
+      });
+      window.location.href = "/login";
     },
   });
 
@@ -515,6 +535,18 @@ export default function AccountSettings() {
         </TabsContent>
 
         <TabsContent value="danger" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Logout</CardTitle>
+              <CardDescription>Sign out of your account</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full" onClick={() => logoutMutation.mutate()} disabled={logoutMutation.isPending} data-testid="button-logout">
+                Logout
+              </Button>
+            </CardContent>
+          </Card>
+
           <Card className="border-destructive">
             <CardHeader>
               <CardTitle className="text-destructive">Danger Zone</CardTitle>

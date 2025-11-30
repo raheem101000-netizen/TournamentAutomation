@@ -1005,6 +1005,15 @@ export class DatabaseStorage implements IStorage {
       .orderBy(channelMessages.createdAt);
   }
 
+  async updateChannelMessage(id: string, data: { message?: string }): Promise<ChannelMessage> {
+    const [updated] = await db
+      .update(channelMessages)
+      .set(data)
+      .where(eq(channelMessages.id, id))
+      .returning();
+    return updated;
+  }
+
   async deleteChannelMessage(id: string): Promise<void> {
     await db.delete(channelMessages).where(eq(channelMessages.id, id));
   }

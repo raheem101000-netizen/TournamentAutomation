@@ -34,6 +34,7 @@ const createTournamentSchema = z.object({
   totalTeams: z.number().min(2, "At least 2 teams required"),
   swissRounds: z.number().optional(),
   imageUrl: z.string().optional(),
+  imageFit: z.enum(["stretch", "contain", "cover"]).optional(),
   prizeReward: z.string().optional(),
   entryFee: z.number().optional(),
   organizerName: z.string().optional(),
@@ -53,6 +54,7 @@ export default function CreateTournament() {
       game: "",
       format: "single_elimination",
       totalTeams: 8,
+      imageFit: "cover",
       prizeReward: "",
       entryFee: 0,
       organizerName: "",
@@ -281,7 +283,7 @@ export default function CreateTournament() {
                   control={form.control}
                   name="imageUrl"
                   render={({ field }) => (
-                    <FormItem className="md:col-span-2">
+                    <FormItem>
                       <FormLabel>Image URL (Optional)</FormLabel>
                       <FormControl>
                         <Input
@@ -290,6 +292,28 @@ export default function CreateTournament() {
                           {...field}
                         />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="imageFit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Image Fit</FormLabel>
+                      <Select value={field.value || "cover"} onValueChange={field.onChange}>
+                        <SelectTrigger data-testid="select-image-fit">
+                          <SelectValue placeholder="Select image fit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="stretch">Stretch (Fill entire poster)</SelectItem>
+                          <SelectItem value="contain">Contain (Full image visible)</SelectItem>
+                          <SelectItem value="cover">Cover (Crop to fill)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>How the image fits inside the poster</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

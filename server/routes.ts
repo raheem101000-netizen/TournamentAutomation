@@ -2362,6 +2362,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/messages/:id", async (req, res) => {
+    try {
+      const updatedMessage = await storage.updateChannelMessage(req.params.id, { message: req.body.message });
+      res.json(updatedMessage);
+    } catch (error: any) {
+      console.error("Error updating message:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.delete("/api/messages/:id", async (req, res) => {
     try {
       await storage.deleteChannelMessage(req.params.id);
