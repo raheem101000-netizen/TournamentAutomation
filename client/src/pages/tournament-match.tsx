@@ -26,7 +26,7 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Send, X, ChevronLeft, Trophy, Upload as UploadIcon } from "lucide-react";
+import { Send, X, ChevronLeft, Trophy, Upload as UploadIcon, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -430,51 +430,61 @@ export default function TournamentMatch() {
                 </div>
               ) : (
                 messages.map((msg: ChatMessage) => {
-                  // Use same logic as participant view: check displayName first, then username
-                  const senderName = (msg as any).displayName?.trim() || msg.username?.trim() || 'Unknown User';
-                  const initials = senderName.substring(0, 2).toUpperCase();
-                  
-                  // Debug logging to see what data we're receiving
-                  if (!msg.username && !msg.displayName) {
-                    console.warn(`[MATCH-CHAT-DEBUG] Message ${msg.id} has no username or displayName:`, msg);
-                  }
-                  
-                  const timestamp = new Date(msg.createdAt).toLocaleTimeString(
-                    "en-US",
-                    {
-                      hour: "numeric",
-                      minute: "2-digit",
-                      hour12: true,
+                  const isOwn = msg.userId === user?.id;
+                  const isSystem = false;
+
+                  // Get proper initials (e.g., "Eli" -> "EL", "Raheem" -> "RA", "John Doe" -> "JD")
+                  const getInitials = () => {
+                    // Use enriched displayName first, fallback to username, then message username
+                    const name = (msg as any).displayName?.trim() || msg.username?.trim() || '';
+                    if (!name) return 'U';
+                    const parts = name.split(' ').filter((p: string) => p);
+                    if (parts.length > 1) {
+                      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
                     }
-                  );
+                    return name.substring(0, 2).toUpperCase();
+                  };
+
+                  // Get sender name to display
+                  const senderName = (msg as any).displayName?.trim() || msg.username?.trim() || 'Unknown User';
+                  const senderUsername = msg.username?.trim() || '';
+
+                  if (isSystem) {
+                    return (
+                      <div key={msg.id} className="flex justify-center">
+                        <Badge variant="outline" className="gap-2 py-1">
+                          <AlertCircle className="w-3 h-3" />
+                          {msg.message}
+                        </Badge>
+                      </div>
+                    );
+                  }
 
                   return (
-                    <div
-                      key={msg.id}
-                      className="flex gap-3"
+                    <div 
+                      key={msg.id} 
+                      className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : ''}`}
                       data-testid={`message-${msg.id}`}
                     >
-                      <Avatar className="h-8 w-8 flex-shrink-0">
-                        <AvatarFallback className="text-xs">
-                          {initials}
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                          {getInitials()}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1">
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-sm font-semibold" data-testid={`user-name-${msg.id}`}>
-                            {senderName}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {timestamp}
-                          </span>
-                        </div>
-                        <p className="text-sm mt-1">{msg.message}</p>
+                      <div className={`flex flex-col gap-1 max-w-[70%] ${isOwn ? 'items-end' : ''}`}>
+                        <span className="text-xs text-muted-foreground">
+                          {senderName}
+                        </span>
                         {msg.imageUrl && (
-                          <img
-                            src={msg.imageUrl}
-                            alt="Message attachment"
-                            className="mt-2 rounded max-w-xs max-h-48 object-cover"
+                          <img 
+                            src={msg.imageUrl} 
+                            alt="Shared image" 
+                            className="max-w-full h-auto max-h-60 object-contain rounded-md"
+                            data-testid={`img-message-${msg.id}`}
                           />
+                        )}
+                        {msg.message && (
+                          <p className="text-sm text-foreground">{msg.message}</p>
                         )}
                       </div>
                     </div>
