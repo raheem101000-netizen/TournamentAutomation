@@ -96,19 +96,31 @@ export default function TournamentMatch() {
   });
 
   // Fetch messages for the match
-  const { data: chatMessages = [], isLoading: messagesLoading } = useQuery<ChatMessage[]>({
+  const { data: chatMessages = [], isLoading: messagesLoading, error: messagesError } = useQuery<ChatMessage[]>({
     queryKey: ["/api/matches", matchId, "messages"],
     enabled: !!matchId,
     queryFn: async () => {
-      if (!matchId) return [];
+      if (!matchId) {
+        console.log(`[DASHBOARD-CHAT-FETCH] No matchId`);
+        return [];
+      }
       console.log(`[DASHBOARD-CHAT-FETCH] Fetching messages for match: ${matchId}`);
       const response = await fetch(`/api/matches/${matchId}/messages`);
-      if (!response.ok) throw new Error("Failed to fetch messages");
+      if (!response.ok) {
+        const text = await response.text();
+        console.error(`[DASHBOARD-CHAT-FETCH] Error ${response.status}:`, text);
+        throw new Error("Failed to fetch messages");
+      }
       const data = await response.json();
-      console.log(`[DASHBOARD-CHAT-FETCH] Received ${data.length} messages:`, JSON.stringify(data.slice(0, 2)));
+      console.log(`[DASHBOARD-CHAT-FETCH] Received ${data.length} messages:`, JSON.stringify(data));
       return data;
     },
   });
+  
+  // Log errors
+  if (messagesError) {
+    console.error(`[DASHBOARD-CHAT] Query error:`, messagesError);
+  }
 
   const qc = useQueryClient();
 
@@ -323,6 +335,9 @@ export default function TournamentMatch() {
                     <p>No messages yet. Start the conversation!</p>
                   </div>
                 ) : (
+                  <>
+                    {console.log(`[DASHBOARD-CHAT-RENDER] Rendering ${chatMessages.length} messages`)}
+                    <>
                   chatMessages.map((msg) => {
                     const isOwn = msg.userId === currentUser?.id;
 
@@ -378,7 +393,8 @@ export default function TournamentMatch() {
                         </div>
                       </div>
                     );
-                  })
+                    </>
+                  </>
                 )}
                 <div ref={messagesEndRef} />
               </div>
