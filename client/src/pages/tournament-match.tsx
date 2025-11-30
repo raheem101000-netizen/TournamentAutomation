@@ -109,13 +109,17 @@ export default function TournamentMatch() {
 
   // Fetch user data for messages that don't have displayName
   const { data: userDataMap } = useQuery<Record<string, any>>({
-    queryKey: ['message-users', initialMessages?.map(m => m.userId).filter(Boolean)?.join(',')],
+    queryKey: ['message-users', initialMessages ? initialMessages.map(m => m.userId).filter(Boolean).join(',') : ''],
     enabled: !!initialMessages && initialMessages.length > 0,
     queryFn: async () => {
       if (!initialMessages || !Array.isArray(initialMessages)) return {};
       
-      // Get unique user IDs
-      const userIds = [...new Set(initialMessages.map((m: any) => m.userId).filter(Boolean))];
+      // Get unique user IDs (using Array.from instead of spread operator for Set)
+      const userIdSet = new Set<string>();
+      initialMessages.forEach((m: any) => {
+        if (m.userId) userIdSet.add(m.userId);
+      });
+      const userIds = Array.from(userIdSet);
       if (userIds.length === 0) return {};
       
       // Fetch user data for all unique users
@@ -127,7 +131,6 @@ export default function TournamentMatch() {
             if (res.ok) {
               const user = await res.json();
               users[userId] = user;
-              console.error(`[USER-FETCH] Fetched user ${userId}:`, user);
             }
           } catch (e) {
             console.error(`[USER-FETCH-ERROR] Failed to fetch user ${userId}:`, e);
@@ -492,53 +495,53 @@ export default function TournamentMatch() {
                   No messages yet
                 </div>
               ) : (
-              messages.map((msg) => {
-                // Always use explicit fallback chain: displayName -> username -> "Unknown"
-                const senderName = msg.displayName?.trim() || msg.username?.trim() || "Unknown";
-                const initials = String(senderName || "U")
-                  .substring(0, 2)
-                  .toUpperCase();
-                const timestamp = new Date(msg.createdAt).toLocaleTimeString(
-                  "en-US",
-                  {
-                    hour: "numeric",
-                    minute: "2-digit",
-                    hour12: true,
-                  }
-                );
+                messages.map((msg) => {
+                  // Always use explicit fallback chain: displayName -> username -> "Unknown"
+                  const senderName = msg.displayName?.trim() || msg.username?.trim() || "Unknown";
+                  const initials = String(senderName || "U")
+                    .substring(0, 2)
+                    .toUpperCase();
+                  const timestamp = new Date(msg.createdAt).toLocaleTimeString(
+                    "en-US",
+                    {
+                      hour: "numeric",
+                      minute: "2-digit",
+                      hour12: true,
+                    }
+                  );
 
-                return (
-                  <div
-                    key={msg.id}
-                    className="flex gap-3"
-                    data-testid={`message-${msg.id}`}
-                  >
-                    <Avatar className="h-8 w-8 flex-shrink-0">
-                      <AvatarFallback className="text-xs">
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-sm font-semibold" data-testid={`user-name-${msg.id}`}>
-                          {senderName}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {timestamp}
-                        </span>
+                  return (
+                    <div
+                      key={msg.id}
+                      className="flex gap-3"
+                      data-testid={`message-${msg.id}`}
+                    >
+                      <Avatar className="h-8 w-8 flex-shrink-0">
+                        <AvatarFallback className="text-xs">
+                          {initials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-sm font-semibold" data-testid={`user-name-${msg.id}`}>
+                            {senderName}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {timestamp}
+                          </span>
+                        </div>
+                        <p className="text-sm mt-1">{msg.message}</p>
+                        {msg.imageUrl && (
+                          <img
+                            src={msg.imageUrl}
+                            alt="Message attachment"
+                            className="mt-2 rounded max-w-xs max-h-48 object-cover"
+                          />
+                        )}
                       </div>
-                      <p className="text-sm mt-1">{msg.message}</p>
-                      {msg.imageUrl && (
-                        <img
-                          src={msg.imageUrl}
-                          alt="Message attachment"
-                          className="mt-2 rounded max-w-xs max-h-48 object-cover"
-                        />
-                      )}
                     </div>
-                  </div>
-                );
-              })
+                  );
+                })
               )}
               <div ref={messagesEndRef} />
             </div>
