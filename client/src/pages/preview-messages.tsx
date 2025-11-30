@@ -899,7 +899,7 @@ export default function PreviewMessages() {
                   <div>
                     <h3 className="text-sm font-semibold mb-3">Achievements</h3>
                     <div className="grid grid-cols-1 gap-3">
-                      {previewAchievements.map((achievement) => (
+                      {previewAchievements.map((achievement: any) => (
                         <div key={achievement.id} className="flex gap-3 p-3 rounded-lg bg-muted/50">
                           <div className="text-2xl flex-shrink-0">
                             {achievement.iconUrl ? (
