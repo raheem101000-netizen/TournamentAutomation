@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Search, Plus, Users, Send, ArrowLeft, Edit, Check, X, Image as ImageIcon, Paperclip, Smile, Loader2, AlertCircle, Trophy, Trash2 } from "lucide-react";
+import { Search, Plus, Users, Send, ArrowLeft, Edit, Check, X, Image as ImageIcon, Paperclip, Smile, Loader2, AlertCircle, Trophy, Trash2, MessageSquare, UserPlus, UserCheck } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
@@ -152,6 +152,7 @@ export default function PreviewMessages() {
   const [messageRequests, setMessageRequests] = useState<Chat[]>(mockMessageRequests);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [isFriendRequestSent, setIsFriendRequestSent] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
@@ -189,6 +190,12 @@ export default function PreviewMessages() {
     },
   });
 
+  // Fetch achievements for profile modal
+  const { data: previewAchievements = [], isLoading: achievementsLoading } = useQuery<any[]>({
+    queryKey: [`/api/users/${selectedProfileId}/achievements`],
+    enabled: !!selectedProfileId && profileModalOpen,
+  });
+
   // Auto-select match chat if matchId is in URL query
   useEffect(() => {
     const params = new URLSearchParams(location.split("?")[1]);
@@ -202,6 +209,74 @@ export default function PreviewMessages() {
       }
     }
   }, [threads, location, selectedChat]);
+
+  // Reset friend request state when modal closes
+  useEffect(() => {
+    if (!profileModalOpen) {
+      setIsFriendRequestSent(false);
+    }
+  }, [profileModalOpen]);
+
+  const handleAddFriend = async () => {
+    if (!previewProfileData || !currentUser) return;
+    
+    try {
+      const response = await fetch("/api/friend-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipientId: previewProfileData.id,
+        }),
+        credentials: "include",
+      });
+
+      if (!response.ok) throw new Error("Failed to send friend request");
+      
+      setIsFriendRequestSent(true);
+      toast({
+        title: "Friend request sent!",
+        description: `Request sent to ${previewProfileData.displayName || previewProfileData.username}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send friend request",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleMessageProfile = async () => {
+    if (!previewProfileData) return;
+    
+    try {
+      const response = await fetch("/api/message-threads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          participantName: previewProfileData.displayName || previewProfileData.username,
+          participantAvatar: previewProfileData.avatarUrl,
+        }),
+        credentials: "include",
+      });
+
+      if (!response.ok) throw new Error("Failed to create message thread");
+      const thread = await response.json();
+      
+      setProfileModalOpen(false);
+      setSelectedChat(threadToChat(thread));
+      toast({
+        title: "Opening message thread",
+        description: `Chat with ${previewProfileData.displayName || previewProfileData.username}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to open message thread",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Fetch messages for selected thread or match
   // If selectedChat has a matchId, fetch from match API, otherwise from thread API
@@ -742,16 +817,26 @@ export default function PreviewMessages() {
           </Card>
         </main>
 
-        {/* Profile Preview Modal - Inside conversation view */}
+        {/* Full-Page Profile Modal - Inside conversation view */}
         <Dialog open={profileModalOpen} onOpenChange={setProfileModalOpen}>
-          <DialogContent className="z-50" style={{ zIndex: 50 }}>
-            <DialogHeader>
-              <DialogTitle>User Profile</DialogTitle>
-            </DialogHeader>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto z-50" style={{ zIndex: 50 }}>
             {previewProfileData ? (
-              <div className="space-y-4">
-                <div className="flex flex-col items-center gap-3">
-                  <Avatar className="w-24 h-24">
+              <div className="space-y-6">
+                {/* Close Button */}
+                <div className="flex justify-end -mt-2 -mr-2">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setProfileModalOpen(false)}
+                    data-testid="button-close-profile-modal"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+
+                {/* Profile Header */}
+                <div className="flex gap-4 items-start">
+                  <Avatar className="w-20 h-20">
                     {previewProfileData.avatarUrl && (
                       <AvatarImage src={previewProfileData.avatarUrl} alt={previewProfileData.displayName || previewProfileData.username} />
                     )}
@@ -759,23 +844,85 @@ export default function PreviewMessages() {
                       {previewProfileData.displayName?.[0]?.toUpperCase() || previewProfileData.username?.[0]?.toUpperCase() || 'U'}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="text-center">
-                    <h3 className="font-semibold text-foreground">{previewProfileData.displayName || previewProfileData.username}</h3>
-                    {previewProfileData.displayName && (
-                      <p className="text-sm text-muted-foreground">@{previewProfileData.username}</p>
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold">{previewProfileData.displayName || previewProfileData.username}</h2>
+                    <p className="text-sm text-muted-foreground">@{previewProfileData.username}</p>
+                    {previewProfileData.email && (
+                      <p className="text-sm text-muted-foreground">{previewProfileData.email}</p>
                     )}
                   </div>
                 </div>
-                
-                <Link to={`/profile/${selectedProfileId}`}>
-                  <Button className="w-full" data-testid="button-visit-profile">
-                    Visit Profile
-                  </Button>
-                </Link>
+
+                {/* Action Buttons */}
+                {currentUser?.id !== selectedProfileId && (
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={handleMessageProfile} 
+                      className="flex-1"
+                      data-testid="button-message-profile-user"
+                    >
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      Message
+                    </Button>
+                    <Button 
+                      onClick={handleAddFriend} 
+                      disabled={isFriendRequestSent}
+                      variant={isFriendRequestSent ? "secondary" : "outline"}
+                      className="flex-1"
+                      data-testid="button-add-friend-profile"
+                    >
+                      {isFriendRequestSent ? (
+                        <>
+                          <UserCheck className="w-4 h-4 mr-2" />
+                          Requested
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          Add Friend
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+
+                {/* Bio */}
+                {previewProfileData.bio && (
+                  <div>
+                    <h3 className="text-sm font-semibold mb-2">Bio</h3>
+                    <p className="text-sm text-foreground">{previewProfileData.bio}</p>
+                  </div>
+                )}
+
+                {/* Achievements */}
+                {!achievementsLoading && previewAchievements.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold mb-3">Achievements</h3>
+                    <div className="grid grid-cols-1 gap-3">
+                      {previewAchievements.map((achievement) => (
+                        <div key={achievement.id} className="flex gap-3 p-3 rounded-lg bg-muted/50">
+                          <div className="text-2xl flex-shrink-0">
+                            {achievement.icon || '🏆'}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-sm">{achievement.title}</h4>
+                            <p className="text-xs text-muted-foreground">{achievement.description}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {!achievementsLoading && previewAchievements.length === 0 && (
+                  <div className="text-center py-6">
+                    <p className="text-sm text-muted-foreground">No achievements yet</p>
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="flex justify-center py-8">
-                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
               </div>
             )}
           </DialogContent>
