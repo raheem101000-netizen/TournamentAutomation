@@ -92,27 +92,22 @@ export default function TournamentMatch() {
     enabled: !!matchId && !!tournamentId,
   });
 
-  // Fetch messages for match - EXACT SAME LOGIC AS PARTICIPANT VIEW
-  const { data: messagesData = [], isLoading: messagesLoading } = useQuery<any[]>({
+  // Fetch messages - with automatic refetching every 2 seconds to ensure userId is always present
+  const { data: messagesData = [] } = useQuery<ChatMessage[]>({
     queryKey: ["/api/matches", matchId, "messages"],
     enabled: !!matchId,
     queryFn: async () => {
       if (!matchId) return [];
-      
-      const url = `/api/matches/${matchId}/messages`;
-      const response = await fetch(url);
+      const response = await fetch(`/api/matches/${matchId}/messages`);
       if (!response.ok) throw new Error("Failed to fetch messages");
       return response.json();
     },
+    staleTime: 0, // Always consider data stale to refetch frequently
+    refetchInterval: 2000, // Refetch every 2 seconds
   });
 
   useEffect(() => {
-    if (messagesData && Array.isArray(messagesData)) {
-      console.log("[TOURNAMENT-MATCH] Messages received:", messagesData);
-      if (messagesData.length > 0) {
-        console.log("[TOURNAMENT-MATCH] First message:", messagesData[0]);
-        console.log("[TOURNAMENT-MATCH] First message userId:", messagesData[0].userId);
-      }
+    if (Array.isArray(messagesData) && messagesData.length > 0) {
       setMessages(messagesData);
     }
   }, [messagesData]);
