@@ -109,17 +109,15 @@ export default function TournamentMatch() {
 
   useEffect(() => {
     if (initialMessages && Array.isArray(initialMessages)) {
-      console.log("[API-MESSAGES] Raw response from backend:", initialMessages.slice(0, 3).map(m => ({ id: m.id?.substring(0, 8), displayName: m.displayName, username: m.username, userId: m.userId })));
+      console.log("[API-FULL-DEBUG] First message full object:", JSON.stringify(initialMessages[0], null, 2));
       const messagesWithDefaults = initialMessages.map((msg: any) => {
         const enrichedMsg = {
           ...msg,
           displayName: msg.displayName || msg.username || "Unknown",
           username: msg.username || null,
         };
-        console.log("[ENRICHED-STATE]", { id: enrichedMsg.id?.substring(0, 8), displayName: enrichedMsg.displayName });
         return enrichedMsg;
       });
-      console.log("[FRONTEND-MESSAGES] After processing:", messagesWithDefaults.slice(0, 3).map(m => ({ id: m.id?.substring(0, 8), displayName: m.displayName, username: m.username })));
       setMessages(messagesWithDefaults);
     }
   }, [initialMessages]);
