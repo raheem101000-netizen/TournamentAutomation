@@ -1033,6 +1033,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Chat routes for message inbox match participants (OLD SYSTEM - KEEP FOR MESSAGE INBOX COMPATIBILITY)
+  app.get("/api/matches/:matchId/messages", async (req, res) => {
+    try {
+      const messages = await storage.getChatMessagesByMatch(req.params.matchId);
+      
+      // Enrich messages with sender username from users table
+      const enrichedMessages = await Promise.all(
+        messages.map(async (msg: any) => {
+          let username = "Unknown";
+          
+          if (msg.userId) {
+            try {
+              const sender = await storage.getUser(msg.userId);
+              if (sender && sender.username) {
+                username = sender.username;
+              }
+            } catch (e) {
+              console.error("Failed to get user:", msg.userId, e);
+            }
+          }
+          
+          return {
+            id: msg.id,
+            matchId: msg.matchId,
+            teamId: msg.teamId || null,
+            userId: msg.userId || null,
+            message: msg.message || null,
+            imageUrl: msg.imageUrl || null,
+            isSystem: msg.isSystem,
+            createdAt: msg.createdAt,
+            username,
+          };
+        })
+      );
+      res.removeHeader("ETag");
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, private, max-age=0");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+      res.setHeader("X-Timestamp", Date.now().toString());
+      res.json(enrichedMessages);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/matches/:matchId/messages", async (req, res) => {
+    try {
+      const validatedData = insertChatMessageSchema.parse({
+        ...req.body,
+        matchId: req.params.matchId,
+      });
+      const message = await storage.createChatMessage(validatedData);
+
+      // Enrich message with username before broadcasting
+      const enrichedMessage: any = {
+        id: message.id,
+        matchId: message.matchId,
+        teamId: message.teamId,
+        userId: message.userId,
+        message: message.message,
+        imageUrl: message.imageUrl,
+        isSystem: message.isSystem,
+        createdAt: message.createdAt,
+      };
+      
+      if (message.userId) {
+        const sender = await storage.getUser(message.userId);
+        enrichedMessage.username = sender?.username || "Unknown";
+      } else {
+        enrichedMessage.username = "Unknown";
+      }
+
+      res.status(201).json(enrichedMessage);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
 
   // Registration Config routes
   app.post("/api/tournaments/:tournamentId/registration-config", async (req, res) => {
