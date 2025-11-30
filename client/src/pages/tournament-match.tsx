@@ -96,7 +96,7 @@ export default function TournamentMatch() {
   });
 
   // Get or create message thread for this match
-  const { data: matchThread, isLoading: threadLoading } = useQuery({
+  const { data: matchThread, isLoading: threadLoading } = useQuery<any>({
     queryKey: ["/api/matches", matchId, "thread"],
     enabled: !!matchId,
   });
@@ -104,7 +104,7 @@ export default function TournamentMatch() {
   // Fetch messages for the match thread
   const { data: threadMessages = [], isLoading: messagesLoading } = useQuery<ThreadMessage[]>({
     queryKey: ["/api/message-threads", matchThread?.id, "messages"],
-    enabled: !!matchThread?.id,
+    enabled: !!matchThread && !!matchThread.id,
   });
 
   const qc = useQueryClient();
@@ -200,8 +200,8 @@ export default function TournamentMatch() {
   }
 
   const { match: m, tournament, team1, team2, team1Players, team2Players } = matchDetails;
-  const isTeam1Manager = currentUser?.id === team1.managerId;
-  const isTeam2Manager = currentUser?.id === team2.managerId;
+  const isTeam1Manager = currentUser?.id === (team1 as any).managerId;
+  const isTeam2Manager = currentUser?.id === (team2 as any).managerId;
 
   return (
     <div className="min-h-screen bg-background p-4 pb-20">

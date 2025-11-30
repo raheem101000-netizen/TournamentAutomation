@@ -2427,34 +2427,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { matchId } = req.params;
       
-      // Try to find existing thread for this match
-      const existingThread = await storage.pool.query(
-        'SELECT * FROM message_threads WHERE match_id = $1 LIMIT 1',
-        [matchId]
-      );
+      // Try to find existing thread for this match using storage
+      const threads = await storage.getMessageThreads();
+      const existingThread = threads.find(t => t.matchId === matchId);
       
-      if (existingThread.rows.length > 0) {
-        return res.json(existingThread.rows[0]);
+      if (existingThread) {
+        return res.json(existingThread);
       }
       
       // Create new match thread if it doesn't exist
-      const matchDetails = await storage.pool.query(
-        'SELECT tournaments.name FROM matches JOIN tournaments ON matches.tournament_id = tournaments.id WHERE matches.id = $1',
-        [matchId]
-      );
+      const newThread = await storage.createMessageThread({
+        matchId: matchId,
+        participantName: `Match Discussion`,
+        participantAvatar: null,
+        lastMessage: "Match discussion started",
+        unreadCount: 0,
+      });
       
-      if (matchDetails.rows.length === 0) {
-        return res.status(404).json({ error: "Match not found" });
-      }
-      
-      const threadName = `Match: ${matchDetails.rows[0].name}`;
-      const newThread = await storage.pool.query(
-        `INSERT INTO message_threads (match_id, participant_name, last_message, last_message_time, unread_count)
-         VALUES ($1, $2, $3, NOW(), 0) RETURNING *`,
-        [matchId, threadName, "Match discussion started"]
-      );
-      
-      res.json(newThread.rows[0]);
+      res.json(newThread);
     } catch (error: any) {
       console.error("Error getting/creating match thread:", error);
       res.status(500).json({ error: error.message });
