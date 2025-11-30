@@ -112,6 +112,15 @@ export default function TournamentMatch() {
 
   const qc = useQueryClient();
 
+  // DEBUG: Log messagesData whenever it changes
+  useEffect(() => {
+    console.log("[TOURNAMENT-MATCH] messagesData:", messagesData);
+    if (messagesData.length > 0) {
+      console.log("[TOURNAMENT-MATCH] First message userId:", messagesData[0].userId);
+      console.log("[TOURNAMENT-MATCH] First message username:", messagesData[0].username);
+    }
+  }, [messagesData]);
+
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -472,6 +481,7 @@ export default function TournamentMatch() {
                 </div>
               ) : (
                 messagesData.map((msg: ChatMessage) => {
+                  console.log("[TOURNAMENT-MATCH-RENDER] Message:", msg.id, "userId:", msg.userId, "username:", msg.username);
                   const isOwn = msg.userId === currentUser?.id;
                   const isSystem = false;
 
@@ -490,6 +500,7 @@ export default function TournamentMatch() {
                   // Get sender name to display
                   const senderName = (msg as any).displayName?.trim() || msg.username?.trim() || 'Unknown User';
                   const senderUsername = msg.username?.trim() || '';
+                  console.log("[TOURNAMENT-MATCH-RENDER] senderName:", senderName, "Will render Link?", !!msg.userId);
 
                   if (isSystem) {
                     return (
