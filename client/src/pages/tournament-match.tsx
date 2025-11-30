@@ -109,10 +109,12 @@ export default function TournamentMatch() {
 
   useEffect(() => {
     if (initialMessages && Array.isArray(initialMessages)) {
+      console.log("[API-MESSAGES] Raw response from backend:", initialMessages.slice(0, 3).map(m => ({ id: m.id?.substring(0, 8), displayName: m.displayName, username: m.username, userId: m.userId })));
       const messagesWithDefaults = initialMessages.map((msg: any) => ({
         ...msg,
         displayName: msg.displayName || msg.username || "Unknown",
       }));
+      console.log("[FRONTEND-MESSAGES] After processing:", messagesWithDefaults.slice(0, 3).map(m => ({ id: m.id?.substring(0, 8), displayName: m.displayName, username: m.username })));
       setMessages(messagesWithDefaults);
     }
   }, [initialMessages]);

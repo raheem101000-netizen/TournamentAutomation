@@ -1014,9 +1014,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if (sender) {
                 displayName = sender.displayName?.trim() || sender.username || "Unknown";
                 username = sender.username || null;
-                if (msg.message && msg.message.includes("Dont get it")) {
-                  console.log("[RAHEEM-DEBUG] User:", sender.username, "displayName:", displayName, "from DB displayName:", sender.displayName);
-                }
+                console.log("[MSG-ENRICHMENT] User:", sender.username, "displayName:", displayName);
               } else {
                 console.log("[RAHEEM-DEBUG] getUser returned null for userId:", msg.userId);
               }
