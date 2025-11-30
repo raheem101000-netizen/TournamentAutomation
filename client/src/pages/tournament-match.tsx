@@ -323,14 +323,13 @@ export default function TournamentMatch() {
                     <p>No messages yet. Start the conversation!</p>
                   </div>
                 ) : (
-                  chatMessages.map((msg, idx) => {
+                  chatMessages.map((msg) => {
                     const isOwn = msg.userId === currentUser?.id;
-                    const displayName = msg.displayName?.trim() || msg.username?.trim() || 'Unknown User';
-                    const hasUserId = msg.userId && msg.userId.length > 0;
 
-                    // Get proper initials
+                    // Get proper initials (e.g., "Eli" -> "EL", "Raheem" -> "RA", "John Doe" -> "JD")
                     const getInitials = () => {
-                      const name = displayName || '';
+                      // Use enriched displayName first, fallback to username
+                      const name = (msg as any).displayName?.trim() || msg.username?.trim() || '';
                       if (!name) return 'U';
                       const parts = name.split(' ').filter((p: string) => p);
                       if (parts.length > 1) {
@@ -338,28 +337,9 @@ export default function TournamentMatch() {
                       }
                       return name.substring(0, 2).toUpperCase();
                     };
-                    
-                    if (idx === 0) {
-                      console.log(`[DASHBOARD-CHAT-RENDER] Message ${idx}:`, {
-                        id: msg.id,
-                        userId: msg.userId,
-                        hasUserId,
-                        username: msg.username,
-                        displayName: msg.displayName,
-                        avatarUrl: msg.avatarUrl,
-                        computedDisplayName: displayName,
-                      });
-                    }
 
-                    // Avatar component - always visible, clickable when userId exists
-                    const avatarComponent = (
-                      <Avatar className={`h-8 w-8 ${hasUserId ? 'cursor-pointer hover-elevate' : ''}`} data-testid={`avatar-${msg.id}`}>
-                        {msg.avatarUrl && <AvatarImage src={msg.avatarUrl} alt={displayName} data-testid={`avatar-image-${msg.id}`} />}
-                        <AvatarFallback className="bg-primary/10 text-primary text-xs" data-testid={`avatar-fallback-${msg.id}`}>
-                          {getInitials()}
-                        </AvatarFallback>
-                      </Avatar>
-                    );
+                    // Get sender name to display (ALWAYS use this)
+                    const senderName = (msg as any).displayName?.trim() || msg.username?.trim() || 'Unknown User';
 
                     return (
                       <div 
@@ -367,37 +347,33 @@ export default function TournamentMatch() {
                         className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : ''}`}
                         data-testid={`message-${msg.id}`}
                       >
-                        {/* Avatar - always shows, linked if userId exists */}
-                        {hasUserId ? (
+                        {msg.userId ? (
                           <Link to={`/profile/${msg.userId}`} data-testid={`avatar-link-${msg.id}`}>
-                            {avatarComponent}
+                            <Avatar className="h-8 w-8 cursor-pointer hover-elevate" data-testid={`avatar-${msg.id}`}>
+                              <AvatarFallback className="bg-primary/10 text-primary text-xs" data-testid={`avatar-fallback-${msg.id}`}>
+                                {getInitials()}
+                              </AvatarFallback>
+                            </Avatar>
                           </Link>
                         ) : (
-                          avatarComponent
+                          <Avatar className="h-8 w-8" data-testid={`avatar-${msg.id}`}>
+                            <AvatarFallback className="bg-primary/10 text-primary text-xs" data-testid={`avatar-fallback-${msg.id}`}>
+                              {getInitials()}
+                            </AvatarFallback>
+                          </Avatar>
                         )}
-
-                        {/* Message content */}
                         <div className={`flex flex-col gap-1 max-w-[70%] ${isOwn ? 'items-end' : ''}`} data-testid={`message-content-${msg.id}`}>
-                          {/* Username - always shows, linked if userId exists */}
-                          {hasUserId ? (
-                            <Link 
-                              to={`/profile/${msg.userId}`} 
-                              className="text-xs text-muted-foreground hover:underline cursor-pointer" 
-                              data-testid={`username-link-${msg.id}`}
-                            >
-                              {displayName}
+                          {msg.userId ? (
+                            <Link to={`/profile/${msg.userId}`} className="text-xs text-muted-foreground hover:underline cursor-pointer" data-testid={`username-link-${msg.id}`}>
+                              {senderName}
                             </Link>
                           ) : (
                             <span className="text-xs text-muted-foreground" data-testid={`username-text-${msg.id}`}>
-                              {displayName}
+                              {senderName}
                             </span>
                           )}
-                          
-                          {/* Message text */}
                           {msg.message && (
-                            <p className="text-sm text-foreground break-words" data-testid={`message-text-${msg.id}`}>
-                              {msg.message}
-                            </p>
+                            <p className="text-sm text-foreground" data-testid={`message-text-${msg.id}`}>{msg.message}</p>
                           )}
                         </div>
                       </div>
