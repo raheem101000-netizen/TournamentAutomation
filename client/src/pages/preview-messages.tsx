@@ -163,6 +163,18 @@ export default function PreviewMessages() {
     queryKey: ["/api/message-threads"],
   });
 
+  // Fetch match details when viewing a match chat
+  const { data: matchDetails } = useQuery<any>({
+    queryKey: selectedChat?.matchId ? ["match-details", selectedChat.matchId] : [],
+    enabled: !!selectedChat?.matchId,
+    queryFn: async () => {
+      if (!selectedChat?.matchId) return null;
+      const response = await fetch(`/api/matches/${selectedChat.matchId}`);
+      if (!response.ok) throw new Error("Failed to fetch match details");
+      return response.json();
+    },
+  });
+
   // Auto-select match chat if matchId is in URL query
   useEffect(() => {
     const params = new URLSearchParams(location.split("?")[1]);
@@ -289,6 +301,30 @@ export default function PreviewMessages() {
       });
     }
   };
+
+  const setWinnerMutation = useMutation({
+    mutationFn: async (winnerId: string) => {
+      if (!selectedChat?.matchId) throw new Error("No match selected");
+      const response = await fetch(`/api/matches/${selectedChat.matchId}/winner`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ winnerId }),
+      });
+      if (!response.ok) throw new Error("Failed to set winner");
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Winner selected!" });
+      queryClient.invalidateQueries({ queryKey: ["match-details", selectedChat?.matchId] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleImageSelected = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
