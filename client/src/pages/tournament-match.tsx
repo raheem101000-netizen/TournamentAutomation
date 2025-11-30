@@ -143,36 +143,10 @@ export default function TournamentMatch() {
 
   useEffect(() => {
     if (initialMessages && Array.isArray(initialMessages)) {
-      console.error("[API-FULL-DEBUG] Received messages from backend:", JSON.stringify(initialMessages, null, 2));
-      const messagesWithDefaults = initialMessages.map((msg: any) => {
-        // First try backend-provided displayName/username
-        let displayName = msg.displayName || msg.display_name;
-        let username = msg.username;
-        let avatarUrl = msg.avatarUrl;
-        
-        // If backend didn't provide displayName, fetch from userDataMap
-        if ((!displayName || displayName === "Unknown") && msg.userId && userDataMap?.[msg.userId]) {
-          const userData = userDataMap[msg.userId];
-          displayName = userData.displayName || userData.display_name || userData.username;
-          username = username || userData.username;
-          avatarUrl = avatarUrl || userData.avatarUrl;
-          console.error(`[MSG-FALLBACK] Using fetched user data for ${msg.userId}: displayName="${displayName}"`);
-        }
-        
-        displayName = displayName?.trim() || username || "Unknown";
-        console.error(`[MSG-PROCESS] msg.id=${msg.id?.substring(0, 8)}, final displayName="${displayName}"`);
-        
-        return {
-          ...msg,
-          displayName,
-          username: username || null,
-          avatarUrl,
-        };
-      });
-      console.error("[API-ALL-MESSAGES] Setting state with messages:", messagesWithDefaults.length);
-      setMessages(messagesWithDefaults);
+      // Simply use backend-enriched data directly - backend sends displayName already
+      setMessages(initialMessages);
     }
-  }, [initialMessages, userDataMap]);
+  }, [initialMessages]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -495,12 +469,10 @@ export default function TournamentMatch() {
                   No messages yet
                 </div>
               ) : (
-                messages.map((msg) => {
-                  // Always use explicit fallback chain: displayName -> username -> "Unknown"
-                  const senderName = msg.displayName?.trim() || msg.username?.trim() || "Unknown";
-                  const initials = String(senderName || "U")
-                    .substring(0, 2)
-                    .toUpperCase();
+                messages.map((msg: ChatMessage) => {
+                  // Use displayName from backend enrichment, fallback to username, then "Unknown"
+                  const senderName = (msg.displayName && msg.displayName.trim()) || (msg.username && msg.username.trim()) || "Unknown";
+                  const initials = senderName.substring(0, 2).toUpperCase();
                   const timestamp = new Date(msg.createdAt).toLocaleTimeString(
                     "en-US",
                     {
