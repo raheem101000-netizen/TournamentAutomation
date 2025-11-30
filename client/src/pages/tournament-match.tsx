@@ -77,6 +77,9 @@ export default function TournamentMatch() {
 
   const matchId = params?.matchId;
   const tournamentId = params?.tournamentId;
+  
+  // DEBUG: Component is mounting
+  console.error("[COMPONENT-MOUNT] TournamentMatch mounted, matchId:", matchId);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [messageInput, setMessageInput] = useState("");
@@ -142,7 +145,9 @@ export default function TournamentMatch() {
   });
 
   useEffect(() => {
+    console.error("[MESSAGES-EFFECT] initialMessages update, data:", initialMessages ? `${initialMessages.length} messages` : "null");
     if (initialMessages && Array.isArray(initialMessages)) {
+      console.error("[SET-MESSAGES] Setting messages to state, sample displayName:", initialMessages[0]?.displayName);
       // Simply use backend-enriched data directly - backend sends displayName already
       setMessages(initialMessages);
     }
