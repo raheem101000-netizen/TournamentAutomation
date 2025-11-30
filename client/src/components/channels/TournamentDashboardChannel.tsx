@@ -76,8 +76,6 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
   const [selectedTeam1Id, setSelectedTeam1Id] = useState<string | null>(null);
   const [selectedTeam2Id, setSelectedTeam2Id] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
-  const [winnerMatchId, setWinnerMatchId] = useState<string | null>(null);
-  const [pendingWinnerId, setPendingWinnerId] = useState<string | null>(null);
   const { toast} = useToast();
   const { user } = useAuth();
 
@@ -273,8 +271,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
         title: "Winner recorded",
         description: "Match result has been saved. Use the Participants tab to manually eliminate teams.",
       });
-      setWinnerMatchId(null);
-      setPendingWinnerId(null);
+      setSelectedMatchId(null);
     },
     onError: (error: Error) => {
       toast({
@@ -503,57 +500,20 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
 
           <TabsContent value="matches">
             {selectedTournamentMatches.length > 0 ? (
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  {user?.id === selectedTournament.organizerId 
-                    ? "Click match to select winner OR submit scores" 
-                    : "Click on a match to view details"}
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {selectedTournamentMatches.map((match) => {
-                    const team1 = getTeamById(match.team1Id);
-                    const team2 = getTeamById(match.team2Id);
-                    return (
-                      <div key={match.id} className="space-y-2">
-                        <div onClick={() => handleMatchClick(match.id)} className="cursor-pointer">
-                          <MatchCard
-                            match={match}
-                            team1={team1}
-                            team2={team2}
-                          />
-                        </div>
-                        {user?.id === selectedTournament.organizerId && match.status !== "completed" && team1 && team2 && (
-                          <div className="flex gap-2">
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              className="flex-1"
-                              onClick={() => {
-                                setWinnerMatchId(match.id);
-                                setPendingWinnerId(team1.id);
-                              }}
-                              data-testid={`button-select-winner-team1-${match.id}`}
-                            >
-                              {team1.name} Wins
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              className="flex-1"
-                              onClick={() => {
-                                setWinnerMatchId(match.id);
-                                setPendingWinnerId(team2.id);
-                              }}
-                              data-testid={`button-select-winner-team2-${match.id}`}
-                            >
-                              {team2.name} Wins
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {selectedTournamentMatches.map((match) => {
+                  const team1 = getTeamById(match.team1Id);
+                  const team2 = getTeamById(match.team2Id);
+                  return (
+                    <div key={match.id} onClick={() => handleMatchClick(match.id)} className="cursor-pointer">
+                      <MatchCard
+                        match={match}
+                        team1={team1}
+                        team2={team2}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <Card className="p-8">
