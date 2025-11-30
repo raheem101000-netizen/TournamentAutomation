@@ -492,6 +492,19 @@ export default function TournamentMatch() {
             <p className="text-sm text-muted-foreground mt-1">
               Team managers and organizer only
             </p>
+            {/* DEBUG: Show first message data to diagnose displayName issue */}
+            {messages.length > 0 && (
+              <div className="mt-4 p-3 bg-destructive/10 rounded-md border border-destructive/30 text-xs font-mono">
+                <div className="font-bold mb-2">DEBUG - First Message Data:</div>
+                <div>ID: {messages[0]?.id?.substring(0, 8)}</div>
+                <div>displayName: "{messages[0]?.displayName}"</div>
+                <div>username: "{messages[0]?.username}"</div>
+                <div>userId: "{messages[0]?.userId}"</div>
+                <div>message: "{messages[0]?.message?.substring(0, 20)}"</div>
+                <div className="mt-2 font-bold">Total messages: {messages.length}</div>
+                <div className="mt-2 font-bold">userDataMap populated: {userDataMap && Object.keys(userDataMap).length > 0 ? `Yes (${Object.keys(userDataMap).length} users)` : "No"}</div>
+              </div>
+            )}
           </CardHeader>
           <CardContent className="flex flex-col gap-4 h-96">
             {/* Messages */}
