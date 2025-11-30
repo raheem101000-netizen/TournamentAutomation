@@ -92,28 +92,25 @@ export default function TournamentMatch() {
     enabled: !!matchId && !!tournamentId,
   });
 
-  // Fetch messages with cache busting
-  const { data: initialMessages, refetch: refetchMessages } = useQuery<any[]>({
+  // Fetch messages for match - EXACT SAME LOGIC AS PARTICIPANT VIEW
+  const { data: messagesData = [], isLoading: messagesLoading } = useQuery<any[]>({
     queryKey: ["/api/matches", matchId, "messages"],
     enabled: !!matchId,
-    staleTime: 0,
-    gcTime: 0,
+    queryFn: async () => {
+      if (!matchId) return [];
+      
+      const url = `/api/matches/${matchId}/messages`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to fetch messages");
+      return response.json();
+    },
   });
 
-  // Initialize messages and refetch when entering page
   useEffect(() => {
-    if (matchId) {
-      refetchMessages();
+    if (messagesData && Array.isArray(messagesData)) {
+      setMessages(messagesData);
     }
-  }, [matchId, refetchMessages]);
-
-  useEffect(() => {
-    if (initialMessages && Array.isArray(initialMessages)) {
-      console.log("[ORGANIZER-INIT] Initial messages from API:", initialMessages);
-      console.log("[ORGANIZER-INIT] Message usernames:", initialMessages.map(m => ({ id: m.id, username: m.username, displayName: m.displayName, userId: m.userId })));
-      setMessages(initialMessages);
-    }
-  }, [initialMessages]);
+  }, [messagesData]);
 
   // Auto-scroll to bottom
   useEffect(() => {
