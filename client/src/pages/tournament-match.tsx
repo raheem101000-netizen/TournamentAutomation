@@ -110,10 +110,15 @@ export default function TournamentMatch() {
   useEffect(() => {
     if (initialMessages && Array.isArray(initialMessages)) {
       console.log("[API-MESSAGES] Raw response from backend:", initialMessages.slice(0, 3).map(m => ({ id: m.id?.substring(0, 8), displayName: m.displayName, username: m.username, userId: m.userId })));
-      const messagesWithDefaults = initialMessages.map((msg: any) => ({
-        ...msg,
-        displayName: msg.displayName || msg.username || "Unknown",
-      }));
+      const messagesWithDefaults = initialMessages.map((msg: any) => {
+        const enrichedMsg = {
+          ...msg,
+          displayName: msg.displayName || msg.username || "Unknown",
+          username: msg.username || null,
+        };
+        console.log("[ENRICHED-STATE]", { id: enrichedMsg.id?.substring(0, 8), displayName: enrichedMsg.displayName });
+        return enrichedMsg;
+      });
       console.log("[FRONTEND-MESSAGES] After processing:", messagesWithDefaults.slice(0, 3).map(m => ({ id: m.id?.substring(0, 8), displayName: m.displayName, username: m.username })));
       setMessages(messagesWithDefaults);
     }
@@ -141,13 +146,16 @@ export default function TournamentMatch() {
         const data = JSON.parse(event.data);
         if (data.type === "new_message") {
           const msg = data.message;
-          // Ensure displayName exists for WebSocket messages
-          if (!msg.displayName) {
-            msg.displayName = msg.username || "Unknown";
-          }
+          // Ensure displayName exists for WebSocket messages - use enriched displayName from backend
+          const enrichedMsg = {
+            ...msg,
+            displayName: msg.displayName || msg.username || "Unknown",
+            username: msg.username || null,
+          };
+          console.log("[WS-ENRICHED]", { id: enrichedMsg.id?.substring(0, 8), displayName: enrichedMsg.displayName, wsDisplayName: msg.displayName, wsUsername: msg.username });
           setMessages((prev) => {
-            if (prev.some((m) => m.id === msg.id)) return prev;
-            return [...prev, msg];
+            if (prev.some((m) => m.id === enrichedMsg.id)) return prev;
+            return [...prev, enrichedMsg];
           });
         }
       } catch (error) {
@@ -433,8 +441,8 @@ export default function TournamentMatch() {
             {/* Messages */}
             <div className="flex-1 overflow-y-auto space-y-4 pr-2">
               {messages.map((msg) => {
-                console.log("[RENDER-MSG]", { id: msg.id?.substring(0, 8), displayName: msg.displayName, username: msg.username, msg_keys: Object.keys(msg) });
                 const displayName = msg.displayName || msg.username || "Unknown";
+                console.log("[RENDER-MSG]", { id: msg.id?.substring(0, 8), displayName, fromMsg: msg.displayName, username: msg.username });
                 const initials = String(displayName || "U")
                   .substring(0, 2)
                   .toUpperCase();
