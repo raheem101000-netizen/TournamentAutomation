@@ -229,6 +229,10 @@ export default function TournamentMatch() {
   const isTeam1Manager = currentUser?.id === (team1 as any).managerId;
   const isTeam2Manager = currentUser?.id === (team2 as any).managerId;
 
+  const navigateToMatchChat = () => {
+    setLocation(`/messages?matchId=${matchId}`);
+  };
+
   return (
     <div className="min-h-screen bg-background p-4 pb-20">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -313,122 +317,21 @@ export default function TournamentMatch() {
           </CardContent>
         </Card>
 
-        {/* Match Chat */}
-        <Card className="flex flex-col min-h-0">
-          <CardHeader className="pb-4">
-            <CardTitle className="font-display flex items-center gap-2">
-              Match Chat
-              <Badge variant="outline" className="font-normal">
-                {chatMessages.length} messages
-              </Badge>
-            </CardTitle>
+        {/* Match Chat - Links to Inbox */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-display">Match Chat</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 flex flex-col gap-4 p-0 px-6 pb-6 min-h-0">
-            <ScrollArea className="flex-1 pr-4">
-              <div className="space-y-4">
-                {messagesLoading ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : chatMessages.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>No messages yet. Start the conversation!</p>
-                  </div>
-                ) : (
-                  chatMessages.map((msg) => {
-                    const isOwn = msg.userId === currentUser?.id;
-                    const isSystem = false;
-
-                    const getInitials = () => {
-                      const name = (msg as any).displayName?.trim() || msg.username?.trim() || '';
-                      if (!name) return 'U';
-                      const parts = name.split(' ').filter((p: string) => p);
-                      if (parts.length > 1) {
-                        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-                      }
-                      return name.substring(0, 2).toUpperCase();
-                    };
-
-                    const senderName = (msg as any).displayName?.trim() || msg.username?.trim() || 'Unknown User';
-
-                    if (isSystem) {
-                      return (
-                        <div key={msg.id} className="flex justify-center">
-                          <Badge variant="outline" className="gap-2 py-1">
-                            <AlertCircle className="w-3 h-3" />
-                            {msg.message}
-                          </Badge>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div 
-                        key={msg.id} 
-                        className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : ''}`}
-                        data-testid={`message-${msg.id}`}
-                      >
-                        {msg.userId ? (
-                          <Link to={`/profile/${msg.userId}`}>
-                            <Avatar className="h-8 w-8 cursor-pointer hover-elevate">
-                              <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                                {getInitials()}
-                              </AvatarFallback>
-                            </Avatar>
-                          </Link>
-                        ) : (
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                              {getInitials()}
-                            </AvatarFallback>
-                          </Avatar>
-                        )}
-                        <div className={`flex flex-col gap-1 max-w-[70%] ${isOwn ? 'items-end' : ''}`}>
-                          {msg.userId ? (
-                            <Link to={`/profile/${msg.userId}`} className="text-xs text-muted-foreground hover:underline cursor-pointer" data-testid={`user-link-${msg.id}`}>
-                              {senderName}
-                            </Link>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">
-                              {senderName}
-                            </span>
-                          )}
-                          {msg.message && (
-                            <p className="text-sm text-foreground">{msg.message}</p>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            </ScrollArea>
-
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Type a message..."
-                  value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                  className="flex-1"
-                  data-testid="input-message"
-                />
-                <Button 
-                  size="icon" 
-                  onClick={handleSendMessage}
-                  disabled={!messageInput.trim() || sendMessageMutation.isPending}
-                  data-testid="button-send-message"
-                >
-                  {sendMessageMutation.isPending ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Send className="w-4 h-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Chat about this match with team members. All messages with usernames and avatars are fully clickable and link to user profiles.
+            </p>
+            <Button 
+              onClick={navigateToMatchChat}
+              data-testid="button-open-match-chat"
+            >
+              Open Match Chat in Inbox
+            </Button>
           </CardContent>
         </Card>
       </div>
