@@ -109,15 +109,20 @@ export default function TournamentMatch() {
 
   useEffect(() => {
     if (initialMessages && Array.isArray(initialMessages)) {
-      console.log("[API-FULL-DEBUG] First message full object:", JSON.stringify(initialMessages[0], null, 2));
+      console.error("[API-FULL-DEBUG] Received messages from backend:", JSON.stringify(initialMessages, null, 2));
       const messagesWithDefaults = initialMessages.map((msg: any) => {
+        // Handle both camelCase and snake_case from backend
+        const displayNameFromMsg = msg.displayName || msg.display_name || msg.username;
+        console.error(`[MSG-PROCESS] msg.id=${msg.id?.substring(0, 8)}, displayName="${msg.displayName}", display_name="${msg.display_name}", username="${msg.username}", final="${displayNameFromMsg}"`);
         const enrichedMsg = {
           ...msg,
-          displayName: msg.displayName || msg.username || "Unknown",
+          displayName: displayNameFromMsg || "Unknown",
           username: msg.username || null,
         };
+        console.error(`[MSG-ENRICHED] Final message: displayName="${enrichedMsg.displayName}"`, enrichedMsg);
         return enrichedMsg;
       });
+      console.error("[API-ALL-MESSAGES] Setting state with:", JSON.stringify(messagesWithDefaults, null, 2));
       setMessages(messagesWithDefaults);
     }
   }, [initialMessages]);
@@ -440,7 +445,7 @@ export default function TournamentMatch() {
             <div className="flex-1 overflow-y-auto space-y-4 pr-2">
               {messages.map((msg) => {
                 const displayName = msg.displayName || msg.username || "Unknown";
-                console.log("[RENDER-MSG]", { id: msg.id?.substring(0, 8), displayName, fromMsg: msg.displayName, username: msg.username });
+                console.error("[RENDER-MSG] Rendering message:", { id: msg.id?.substring(0, 8), displayName, msg_displayName: msg.displayName, msg_username: msg.username, fullMsg: msg });
                 const initials = String(displayName || "U")
                   .substring(0, 2)
                   .toUpperCase();
