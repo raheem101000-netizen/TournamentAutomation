@@ -1038,16 +1038,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const messages = await storage.getChatMessagesByMatch(req.params.matchId);
       
-      // Enrich messages with sender username from users table
+      // Enrich messages with sender username, avatar, and displayName from users table
       const enrichedMessages = await Promise.all(
         messages.map(async (msg: any) => {
           let username = "Unknown";
+          let avatarUrl: string | undefined;
+          let displayName: string | undefined;
           
           if (msg.userId) {
             try {
               const sender = await storage.getUser(msg.userId);
-              if (sender && sender.username) {
-                username = sender.username;
+              if (sender) {
+                username = sender.username || "Unknown";
+                avatarUrl = sender.avatarUrl || undefined;
+                displayName = sender.displayName?.trim() || sender.username || "Unknown";
               }
             } catch (e) {
               console.error("Failed to get user:", msg.userId, e);
@@ -1064,6 +1068,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             isSystem: msg.isSystem,
             createdAt: msg.createdAt,
             username,
+            avatarUrl,
+            displayName,
           };
         })
       );
@@ -1086,7 +1092,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       const message = await storage.createChatMessage(validatedData);
 
-      // Enrich message with username before broadcasting
+      // Enrich message with username, avatar, and displayName before returning
       const enrichedMessage: any = {
         id: message.id,
         matchId: message.matchId,
@@ -1101,6 +1107,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (message.userId) {
         const sender = await storage.getUser(message.userId);
         enrichedMessage.username = sender?.username || "Unknown";
+        enrichedMessage.avatarUrl = sender?.avatarUrl || undefined;
+        enrichedMessage.displayName = sender?.displayName?.trim() || sender?.username || "Unknown";
       } else {
         enrichedMessage.username = "Unknown";
       }
