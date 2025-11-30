@@ -339,6 +339,7 @@ export default function TournamentMatch() {
                         {msg.userId ? (
                           <Link to={`/profile/${msg.userId}`}>
                             <Avatar className="h-8 w-8 cursor-pointer hover-elevate">
+                              {msg.avatarUrl && <AvatarImage src={msg.avatarUrl} alt={senderName} />}
                               <AvatarFallback className="bg-primary/10 text-primary text-xs">
                                 {getInitials()}
                               </AvatarFallback>
@@ -346,6 +347,7 @@ export default function TournamentMatch() {
                           </Link>
                         ) : (
                           <Avatar className="h-8 w-8">
+                            {msg.avatarUrl && <AvatarImage src={msg.avatarUrl} alt={senderName} />}
                             <AvatarFallback className="bg-primary/10 text-primary text-xs">
                               {getInitials()}
                             </AvatarFallback>
