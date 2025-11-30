@@ -107,25 +107,69 @@ export default function TournamentMatch() {
     }
   }, [matchId, refetchMessages]);
 
+  // Fetch user data for messages that don't have displayName
+  const { data: userDataMap } = useQuery<Record<string, any>>({
+    queryKey: ['message-users', initialMessages?.map(m => m.userId).filter(Boolean)?.join(',')],
+    enabled: !!initialMessages && initialMessages.length > 0,
+    queryFn: async () => {
+      if (!initialMessages || !Array.isArray(initialMessages)) return {};
+      
+      // Get unique user IDs
+      const userIds = [...new Set(initialMessages.map((m: any) => m.userId).filter(Boolean))];
+      if (userIds.length === 0) return {};
+      
+      // Fetch user data for all unique users
+      const users: Record<string, any> = {};
+      await Promise.all(
+        userIds.map(async (userId: string) => {
+          try {
+            const res = await fetch(`/api/users/${userId}`, { credentials: "include" });
+            if (res.ok) {
+              const user = await res.json();
+              users[userId] = user;
+              console.error(`[USER-FETCH] Fetched user ${userId}:`, user);
+            }
+          } catch (e) {
+            console.error(`[USER-FETCH-ERROR] Failed to fetch user ${userId}:`, e);
+          }
+        })
+      );
+      return users;
+    },
+  });
+
   useEffect(() => {
     if (initialMessages && Array.isArray(initialMessages)) {
       console.error("[API-FULL-DEBUG] Received messages from backend:", JSON.stringify(initialMessages, null, 2));
       const messagesWithDefaults = initialMessages.map((msg: any) => {
-        // Handle both camelCase and snake_case from backend
-        const displayNameFromMsg = msg.displayName || msg.display_name || msg.username;
-        console.error(`[MSG-PROCESS] msg.id=${msg.id?.substring(0, 8)}, displayName="${msg.displayName}", display_name="${msg.display_name}", username="${msg.username}", final="${displayNameFromMsg}"`);
-        const enrichedMsg = {
+        // First try backend-provided displayName/username
+        let displayName = msg.displayName || msg.display_name;
+        let username = msg.username;
+        let avatarUrl = msg.avatarUrl;
+        
+        // If backend didn't provide displayName, fetch from userDataMap
+        if ((!displayName || displayName === "Unknown") && msg.userId && userDataMap?.[msg.userId]) {
+          const userData = userDataMap[msg.userId];
+          displayName = userData.displayName || userData.display_name || userData.username;
+          username = username || userData.username;
+          avatarUrl = avatarUrl || userData.avatarUrl;
+          console.error(`[MSG-FALLBACK] Using fetched user data for ${msg.userId}: displayName="${displayName}"`);
+        }
+        
+        displayName = displayName?.trim() || username || "Unknown";
+        console.error(`[MSG-PROCESS] msg.id=${msg.id?.substring(0, 8)}, final displayName="${displayName}"`);
+        
+        return {
           ...msg,
-          displayName: displayNameFromMsg || "Unknown",
-          username: msg.username || null,
+          displayName,
+          username: username || null,
+          avatarUrl,
         };
-        console.error(`[MSG-ENRICHED] Final message: displayName="${enrichedMsg.displayName}"`, enrichedMsg);
-        return enrichedMsg;
       });
-      console.error("[API-ALL-MESSAGES] Setting state with:", JSON.stringify(messagesWithDefaults, null, 2));
+      console.error("[API-ALL-MESSAGES] Setting state with messages:", messagesWithDefaults.length);
       setMessages(messagesWithDefaults);
     }
-  }, [initialMessages]);
+  }, [initialMessages, userDataMap]);
 
   // Auto-scroll to bottom
   useEffect(() => {
