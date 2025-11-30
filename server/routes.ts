@@ -1045,19 +1045,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const message = await storage.createChatMessage(validatedData);
 
       // Enrich message with displayName before broadcasting
-      let enrichedMessage = { ...message } as any;
+      const enrichedMessage: any = {
+        id: message.id,
+        matchId: message.matchId,
+        teamId: message.teamId,
+        userId: message.userId,
+        message: message.message,
+        imageUrl: message.imageUrl,
+        isSystem: message.isSystem,
+        createdAt: message.createdAt,
+      };
+      
       if (message.userId) {
         const sender = await storage.getUser(message.userId);
         enrichedMessage.displayName = sender?.displayName?.trim() || sender?.username || "Unknown";
-        enrichedMessage.username = sender?.username || undefined;
+        enrichedMessage.username = sender?.username || null;
         enrichedMessage.avatarUrl = sender?.avatarUrl || undefined;
-        console.log("[WS-BROADCAST] Enriching message from user:", message.userId, "displayName:", enrichedMessage.displayName, "username:", enrichedMessage.username);
       } else {
         enrichedMessage.displayName = "Unknown";
-        enrichedMessage.username = undefined;
+        enrichedMessage.username = null;
       }
-
-      console.log("[WS-BROADCAST] Sending message:", JSON.stringify({ type: "new_message", message: enrichedMessage }, null, 2));
 
       broadcastToMatch(req.params.matchId, {
         type: "new_message",
