@@ -109,6 +109,7 @@ export default function TournamentMatch() {
 
   useEffect(() => {
     if (initialMessages) {
+      console.log("[FRONTEND] Initial messages loaded:", initialMessages);
       setMessages(initialMessages);
     }
   }, [initialMessages]);
@@ -133,12 +134,14 @@ export default function TournamentMatch() {
     websocket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        console.log("[FRONTEND-WS] Received:", data);
         if (data.type === "new_message") {
           const msg = data.message;
           // Ensure displayName exists for WebSocket messages
           if (!msg.displayName) {
             msg.displayName = msg.username || "Unknown";
           }
+          console.log("[FRONTEND-WS] Message with displayName:", msg.displayName);
           setMessages((prev) => {
             if (prev.some((m) => m.id === msg.id)) return prev;
             return [...prev, msg];
@@ -428,6 +431,7 @@ export default function TournamentMatch() {
             <div className="flex-1 overflow-y-auto space-y-4 pr-2">
               {messages.map((msg) => {
                 const displayName = msg.displayName || msg.username || "Unknown";
+                console.log("[FRONTEND-RENDER] Message:", msg.id, "displayName:", msg.displayName, "username:", msg.username, "final:", displayName);
                 const initials = String(displayName || "U")
                   .substring(0, 2)
                   .toUpperCase();
