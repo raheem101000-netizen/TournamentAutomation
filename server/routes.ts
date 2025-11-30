@@ -1004,24 +1004,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const messages = await storage.getChatMessagesByMatch(req.params.matchId);
       // Enrich messages with sender displayName, username and avatarUrl from users table
       const enrichedMessages = await Promise.all(
-        messages.map(async (msg) => {
+        messages.map(async (msg: any) => {
+          const enriched: any = {
+            id: msg.id,
+            matchId: msg.matchId,
+            teamId: msg.teamId,
+            userId: msg.userId,
+            message: msg.message,
+            imageUrl: msg.imageUrl,
+            isSystem: msg.isSystem,
+            createdAt: msg.createdAt,
+          };
+          
           if (msg.userId) {
             const sender = await storage.getUser(msg.userId);
-            const displayName = sender?.displayName?.trim() || sender?.username || "Unknown";
-            return {
-              ...msg,
-              displayName: displayName,
-              username: sender?.username,
-              avatarUrl: sender?.avatarUrl || undefined,
-            };
+            enriched.displayName = sender?.displayName?.trim() || sender?.username || "Unknown";
+            enriched.username = sender?.username || null;
+            enriched.avatarUrl = sender?.avatarUrl || undefined;
+          } else {
+            enriched.displayName = "Unknown";
+            enriched.username = null;
           }
-          return {
-            ...msg,
-            displayName: "Unknown",
-          };
+          
+          return enriched;
         })
       );
-      console.log("[MATCH-MSG-ENRICHMENT] Total messages enriched:", enrichedMessages.length, "- Full:", JSON.stringify(enrichedMessages, null, 2));
+      console.log("[ENRICHMENT-SUCCESS] Enriched", enrichedMessages.length, "messages with displayName");
       res.json(enrichedMessages);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
