@@ -741,6 +741,45 @@ export default function PreviewMessages() {
             </CardContent>
           </Card>
         </main>
+
+        {/* Profile Preview Modal - Inside conversation view */}
+        <Dialog open={profileModalOpen} onOpenChange={setProfileModalOpen}>
+          <DialogContent className="z-50" style={{ zIndex: 50 }}>
+            <DialogHeader>
+              <DialogTitle>User Profile</DialogTitle>
+            </DialogHeader>
+            {previewProfileData ? (
+              <div className="space-y-4">
+                <div className="flex flex-col items-center gap-3">
+                  <Avatar className="w-24 h-24">
+                    {previewProfileData.avatarUrl && (
+                      <AvatarImage src={previewProfileData.avatarUrl} alt={previewProfileData.displayName || previewProfileData.username} />
+                    )}
+                    <AvatarFallback className="bg-primary/10 text-primary text-2xl">
+                      {previewProfileData.displayName?.[0]?.toUpperCase() || previewProfileData.username?.[0]?.toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="text-center">
+                    <h3 className="font-semibold text-foreground">{previewProfileData.displayName || previewProfileData.username}</h3>
+                    {previewProfileData.displayName && (
+                      <p className="text-sm text-muted-foreground">@{previewProfileData.username}</p>
+                    )}
+                  </div>
+                </div>
+                
+                <Link to={`/profile/${selectedProfileId}`}>
+                  <Button className="w-full" data-testid="button-visit-profile">
+                    Visit Profile
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
@@ -1086,44 +1125,6 @@ export default function PreviewMessages() {
         </DialogContent>
       </Dialog>
 
-      {/* Profile Preview Modal */}
-      <Dialog open={profileModalOpen} onOpenChange={setProfileModalOpen}>
-        <DialogContent className="z-50" style={{ zIndex: 50 }}>
-          <DialogHeader>
-            <DialogTitle>User Profile</DialogTitle>
-          </DialogHeader>
-          {previewProfileData ? (
-            <div className="space-y-4">
-              <div className="flex flex-col items-center gap-3">
-                <Avatar className="w-24 h-24">
-                  {previewProfileData.avatarUrl && (
-                    <AvatarImage src={previewProfileData.avatarUrl} alt={previewProfileData.displayName || previewProfileData.username} />
-                  )}
-                  <AvatarFallback className="bg-primary/10 text-primary text-2xl">
-                    {previewProfileData.displayName?.[0]?.toUpperCase() || previewProfileData.username?.[0]?.toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="text-center">
-                  <h3 className="font-semibold text-foreground">{previewProfileData.displayName || previewProfileData.username}</h3>
-                  {previewProfileData.displayName && (
-                    <p className="text-sm text-muted-foreground">@{previewProfileData.username}</p>
-                  )}
-                </div>
-              </div>
-              
-              <Link to={`/profile/${selectedProfileId}`}>
-                <Button className="w-full" data-testid="button-visit-profile">
-                  Visit Profile
-                </Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="flex justify-center py-8">
-              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
