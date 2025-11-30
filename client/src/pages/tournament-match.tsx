@@ -109,7 +109,6 @@ export default function TournamentMatch() {
 
   useEffect(() => {
     if (initialMessages) {
-      console.log("[FRONTEND] Initial messages loaded:", initialMessages);
       setMessages(initialMessages);
     }
   }, [initialMessages]);
@@ -428,7 +427,7 @@ export default function TournamentMatch() {
             {/* Messages */}
             <div className="flex-1 overflow-y-auto space-y-4 pr-2">
               {messages.map((msg) => {
-                const displayName = (msg.displayName?.trim?.() || msg.displayName) || (msg.username?.trim?.() || msg.username) || "Unknown";
+                const displayName = msg.displayName || msg.username || "Unknown";
                 const initials = String(displayName || "U")
                   .substring(0, 2)
                   .toUpperCase();

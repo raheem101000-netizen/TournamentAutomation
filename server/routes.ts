@@ -1005,31 +1005,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Enrich messages with sender displayName, username and avatarUrl from users table
       const enrichedMessages = await Promise.all(
         messages.map(async (msg: any) => {
-          const enriched: any = {
-            id: msg.id,
-            matchId: msg.matchId,
-            teamId: msg.teamId,
-            userId: msg.userId,
-            message: msg.message,
-            imageUrl: msg.imageUrl,
-            isSystem: msg.isSystem,
-            createdAt: msg.createdAt,
-          };
+          let displayName = "Unknown";
+          let username = null;
           
           if (msg.userId) {
-            const sender = await storage.getUser(msg.userId);
-            enriched.displayName = sender?.displayName?.trim() || sender?.username || "Unknown";
-            enriched.username = sender?.username || null;
-            enriched.avatarUrl = sender?.avatarUrl || undefined;
-          } else {
-            enriched.displayName = "Unknown";
-            enriched.username = null;
+            try {
+              const sender = await storage.getUser(msg.userId);
+              if (sender) {
+                displayName = sender.displayName?.trim() || sender.username || "Unknown";
+                username = sender.username || null;
+              }
+            } catch (e) {
+              console.error("[ENRICHMENT-ERROR] Failed to get user:", msg.userId, e);
+            }
           }
           
-          return enriched;
+          return {
+            id: msg.id,
+            matchId: msg.matchId,
+            teamId: msg.teamId || null,
+            userId: msg.userId || null,
+            message: msg.message || null,
+            imageUrl: msg.imageUrl || null,
+            isSystem: msg.isSystem,
+            createdAt: msg.createdAt,
+            displayName,
+            username,
+          };
         })
       );
-      console.log("[ENRICHMENT-SUCCESS] Enriched", enrichedMessages.length, "messages with displayName");
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
       res.json(enrichedMessages);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
