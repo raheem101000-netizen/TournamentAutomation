@@ -109,6 +109,8 @@ export default function TournamentMatch() {
 
   useEffect(() => {
     if (initialMessages && Array.isArray(initialMessages)) {
+      console.log("[ORGANIZER-INIT] Initial messages from API:", initialMessages);
+      console.log("[ORGANIZER-INIT] Message usernames:", initialMessages.map(m => ({ id: m.id, username: m.username, displayName: m.displayName, userId: m.userId })));
       setMessages(initialMessages);
     }
   }, [initialMessages]);
