@@ -433,6 +433,7 @@ export default function TournamentMatch() {
             {/* Messages */}
             <div className="flex-1 overflow-y-auto space-y-4 pr-2">
               {messages.map((msg) => {
+                console.log("[RENDER-MSG]", { id: msg.id?.substring(0, 8), displayName: msg.displayName, username: msg.username, msg_keys: Object.keys(msg) });
                 const displayName = msg.displayName || msg.username || "Unknown";
                 const initials = String(displayName || "U")
                   .substring(0, 2)
