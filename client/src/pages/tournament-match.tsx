@@ -422,8 +422,8 @@ export default function TournamentMatch() {
             {/* Messages */}
             <div className="flex-1 overflow-y-auto space-y-4 pr-2">
               {messages.map((msg) => {
-                const displayName = (msg.displayName && msg.displayName.trim()) || msg.username || "Unknown";
-                const initials = (displayName || "U")
+                const displayName = (msg.displayName && typeof msg.displayName === 'string' && msg.displayName.trim()) || (msg.username && msg.username.trim()) || "Unknown";
+                const initials = String(displayName || "U")
                   .substring(0, 2)
                   .toUpperCase();
                 const timestamp = new Date(msg.createdAt).toLocaleTimeString(
@@ -448,7 +448,7 @@ export default function TournamentMatch() {
                     </Avatar>
                     <div className="flex-1">
                       <div className="flex items-baseline gap-2">
-                        <span className="text-sm font-semibold">
+                        <span className="text-sm font-semibold" data-testid={`user-name-${msg.id}`}>
                           {displayName}
                         </span>
                         <span className="text-xs text-muted-foreground">
