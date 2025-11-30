@@ -1036,7 +1036,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Chat routes for message inbox match participants (OLD SYSTEM - KEEP FOR MESSAGE INBOX COMPATIBILITY)
   app.get("/api/matches/:matchId/messages", async (req, res) => {
     try {
-      const messages = await storage.getChatMessagesByMatch(req.params.matchId);
+      const matchId = req.params.matchId;
+      console.log(`[DASHBOARD-MATCH-CHAT-GET] Fetching messages for match: ${matchId}`);
+      const messages = await storage.getChatMessagesByMatch(matchId);
+      console.log(`[DASHBOARD-MATCH-CHAT-GET] Found ${messages.length} raw messages`);
       
       // Enrich messages with sender username, avatar, and displayName from users table
       const enrichedMessages = await Promise.all(
@@ -1045,6 +1048,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           let avatarUrl: string | undefined;
           let displayName: string | undefined;
           
+          console.log(`[DASHBOARD-MATCH-CHAT-ENRICH] Processing message ${msg.id}, userId: ${msg.userId}`);
+          
           if (msg.userId) {
             try {
               const sender = await storage.getUser(msg.userId);
@@ -1052,13 +1057,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 username = sender.username || "Unknown";
                 avatarUrl = sender.avatarUrl || undefined;
                 displayName = sender.displayName?.trim() || sender.username || "Unknown";
+                console.log(`[DASHBOARD-MATCH-CHAT-ENRICH] Message ${msg.id}: username=${username}, displayName=${displayName}, avatarUrl=${avatarUrl}`);
+              } else {
+                console.log(`[DASHBOARD-MATCH-CHAT-ENRICH] Message ${msg.id}: sender not found`);
               }
             } catch (e) {
-              console.error("Failed to get user:", msg.userId, e);
+              console.error("[DASHBOARD-MATCH-CHAT-ENRICH] Failed to get user:", msg.userId, e);
             }
+          } else {
+            console.log(`[DASHBOARD-MATCH-CHAT-ENRICH] Message ${msg.id}: no userId`);
           }
           
-          return {
+          const enriched = {
             id: msg.id,
             matchId: msg.matchId,
             teamId: msg.teamId || null,
@@ -1071,26 +1081,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
             avatarUrl,
             displayName,
           };
+          console.log(`[DASHBOARD-MATCH-CHAT-ENRICH] Final enriched message:`, JSON.stringify(enriched));
+          return enriched;
         })
       );
+      
       res.removeHeader("ETag");
       res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, private, max-age=0");
       res.setHeader("Pragma", "no-cache");
       res.setHeader("Expires", "0");
       res.setHeader("X-Timestamp", Date.now().toString());
+      console.log(`[DASHBOARD-MATCH-CHAT-GET] Returning ${enrichedMessages.length} enriched messages`);
       res.json(enrichedMessages);
     } catch (error: any) {
+      console.error("[DASHBOARD-MATCH-CHAT-GET] Error:", error);
       res.status(500).json({ error: error.message });
     }
   });
 
   app.post("/api/matches/:matchId/messages", async (req, res) => {
     try {
+      const matchId = req.params.matchId;
+      console.log(`[DASHBOARD-MATCH-CHAT-POST] Received message for match: ${matchId}`, JSON.stringify(req.body));
+      
       const validatedData = insertChatMessageSchema.parse({
         ...req.body,
-        matchId: req.params.matchId,
+        matchId: matchId,
       });
+      console.log(`[DASHBOARD-MATCH-CHAT-POST] Validated data:`, JSON.stringify(validatedData));
+      
       const message = await storage.createChatMessage(validatedData);
+      console.log(`[DASHBOARD-MATCH-CHAT-POST] Created message:`, JSON.stringify(message));
 
       // Enrich message with username, avatar, and displayName before returning
       const enrichedMessage: any = {
@@ -1105,16 +1126,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       if (message.userId) {
+        console.log(`[DASHBOARD-MATCH-CHAT-POST] Fetching user data for userId: ${message.userId}`);
         const sender = await storage.getUser(message.userId);
-        enrichedMessage.username = sender?.username || "Unknown";
-        enrichedMessage.avatarUrl = sender?.avatarUrl || undefined;
-        enrichedMessage.displayName = sender?.displayName?.trim() || sender?.username || "Unknown";
+        if (sender) {
+          enrichedMessage.username = sender.username || "Unknown";
+          enrichedMessage.avatarUrl = sender.avatarUrl || undefined;
+          enrichedMessage.displayName = sender.displayName?.trim() || sender.username || "Unknown";
+          console.log(`[DASHBOARD-MATCH-CHAT-POST] Enriched: username=${enrichedMessage.username}, displayName=${enrichedMessage.displayName}, avatarUrl=${enrichedMessage.avatarUrl}`);
+        } else {
+          enrichedMessage.username = "Unknown";
+          console.log(`[DASHBOARD-MATCH-CHAT-POST] Sender not found for userId: ${message.userId}`);
+        }
       } else {
         enrichedMessage.username = "Unknown";
+        console.log(`[DASHBOARD-MATCH-CHAT-POST] No userId in message`);
       }
 
+      console.log(`[DASHBOARD-MATCH-CHAT-POST] Final enriched message:`, JSON.stringify(enrichedMessage));
       res.status(201).json(enrichedMessage);
     } catch (error: any) {
+      console.error("[DASHBOARD-MATCH-CHAT-POST] Error:", error);
       res.status(400).json({ error: error.message });
     }
   });

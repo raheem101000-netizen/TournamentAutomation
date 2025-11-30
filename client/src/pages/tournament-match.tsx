@@ -101,9 +101,12 @@ export default function TournamentMatch() {
     enabled: !!matchId,
     queryFn: async () => {
       if (!matchId) return [];
+      console.log(`[DASHBOARD-CHAT-FETCH] Fetching messages for match: ${matchId}`);
       const response = await fetch(`/api/matches/${matchId}/messages`);
       if (!response.ok) throw new Error("Failed to fetch messages");
-      return response.json();
+      const data = await response.json();
+      console.log(`[DASHBOARD-CHAT-FETCH] Received ${data.length} messages:`, JSON.stringify(data.slice(0, 2)));
+      return data;
     },
   });
 
@@ -117,18 +120,26 @@ export default function TournamentMatch() {
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
+      const payload = {
+        userId: currentUser?.id,
+        username: currentUser?.username,
+        message,
+      };
+      console.log(`[DASHBOARD-CHAT-SEND] Sending message:`, JSON.stringify(payload));
       const response = await fetch(`/api/matches/${matchId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: currentUser?.id,
-          username: currentUser?.username,
-          message,
-        }),
+        body: JSON.stringify(payload),
       });
       
-      if (!response.ok) throw new Error("Failed to send message");
-      return response.json();
+      if (!response.ok) {
+        const error = await response.text();
+        console.error(`[DASHBOARD-CHAT-SEND] Failed to send message:`, error);
+        throw new Error("Failed to send message");
+      }
+      const data = await response.json();
+      console.log(`[DASHBOARD-CHAT-SEND] Response:`, JSON.stringify(data));
+      return data;
     },
     onSuccess: () => {
       setMessageInput("");
@@ -137,7 +148,8 @@ export default function TournamentMatch() {
         queryKey: ["/api/matches", matchId, "messages"],
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error(`[DASHBOARD-CHAT-SEND] Mutation error:`, error);
       toast({
         title: "Error",
         description: "Failed to send message",
@@ -311,7 +323,7 @@ export default function TournamentMatch() {
                     <p>No messages yet. Start the conversation!</p>
                   </div>
                 ) : (
-                  chatMessages.map((msg) => {
+                  chatMessages.map((msg, idx) => {
                     const isOwn = msg.userId === currentUser?.id;
 
                     // Get proper initials
@@ -326,6 +338,18 @@ export default function TournamentMatch() {
                     };
 
                     const senderName = msg.displayName?.trim() || msg.username?.trim() || 'Unknown User';
+                    
+                    // Debug logging
+                    if (idx === 0) {
+                      console.log(`[DASHBOARD-CHAT-RENDER] First message data:`, {
+                        id: msg.id,
+                        userId: msg.userId,
+                        username: msg.username,
+                        displayName: msg.displayName,
+                        avatarUrl: msg.avatarUrl,
+                        senderName,
+                      });
+                    }
 
                     return (
                       <div 
@@ -334,34 +358,34 @@ export default function TournamentMatch() {
                         data-testid={`message-${msg.id}`}
                       >
                         {msg.userId ? (
-                          <Link to={`/profile/${msg.userId}`}>
-                            <Avatar className="h-8 w-8 cursor-pointer hover-elevate">
-                              {msg.avatarUrl && <AvatarImage src={msg.avatarUrl} alt={senderName} />}
-                              <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                          <Link to={`/profile/${msg.userId}`} data-testid={`avatar-link-${msg.id}`}>
+                            <Avatar className="h-8 w-8 cursor-pointer hover-elevate" data-testid={`avatar-${msg.id}`}>
+                              {msg.avatarUrl && <AvatarImage src={msg.avatarUrl} alt={senderName} data-testid={`avatar-image-${msg.id}`} />}
+                              <AvatarFallback className="bg-primary/10 text-primary text-xs" data-testid={`avatar-fallback-${msg.id}`}>
                                 {getInitials()}
                               </AvatarFallback>
                             </Avatar>
                           </Link>
                         ) : (
-                          <Avatar className="h-8 w-8">
-                            {msg.avatarUrl && <AvatarImage src={msg.avatarUrl} alt={senderName} />}
-                            <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                          <Avatar className="h-8 w-8" data-testid={`avatar-${msg.id}`}>
+                            {msg.avatarUrl && <AvatarImage src={msg.avatarUrl} alt={senderName} data-testid={`avatar-image-${msg.id}`} />}
+                            <AvatarFallback className="bg-primary/10 text-primary text-xs" data-testid={`avatar-fallback-${msg.id}`}>
                               {getInitials()}
                             </AvatarFallback>
                           </Avatar>
                         )}
-                        <div className={`flex flex-col gap-1 max-w-[70%] ${isOwn ? 'items-end' : ''}`}>
+                        <div className={`flex flex-col gap-1 max-w-[70%] ${isOwn ? 'items-end' : ''}`} data-testid={`message-content-${msg.id}`}>
                           {msg.userId ? (
-                            <Link to={`/profile/${msg.userId}`} className="text-xs text-muted-foreground hover:underline cursor-pointer" data-testid={`user-link-${msg.id}`}>
+                            <Link to={`/profile/${msg.userId}`} className="text-xs text-muted-foreground hover:underline cursor-pointer" data-testid={`username-link-${msg.id}`}>
                               {senderName}
                             </Link>
                           ) : (
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-xs text-muted-foreground" data-testid={`username-text-${msg.id}`}>
                               {senderName}
                             </span>
                           )}
                           {msg.message && (
-                            <p className="text-sm text-foreground">{msg.message}</p>
+                            <p className="text-sm text-foreground" data-testid={`message-text-${msg.id}`}>{msg.message}</p>
                           )}
                         </div>
                       </div>
