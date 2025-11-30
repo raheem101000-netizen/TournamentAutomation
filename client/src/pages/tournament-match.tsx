@@ -475,8 +475,15 @@ export default function TournamentMatch() {
                 </div>
               ) : (
                 messages.map((msg: ChatMessage) => {
-                  // Use displayName from backend enrichment, fallback to username, then "Unknown"
-                  const senderName = (msg.displayName && msg.displayName.trim()) || (msg.username && msg.username.trim()) || "Unknown";
+                  // CRITICAL: Use displayName from any source: backend enrichment, userDataMap, username, or fetch
+                  let senderName = msg.displayName?.trim() || msg.username?.trim() || "Unknown";
+                  
+                  // Fallback: if no displayName and we have userDataMap, use that
+                  if ((!msg.displayName || msg.displayName === "Unknown") && msg.userId && userDataMap?.[msg.userId]) {
+                    const userData = userDataMap[msg.userId];
+                    senderName = userData.displayName?.trim() || userData.username?.trim() || msg.username?.trim() || "Unknown";
+                  }
+                  
                   const initials = senderName.substring(0, 2).toUpperCase();
                   const timestamp = new Date(msg.createdAt).toLocaleTimeString(
                     "en-US",
