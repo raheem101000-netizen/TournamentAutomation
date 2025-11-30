@@ -909,7 +909,9 @@ export default function PreviewMessages() {
                             {achievement.game && (
                               <p className="text-xs text-muted-foreground">{achievement.game}</p>
                             )}
-                            <p className="text-xs text-muted-foreground">{achievement.description}</p>
+                            {achievement.serverName && (
+                              <p className="text-xs text-muted-foreground">{achievement.serverName}</p>
+                            )}
                           </div>
                         </div>
                       ))}
