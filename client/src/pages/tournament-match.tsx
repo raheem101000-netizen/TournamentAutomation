@@ -57,9 +57,11 @@ interface ChatMessage {
   matchId: string;
   userId?: string;
   username: string;
+  displayName?: string;
   message: string;
   createdAt: string;
   imageUrl?: string;
+  avatarUrl?: string;
 }
 
 interface User {
@@ -97,6 +99,12 @@ export default function TournamentMatch() {
   const { data: chatMessages = [], isLoading: messagesLoading } = useQuery<ChatMessage[]>({
     queryKey: ["/api/matches", matchId, "messages"],
     enabled: !!matchId,
+    queryFn: async () => {
+      if (!matchId) return [];
+      const response = await fetch(`/api/matches/${matchId}/messages`);
+      if (!response.ok) throw new Error("Failed to fetch messages");
+      return response.json();
+    },
   });
 
   const qc = useQueryClient();
@@ -308,7 +316,7 @@ export default function TournamentMatch() {
 
                     // Get proper initials
                     const getInitials = () => {
-                      const name = msg.username?.trim() || '';
+                      const name = msg.displayName?.trim() || msg.username?.trim() || '';
                       if (!name) return 'U';
                       const parts = name.split(' ').filter((p: string) => p);
                       if (parts.length > 1) {
@@ -317,7 +325,7 @@ export default function TournamentMatch() {
                       return name.substring(0, 2).toUpperCase();
                     };
 
-                    const senderName = msg.username?.trim() || 'Unknown User';
+                    const senderName = msg.displayName?.trim() || msg.username?.trim() || 'Unknown User';
 
                     return (
                       <div 
@@ -328,6 +336,7 @@ export default function TournamentMatch() {
                         {msg.userId ? (
                           <Link to={`/profile/${msg.userId}`}>
                             <Avatar className="h-8 w-8 cursor-pointer hover-elevate">
+                              {msg.avatarUrl && <AvatarImage src={msg.avatarUrl} alt={senderName} />}
                               <AvatarFallback className="bg-primary/10 text-primary text-xs">
                                 {getInitials()}
                               </AvatarFallback>
@@ -335,6 +344,7 @@ export default function TournamentMatch() {
                           </Link>
                         ) : (
                           <Avatar className="h-8 w-8">
+                            {msg.avatarUrl && <AvatarImage src={msg.avatarUrl} alt={senderName} />}
                             <AvatarFallback className="bg-primary/10 text-primary text-xs">
                               {getInitials()}
                             </AvatarFallback>
