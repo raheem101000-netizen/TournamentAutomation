@@ -1044,7 +1044,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader("Pragma", "no-cache");
       res.setHeader("Expires", "0");
       res.setHeader("X-Timestamp", Date.now().toString());
-      console.log("[MSG-ENDPOINT-DEBUG] Full enrichedMessages sample:", JSON.stringify(enrichedMessages.slice(0, 1), null, 2));
+      console.log("[MSG-ENDPOINT-DEBUG] ALL enrichedMessages:", JSON.stringify(enrichedMessages, null, 2));
       res.json(enrichedMessages);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -1087,7 +1087,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: enrichedMessage,
       });
 
-      res.status(201).json(message);
+      res.status(201).json(enrichedMessage);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
