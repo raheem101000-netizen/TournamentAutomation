@@ -317,6 +317,13 @@ export default function PreviewMessages() {
       toast({ title: "Winner selected!" });
       queryClient.invalidateQueries({ queryKey: ["match-details", selectedChat?.matchId] });
       queryClient.invalidateQueries({ queryKey: ["/api/message-threads"] });
+      
+      // Invalidate Dashboard caches for this tournament to keep standings in sync
+      if (matchDetails?.tournamentId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${matchDetails.tournamentId}/teams`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${matchDetails.tournamentId}/matches`] });
+      }
+      
       setSelectedChat(null);
     },
     onError: (error: any) => {
