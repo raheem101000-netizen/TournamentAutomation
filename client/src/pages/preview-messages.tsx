@@ -909,11 +909,11 @@ export default function PreviewMessages() {
                     <div className="grid grid-cols-1 gap-3">
                       {previewAchievements.map((achievement: any) => (
                         <div key={achievement.id} className="flex gap-3 p-3 rounded-lg bg-muted/50">
-                          <div className="text-2xl flex-shrink-0">
+                          <div className="flex-shrink-0 flex items-center justify-center w-8 h-8">
                             {achievement.iconUrl ? (
-                              <img src={achievement.iconUrl} alt={achievement.title} className="w-8 h-8 object-cover" />
+                              <img src={achievement.iconUrl} alt={achievement.title} className="w-8 h-8 object-cover rounded" />
                             ) : (
-                              '🏆'
+                              <Trophy className="w-5 h-5 text-amber-500" />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
