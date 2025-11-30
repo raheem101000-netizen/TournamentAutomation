@@ -1,6 +1,6 @@
-import { useState, useRef, ChangeEvent } from "react";
+import { useState, useRef, ChangeEvent, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -141,6 +141,7 @@ function formatTime(dateString: string): string {
 export default function PreviewMessages() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [location] = useLocation();
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [editingAvatar, setEditingAvatar] = useState<Chat | null>(null);
@@ -161,6 +162,20 @@ export default function PreviewMessages() {
   const { data: threads = [], isLoading } = useQuery<MessageThread[]>({
     queryKey: ["/api/message-threads"],
   });
+
+  // Auto-select match chat if matchId is in URL query
+  useEffect(() => {
+    const params = new URLSearchParams(location.split("?")[1]);
+    const matchIdParam = params.get("matchId");
+    
+    if (matchIdParam && threads.length > 0 && !selectedChat) {
+      const matchThread = threads.find(t => t.matchId === matchIdParam);
+      if (matchThread) {
+        const chat = threadToChat(matchThread);
+        setSelectedChat(chat);
+      }
+    }
+  }, [threads, location, selectedChat]);
 
   // Fetch messages for selected thread or match
   // If selectedChat has a matchId, fetch from match API, otherwise from thread API
