@@ -164,40 +164,14 @@ export default function PreviewMessages() {
   });
 
   // Fetch match details when viewing a match chat
-  const { data: matchDetails, isLoading: matchDetailsLoading } = useQuery<any>({
+  const { data: matchDetails } = useQuery<any>({
     queryKey: ["match-details", selectedChat?.matchId || "none"],
     enabled: !!selectedChat?.matchId,
     queryFn: async () => {
       if (!selectedChat?.matchId) return null;
-      try {
-        const response = await fetch(`/api/matches/${selectedChat.matchId}`);
-        if (!response.ok) {
-          console.error("[MATCH-DETAILS] Error:", response.status);
-          return null;
-        }
-        const match = await response.json();
-        console.log("[MATCH-DETAILS] Match loaded:", match);
-        
-        // Fetch full team details
-        const [team1Response, team2Response] = await Promise.all([
-          fetch(`/api/teams/${match.team1Id}`),
-          fetch(`/api/teams/${match.team2Id}`),
-        ]);
-        
-        const team1 = team1Response.ok ? await team1Response.json() : null;
-        const team2 = team2Response.ok ? await team2Response.json() : null;
-        
-        console.log("[MATCH-DETAILS] Teams loaded:", { team1, team2 });
-        
-        return {
-          ...match,
-          team1,
-          team2,
-        };
-      } catch (error) {
-        console.error("[MATCH-DETAILS] Fetch error:", error);
-        return null;
-      }
+      const response = await fetch(`/api/matches/${selectedChat.matchId}`);
+      if (!response.ok) return null;
+      return response.json();
     },
   });
 
@@ -645,33 +619,29 @@ export default function PreviewMessages() {
                 </ScrollArea>
 
                 {/* Winner Selection for Match Chats */}
-                {selectedChat?.matchId && matchDetails && matchDetails.team1 && matchDetails.team2 && (
+                {selectedChat?.matchId && matchDetails && matchDetails.status !== "completed" && (
                   <div className="border-t pt-3 space-y-2">
-                    {matchDetails.status !== "completed" && (
-                      <>
-                        <p className="text-xs font-semibold text-muted-foreground">Select Winner:</p>
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={() => setWinnerMutation.mutate(matchDetails.team1.id)}
-                            disabled={setWinnerMutation.isPending}
-                            className="flex-1"
-                            data-testid="button-team1-wins"
-                          >
-                            <Trophy className="w-4 h-4 mr-2" />
-                            {matchDetails.team1.name}
-                          </Button>
-                          <Button
-                            onClick={() => setWinnerMutation.mutate(matchDetails.team2.id)}
-                            disabled={setWinnerMutation.isPending}
-                            className="flex-1"
-                            data-testid="button-team2-wins"
-                          >
-                            <Trophy className="w-4 h-4 mr-2" />
-                            {matchDetails.team2.name}
-                          </Button>
-                        </div>
-                      </>
-                    )}
+                    <p className="text-xs font-semibold text-muted-foreground">Select Winner:</p>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => setWinnerMutation.mutate(matchDetails.team1Id)}
+                        disabled={setWinnerMutation.isPending}
+                        className="flex-1"
+                        data-testid="button-team1-wins"
+                      >
+                        <Trophy className="w-4 h-4 mr-2" />
+                        Team 1
+                      </Button>
+                      <Button
+                        onClick={() => setWinnerMutation.mutate(matchDetails.team2Id)}
+                        disabled={setWinnerMutation.isPending}
+                        className="flex-1"
+                        data-testid="button-team2-wins"
+                      >
+                        <Trophy className="w-4 h-4 mr-2" />
+                        Team 2
+                      </Button>
+                    </div>
                   </div>
                 )}
 
