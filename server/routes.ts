@@ -247,12 +247,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             createdAt: savedMessage.createdAt,
           };
           
+          console.log(`[WS-ENRICH] Message saved with userId: ${savedMessage.userId}`);
+          
           if (savedMessage.userId) {
             const sender = await storage.getUser(savedMessage.userId);
             enrichedMessage.username = sender?.username || "Unknown";
+            console.log(`[WS-ENRICH] User lookup: userId=${savedMessage.userId} -> username=${enrichedMessage.username}`);
           } else {
             enrichedMessage.username = "Unknown";
+            console.log(`[WS-ENRICH] No userId in savedMessage`);
           }
+
+          console.log(`[WS-BROADCAST] Broadcasting message with username: ${enrichedMessage.username}`);
 
           // Broadcast enriched message to all connections in this match
           const broadcastPayload = {
