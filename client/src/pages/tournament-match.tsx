@@ -137,10 +137,9 @@ export default function TournamentMatch() {
       try {
         const data = JSON.parse(event.data);
         if (data.type === "new_message") {
-          const msg = data.message;
-          setMessages((prev) => {
-            if (prev.some((m) => m.id === msg.id)) return prev;
-            return [...prev, msg];
+          // Invalidate messages query to refetch with proper enrichment (userId)
+          qc.invalidateQueries({
+            queryKey: ["/api/matches", matchId, "messages"],
           });
         }
       } catch (error) {
