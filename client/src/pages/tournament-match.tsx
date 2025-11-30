@@ -115,7 +115,10 @@ export default function TournamentMatch() {
     queryKey: ['message-users', initialMessages ? initialMessages.map(m => m.userId).filter(Boolean).join(',') : ''],
     enabled: !!initialMessages && initialMessages.length > 0,
     queryFn: async () => {
-      if (!initialMessages || !Array.isArray(initialMessages)) return {};
+      if (!initialMessages || !Array.isArray(initialMessages)) {
+        console.log("[USER-MAP-QUERY] initialMessages not available, returning empty map");
+        return {};
+      }
       
       // Get unique user IDs (using Array.from instead of spread operator for Set)
       const userIdSet = new Set<string>();
@@ -123,7 +126,12 @@ export default function TournamentMatch() {
         if (m.userId) userIdSet.add(m.userId);
       });
       const userIds = Array.from(userIdSet);
-      if (userIds.length === 0) return {};
+      console.log("[USER-MAP-QUERY] Found user IDs to fetch:", userIds);
+      
+      if (userIds.length === 0) {
+        console.log("[USER-MAP-QUERY] No user IDs found in messages, returning empty map");
+        return {};
+      }
       
       // Fetch user data for all unique users
       const users: Record<string, any> = {};
@@ -133,22 +141,41 @@ export default function TournamentMatch() {
             const res = await fetch(`/api/users/${userId}`, { credentials: "include" });
             if (res.ok) {
               const user = await res.json();
+              console.log(`[USER-MAP-QUERY] Fetched user ${userId}:`, { displayName: user.displayName, username: user.username });
               users[userId] = user;
+            } else {
+              console.error(`[USER-MAP-QUERY] Failed to fetch user ${userId}: status ${res.status}`);
             }
           } catch (e) {
-            console.error(`[USER-FETCH-ERROR] Failed to fetch user ${userId}:`, e);
+            console.error(`[USER-MAP-QUERY] Exception fetching user ${userId}:`, e);
           }
         })
       );
+      console.log("[USER-MAP-QUERY] Returning populated userDataMap with", Object.keys(users).length, "users:", users);
       return users;
     },
   });
 
   useEffect(() => {
-    console.error("[MESSAGES-EFFECT] initialMessages update, data:", initialMessages ? `${initialMessages.length} messages` : "null");
+    console.log("[MESSAGES-EFFECT] initialMessages received:", initialMessages?.length || 0, "messages");
     if (initialMessages && Array.isArray(initialMessages)) {
-      console.error("[SET-MESSAGES] Setting messages to state, sample displayName:", initialMessages[0]?.displayName);
-      // Simply use backend-enriched data directly - backend sends displayName already
+      // Log details about first message
+      if (initialMessages.length > 0) {
+        const firstMsg = initialMessages[0];
+        console.log("[MESSAGES-EFFECT] First message details:", {
+          id: firstMsg.id?.substring(0, 8),
+          userId: firstMsg.userId,
+          displayName: firstMsg.displayName,
+          username: firstMsg.username,
+          message: firstMsg.message?.substring(0, 20)
+        });
+      }
+      // Log all user IDs in messages
+      const userIds = initialMessages
+        .map(m => m.userId)
+        .filter(Boolean);
+      console.log("[MESSAGES-EFFECT] User IDs in messages:", userIds);
+      
       setMessages(initialMessages);
     }
   }, [initialMessages]);
@@ -478,11 +505,19 @@ export default function TournamentMatch() {
                   // CRITICAL: Use displayName from any source: backend enrichment, userDataMap, username, or fetch
                   let senderName = msg.displayName?.trim() || msg.username?.trim() || "Unknown";
                   
+                  // DEBUG: Log for each message
+                  console.log(`[RENDER-MSG ${msg.id?.substring(0, 8)}] msg.displayName="${msg.displayName}" msg.username="${msg.username}" userId="${msg.userId}" userDataMap available:`, !!userDataMap);
+                  
                   // Fallback: if no displayName and we have userDataMap, use that
                   if ((!msg.displayName || msg.displayName === "Unknown") && msg.userId && userDataMap?.[msg.userId]) {
                     const userData = userDataMap[msg.userId];
+                    console.log(`[RENDER-FALLBACK ${msg.id?.substring(0, 8)}] Using userDataMap for userId ${msg.userId}:`, { displayName: userData.displayName, username: userData.username });
                     senderName = userData.displayName?.trim() || userData.username?.trim() || msg.username?.trim() || "Unknown";
+                  } else if ((!msg.displayName || msg.displayName === "Unknown") && msg.userId) {
+                    console.log(`[RENDER-FALLBACK-MISS ${msg.id?.substring(0, 8)}] No userDataMap entry for userId ${msg.userId}. userDataMap keys:`, Object.keys(userDataMap || {}));
                   }
+                  
+                  console.log(`[RENDER-FINAL ${msg.id?.substring(0, 8)}] senderName="${senderName}"`);
                   
                   const initials = senderName.substring(0, 2).toUpperCase();
                   const timestamp = new Date(msg.createdAt).toLocaleTimeString(
