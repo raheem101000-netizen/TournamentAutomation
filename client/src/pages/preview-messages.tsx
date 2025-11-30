@@ -621,12 +621,12 @@ export default function PreviewMessages() {
                 {/* Winner Selection for Match Chats - Available for all matches (including completed for round-robin/swiss formats) */}
                 {selectedChat?.matchId && matchDetails && (
                   <div className="border-t pt-3 space-y-2">
-                    <p className="text-xs font-semibold text-muted-foreground">Select Winner:</p>
+                    <p className="text-xs font-semibold text-muted-foreground">Crown Champion:</p>
                     <div className="flex gap-2">
                       <Button
                         onClick={() => setWinnerMutation.mutate(matchDetails.team1Id)}
                         disabled={setWinnerMutation.isPending}
-                        className="flex-1"
+                        className="flex-1 bg-amber-500 hover:bg-amber-600 text-white"
                         data-testid="button-team1-wins"
                       >
                         <Trophy className="w-4 h-4 mr-2" />
@@ -635,7 +635,7 @@ export default function PreviewMessages() {
                       <Button
                         onClick={() => setWinnerMutation.mutate(matchDetails.team2Id)}
                         disabled={setWinnerMutation.isPending}
-                        className="flex-1"
+                        className="flex-1 bg-amber-500 hover:bg-amber-600 text-white"
                         data-testid="button-team2-wins"
                       >
                         <Trophy className="w-4 h-4 mr-2" />
