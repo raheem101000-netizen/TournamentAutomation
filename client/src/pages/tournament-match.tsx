@@ -110,6 +110,8 @@ export default function TournamentMatch() {
     },
   });
 
+  const qc = useQueryClient();
+
   useEffect(() => {
     if (Array.isArray(messagesData)) {
       setMessages(messagesData);
@@ -165,9 +167,7 @@ export default function TournamentMatch() {
     return () => {
       websocket.close();
     };
-  }, [matchId, toast]);
-
-  const qc = useQueryClient();
+  }, [matchId, toast, qc]);
 
   const closeMatchMutation = useMutation({
     mutationFn: async () => {
