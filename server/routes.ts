@@ -1012,9 +1012,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             try {
               const sender = await storage.getUser(msg.userId);
               if (sender) {
-                displayName = sender.displayName?.trim() || sender.username || "Unknown";
+                // Drizzle maps display_name column to displayName property
+                const senderDisplayName = (sender as any).displayName || (sender as any).display_name;
+                displayName = senderDisplayName?.trim() || sender.username || "Unknown";
                 username = sender.username || null;
-                console.log("[MSG-ENRICHMENT] User:", sender.username, "displayName:", displayName);
+                console.log("[MSG-ENRICHMENT] User:", sender.username, "displayName:", displayName, "from field:", senderDisplayName);
               } else {
                 console.log("[RAHEEM-DEBUG] getUser returned null for userId:", msg.userId);
               }
@@ -1071,7 +1073,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (message.userId) {
         const sender = await storage.getUser(message.userId);
-        enrichedMessage.displayName = sender?.displayName?.trim() || sender?.username || "Unknown";
+        const senderDisplayName = (sender as any)?.displayName || (sender as any)?.display_name;
+        enrichedMessage.displayName = senderDisplayName?.trim() || sender?.username || "Unknown";
         enrichedMessage.username = sender?.username || null;
         enrichedMessage.avatarUrl = sender?.avatarUrl || undefined;
       } else {
