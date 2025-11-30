@@ -770,7 +770,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!match) {
         return res.status(404).json({ error: "Match not found" });
       }
-      res.json(match);
+      
+      // Fetch player names from registrations
+      const registrations = await storage.getRegistrationsByTournament(match.tournamentId);
+      
+      // Find team names from registrations - use teamName field for now
+      let team1Name = "Team 1";
+      let team2Name = "Team 2";
+      
+      // Try to find registrations that match team IDs, use their team names
+      for (const reg of registrations) {
+        if (reg.status === "approved") {
+          // If registration belongs to team1, use its name
+          const team1 = await storage.getTeam(match.team1Id);
+          const team2 = await storage.getTeam(match.team2Id);
+          
+          // Use registration teamName if available
+          if (team1 && reg.teamName) {
+            team1Name = reg.teamName;
+          }
+          if (team2 && reg.teamName) {
+            team2Name = reg.teamName;
+          }
+        }
+      }
+      
+      res.json({
+        ...match,
+        team1Name,
+        team2Name,
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
