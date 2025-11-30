@@ -1035,9 +1035,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       const message = await storage.createChatMessage(validatedData);
 
+      // Enrich message with displayName before broadcasting
+      let enrichedMessage = { ...message };
+      if (message.userId) {
+        const sender = await storage.getUser(message.userId);
+        enrichedMessage.displayName = sender?.displayName?.trim() || sender?.username || "Unknown";
+        enrichedMessage.avatarUrl = sender?.avatarUrl || undefined;
+      } else {
+        enrichedMessage.displayName = "Unknown";
+      }
+
       broadcastToMatch(req.params.matchId, {
         type: "new_message",
-        message,
+        message: enrichedMessage,
       });
 
       res.status(201).json(message);
