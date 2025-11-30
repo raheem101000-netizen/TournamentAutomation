@@ -1088,7 +1088,7 @@ export default function PreviewMessages() {
 
       {/* Profile Preview Modal */}
       <Dialog open={profileModalOpen} onOpenChange={setProfileModalOpen}>
-        <DialogContent>
+        <DialogContent className="z-50" style={{ zIndex: 50 }}>
           <DialogHeader>
             <DialogTitle>User Profile</DialogTitle>
           </DialogHeader>
