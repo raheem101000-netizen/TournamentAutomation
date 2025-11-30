@@ -93,7 +93,7 @@ export default function TournamentMatch() {
   });
 
   // Fetch messages with cache busting
-  const { data: initialMessages, refetch: refetchMessages } = useQuery<ChatMessage[]>({
+  const { data: initialMessages, refetch: refetchMessages } = useQuery<any[]>({
     queryKey: [`/api/matches/${matchId}/messages`],
     enabled: !!matchId,
     staleTime: 0,
@@ -108,8 +108,12 @@ export default function TournamentMatch() {
   }, [matchId, refetchMessages]);
 
   useEffect(() => {
-    if (initialMessages) {
-      setMessages(initialMessages);
+    if (initialMessages && Array.isArray(initialMessages)) {
+      const messagesWithDefaults = initialMessages.map((msg: any) => ({
+        ...msg,
+        displayName: msg.displayName || msg.username || "Unknown",
+      }));
+      setMessages(messagesWithDefaults);
     }
   }, [initialMessages]);
 

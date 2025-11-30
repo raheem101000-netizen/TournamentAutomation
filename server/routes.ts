@@ -1044,6 +1044,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader("Pragma", "no-cache");
       res.setHeader("Expires", "0");
       res.setHeader("X-Timestamp", Date.now().toString());
+      console.log("[MSG-ENDPOINT] Returning enriched messages with displayNames:", enrichedMessages.map(m => ({ id: m.id.substring(0, 8), displayName: m.displayName, username: m.username })));
       res.json(enrichedMessages);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
