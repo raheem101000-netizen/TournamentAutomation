@@ -58,13 +58,15 @@ interface MatchDetails {
 interface ChatMessage {
   id: string;
   matchId: string;
-  message: string;
-  imageUrl?: string;
+  teamId?: string;
   userId?: string;
   username?: string;
   displayName?: string;
+  message?: string;
+  imageUrl?: string;
   isSystem: number;
   createdAt: string;
+  avatarUrl?: string;
 }
 
 export default function TournamentMatch() {
@@ -90,13 +92,21 @@ export default function TournamentMatch() {
     enabled: !!matchId && !!tournamentId,
   });
 
-  // Fetch messages
-  const { data: initialMessages } = useQuery<ChatMessage[]>({
+  // Fetch messages with cache busting
+  const { data: initialMessages, refetch: refetchMessages } = useQuery<ChatMessage[]>({
     queryKey: [`/api/matches/${matchId}/messages`],
     enabled: !!matchId,
+    staleTime: 0,
+    gcTime: 0,
   });
 
-  // Initialize messages
+  // Initialize messages and refetch when entering page
+  useEffect(() => {
+    if (matchId) {
+      refetchMessages();
+    }
+  }, [matchId, refetchMessages]);
+
   useEffect(() => {
     if (initialMessages) {
       setMessages(initialMessages);
@@ -412,8 +422,8 @@ export default function TournamentMatch() {
             {/* Messages */}
             <div className="flex-1 overflow-y-auto space-y-4 pr-2">
               {messages.map((msg) => {
-                const displayName = msg.displayName || msg.username || "Unknown";
-                const initials = displayName
+                const displayName = (msg.displayName && msg.displayName.trim()) || msg.username || "Unknown";
+                const initials = (displayName || "U")
                   .substring(0, 2)
                   .toUpperCase();
                 const timestamp = new Date(msg.createdAt).toLocaleTimeString(
