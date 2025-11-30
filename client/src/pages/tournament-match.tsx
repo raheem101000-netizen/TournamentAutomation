@@ -62,6 +62,8 @@ interface ChatMessage {
   imageUrl?: string;
   userId?: string;
   username?: string;
+  displayName?: string;
+  avatarUrl?: string;
   isSystem: number;
   createdAt: string;
 }
