@@ -502,22 +502,32 @@ export default function TournamentMatch() {
                 </div>
               ) : (
                 messages.map((msg: ChatMessage) => {
-                  // CRITICAL: Use displayName from any source: backend enrichment, userDataMap, username, or fetch
-                  let senderName = msg.displayName?.trim() || msg.username?.trim() || "Unknown";
+                  // CRITICAL: Priority order: backend displayName → backend username → userDataMap displayName → userDataMap username → "Unknown"
+                  let senderName = "";
                   
-                  // DEBUG: Log for each message
-                  console.log(`[RENDER-MSG ${msg.id?.substring(0, 8)}] msg.displayName="${msg.displayName}" msg.username="${msg.username}" userId="${msg.userId}" userDataMap available:`, !!userDataMap);
-                  
-                  // Fallback: if no displayName and we have userDataMap, use that
-                  if ((!msg.displayName || msg.displayName === "Unknown") && msg.userId && userDataMap?.[msg.userId]) {
+                  // 1. Try backend enriched displayName first (most important - from backend API enrichment)
+                  if (msg.displayName && msg.displayName.trim()) {
+                    senderName = msg.displayName.trim();
+                  }
+                  // 2. Fallback to backend username
+                  else if (msg.username && msg.username.trim()) {
+                    senderName = msg.username.trim();
+                  }
+                  // 3. Try userDataMap if we have userId and userDataMap
+                  else if (msg.userId && userDataMap?.[msg.userId]) {
                     const userData = userDataMap[msg.userId];
-                    console.log(`[RENDER-FALLBACK ${msg.id?.substring(0, 8)}] Using userDataMap for userId ${msg.userId}:`, { displayName: userData.displayName, username: userData.username });
-                    senderName = userData.displayName?.trim() || userData.username?.trim() || msg.username?.trim() || "Unknown";
-                  } else if ((!msg.displayName || msg.displayName === "Unknown") && msg.userId) {
-                    console.log(`[RENDER-FALLBACK-MISS ${msg.id?.substring(0, 8)}] No userDataMap entry for userId ${msg.userId}. userDataMap keys:`, Object.keys(userDataMap || {}));
+                    if (userData.displayName && userData.displayName.trim()) {
+                      senderName = userData.displayName.trim();
+                    } else if (userData.username && userData.username.trim()) {
+                      senderName = userData.username.trim();
+                    }
+                  }
+                  // 4. Last resort
+                  if (!senderName) {
+                    senderName = "Unknown";
                   }
                   
-                  console.log(`[RENDER-FINAL ${msg.id?.substring(0, 8)}] senderName="${senderName}"`);
+                  console.log(`[RENDER-MSG ${msg.id?.substring(0, 8)}] Final name="${senderName}" (displayName="${msg.displayName}" username="${msg.username}" userId="${msg.userId}")`);
                   
                   const initials = senderName.substring(0, 2).toUpperCase();
                   const timestamp = new Date(msg.createdAt).toLocaleTimeString(
