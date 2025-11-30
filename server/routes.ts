@@ -1002,6 +1002,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/matches/:matchId/messages", async (req, res) => {
     try {
       const messages = await storage.getChatMessagesByMatch(req.params.matchId);
+      console.log(`[MATCH-CHAT-GET] Fetching ${messages.length} messages for match ${req.params.matchId}`);
+      
       // Enrich messages with sender username from users table
       const enrichedMessages = await Promise.all(
         messages.map(async (msg: any) => {
@@ -1012,10 +1014,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const sender = await storage.getUser(msg.userId);
               if (sender && sender.username) {
                 username = sender.username;
+                console.log(`[MATCH-CHAT-ENRICH] userId=${msg.userId} -> username=${username}`);
+              } else {
+                console.log(`[MATCH-CHAT-ENRICH] userId=${msg.userId} -> sender lookup failed or no username`);
               }
             } catch (e) {
-              console.error("[ENRICHMENT-ERROR] Failed to get user:", msg.userId, e);
+              console.error("[MATCH-CHAT-ERROR] Failed to get user:", msg.userId, e);
             }
+          } else {
+            console.log(`[MATCH-CHAT-ENRICH] Message ${msg.id} has no userId`);
           }
           
           return {
@@ -1036,6 +1043,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader("Pragma", "no-cache");
       res.setHeader("Expires", "0");
       res.setHeader("X-Timestamp", Date.now().toString());
+      console.log(`[MATCH-CHAT-RESPONSE] Returning ${enrichedMessages.length} enriched messages`);
       res.json(enrichedMessages);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
