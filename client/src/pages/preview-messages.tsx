@@ -907,11 +907,13 @@ export default function PreviewMessages() {
                   <div>
                     <h3 className="text-sm font-semibold mb-3">Achievements</h3>
                     <div className="grid grid-cols-1 gap-3">
-                      {previewAchievements.map((achievement: any) => (
+                      {previewAchievements.map((achievement: any) => {
+                        const isValidUrl = achievement.iconUrl && (achievement.iconUrl.startsWith('http://') || achievement.iconUrl.startsWith('https://') || achievement.iconUrl.startsWith('/'));
+                        return (
                         <div key={achievement.id} className="flex gap-3 p-3 rounded-lg bg-muted/50">
                           <div className="flex-shrink-0 flex items-center justify-center w-8 h-8">
-                            {achievement.iconUrl ? (
-                              <img src={achievement.iconUrl} alt={achievement.title} className="w-8 h-8 object-cover rounded" />
+                            {isValidUrl ? (
+                              <img src={achievement.iconUrl} alt={achievement.title} className="w-8 h-8 object-cover rounded" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             ) : (
                               <Trophy className="w-5 h-5 text-amber-500" />
                             )}
@@ -922,7 +924,8 @@ export default function PreviewMessages() {
                             {achievement.serverName && <p className="text-xs text-muted-foreground">{achievement.serverName}</p>}
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
