@@ -42,9 +42,9 @@ const mockTeams = [
       { username: "TacticalG", position: "Initiator", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=tactical" },
     ],
     achievements: [
-      { icon: Trophy, title: "Regional Champions", color: "text-amber-500" },
-      { icon: Medal, title: "Top 5 Finish", color: "text-slate-500" },
-      { icon: Star, title: "Undefeated Streak", color: "text-blue-500" },
+      { title: "Regional Champions" },
+      { title: "Top 5 Finish" },
+      { title: "Undefeated Streak" },
     ],
     tournaments: [
       { name: "Summer Championship 2024", result: "1st Place - $5,000" },
@@ -67,8 +67,8 @@ const mockTeams = [
       { username: "BombMaster", position: "Lurker", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=bomb" },
     ],
     achievements: [
-      { icon: Medal, title: "Runner Up", color: "text-slate-500" },
-      { icon: Trophy, title: "Best Team Coordination", color: "text-purple-500" },
+      { title: "Runner Up" },
+      { title: "Best Team Coordination" },
     ],
     tournaments: [
       { name: "Winter Showdown", result: "2nd Place - $1,500" },
@@ -342,6 +342,7 @@ export default function PreviewAccount() {
                       </div>
                       <div className="w-full min-w-0 truncate">
                         <p className="font-semibold text-sm line-clamp-2 truncate">{achievement.title}</p>
+                        {achievement.game && <p className="text-xs text-muted-foreground truncate">{achievement.game}</p>}
                         {achievement.serverName ? (
                           <Button
                             variant="ghost"
