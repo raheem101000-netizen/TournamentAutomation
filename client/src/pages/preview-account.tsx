@@ -340,14 +340,14 @@ export default function PreviewAccount() {
                           </span>
                         )}
                       </div>
-                      <div className="w-full min-w-0 truncate">
-                        <p className="font-semibold text-sm line-clamp-2 truncate">{achievement.title}</p>
-                        {achievement.game && <p className="text-xs text-muted-foreground truncate">{achievement.game}</p>}
+                      <div className="w-full min-w-0 flex flex-col items-center gap-1.5">
+                        <p className="font-semibold text-sm line-clamp-2 text-center">{achievement.title}</p>
+                        {achievement.game && <p className="text-xs text-muted-foreground text-center">{achievement.game}</p>}
                         {achievement.serverName ? (
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-xs h-auto p-0 mt-1 text-muted-foreground hover:text-foreground truncate"
+                            className="text-xs h-auto p-0 text-muted-foreground hover:text-foreground text-center"
                             onClick={(e) => {
                               e.stopPropagation();
                               if (achievement.serverId) {
@@ -359,7 +359,7 @@ export default function PreviewAccount() {
                             <span className="block truncate">{achievement.serverName}</span>
                           </Button>
                         ) : (
-                          <p className="text-xs text-destructive mt-1 truncate">Server no longer exists</p>
+                          <p className="text-xs text-destructive text-center">Server no longer exists</p>
                         )}
                       </div>
                     </CardContent>
