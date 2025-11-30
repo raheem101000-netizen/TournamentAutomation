@@ -771,26 +771,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Match not found" });
       }
       
-      // Fetch player names from registrations
-      const registrations = await storage.getRegistrationsByTournament(match.tournamentId);
+      // Fetch actual team objects for both teams
+      const team1 = match.team1Id ? await storage.getTeam(match.team1Id) : null;
+      const team2 = match.team2Id ? await storage.getTeam(match.team2Id) : null;
       
-      // Find team names from registrations - use teamName field for now
-      let team1Name = "Team 1";
-      let team2Name = "Team 2";
+      // Get team names - use team name if available, otherwise use first registration for that team
+      let team1Name = team1?.name || "Team 1";
+      let team2Name = team2?.name || "Team 2";
       
-      // Try to find registrations that match team IDs, use their team names
-      for (const reg of registrations) {
-        if (reg.status === "approved") {
-          // If registration belongs to team1, use its name
-          const team1 = await storage.getTeam(match.team1Id);
-          const team2 = await storage.getTeam(match.team2Id);
-          
-          // Use registration teamName if available
-          if (team1 && reg.teamName) {
+      // If team names are still just numbers, try to get from registrations
+      if ((team1Name === "1" || team1Name === "2" || team1Name === "3" || team1Name === "4" || team1Name === "11" || team1Name === "15") && team1) {
+        const registrations = await storage.getRegistrationsByTournament(match.tournamentId);
+        for (const reg of registrations) {
+          if (reg.status === "approved") {
+            // Use the registration team name
             team1Name = reg.teamName;
+            break;
           }
-          if (team2 && reg.teamName) {
+        }
+      }
+      
+      if ((team2Name === "1" || team2Name === "2" || team2Name === "3" || team2Name === "4" || team2Name === "11" || team2Name === "15") && team2) {
+        const registrations = await storage.getRegistrationsByTournament(match.tournamentId);
+        const usedTeamName = team1Name;
+        for (const reg of registrations) {
+          if (reg.status === "approved" && reg.teamName !== usedTeamName) {
+            // Use a different registration team name for team2
             team2Name = reg.teamName;
+            break;
           }
         }
       }
