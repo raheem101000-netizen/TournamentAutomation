@@ -77,9 +77,6 @@ export default function TournamentMatch() {
 
   const matchId = params?.matchId;
   const tournamentId = params?.tournamentId;
-  
-  // DEBUG: Component is mounting
-  console.error("[COMPONENT-MOUNT] TournamentMatch mounted, matchId:", matchId);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [messageInput, setMessageInput] = useState("");
@@ -110,72 +107,8 @@ export default function TournamentMatch() {
     }
   }, [matchId, refetchMessages]);
 
-  // Fetch user data for messages that don't have displayName
-  const { data: userDataMap } = useQuery<Record<string, any>>({
-    queryKey: ['message-users', initialMessages ? initialMessages.map(m => m.userId).filter(Boolean).join(',') : ''],
-    enabled: !!initialMessages && initialMessages.length > 0,
-    queryFn: async () => {
-      if (!initialMessages || !Array.isArray(initialMessages)) {
-        console.log("[USER-MAP-QUERY] initialMessages not available, returning empty map");
-        return {};
-      }
-      
-      // Get unique user IDs (using Array.from instead of spread operator for Set)
-      const userIdSet = new Set<string>();
-      initialMessages.forEach((m: any) => {
-        if (m.userId) userIdSet.add(m.userId);
-      });
-      const userIds = Array.from(userIdSet);
-      console.log("[USER-MAP-QUERY] Found user IDs to fetch:", userIds);
-      
-      if (userIds.length === 0) {
-        console.log("[USER-MAP-QUERY] No user IDs found in messages, returning empty map");
-        return {};
-      }
-      
-      // Fetch user data for all unique users
-      const users: Record<string, any> = {};
-      await Promise.all(
-        userIds.map(async (userId: string) => {
-          try {
-            const res = await fetch(`/api/users/${userId}`, { credentials: "include" });
-            if (res.ok) {
-              const user = await res.json();
-              console.log(`[USER-MAP-QUERY] Fetched user ${userId}:`, { displayName: user.displayName, username: user.username });
-              users[userId] = user;
-            } else {
-              console.error(`[USER-MAP-QUERY] Failed to fetch user ${userId}: status ${res.status}`);
-            }
-          } catch (e) {
-            console.error(`[USER-MAP-QUERY] Exception fetching user ${userId}:`, e);
-          }
-        })
-      );
-      console.log("[USER-MAP-QUERY] Returning populated userDataMap with", Object.keys(users).length, "users:", users);
-      return users;
-    },
-  });
-
   useEffect(() => {
-    console.log("[MESSAGES-EFFECT] initialMessages received:", initialMessages?.length || 0, "messages");
     if (initialMessages && Array.isArray(initialMessages)) {
-      // Log details about first message
-      if (initialMessages.length > 0) {
-        const firstMsg = initialMessages[0];
-        console.log("[MESSAGES-EFFECT] First message details:", {
-          id: firstMsg.id?.substring(0, 8),
-          userId: firstMsg.userId,
-          displayName: firstMsg.displayName,
-          username: firstMsg.username,
-          message: firstMsg.message?.substring(0, 20)
-        });
-      }
-      // Log all user IDs in messages
-      const userIds = initialMessages
-        .map(m => m.userId)
-        .filter(Boolean);
-      console.log("[MESSAGES-EFFECT] User IDs in messages:", userIds);
-      
       setMessages(initialMessages);
     }
   }, [initialMessages]);
@@ -202,16 +135,9 @@ export default function TournamentMatch() {
         const data = JSON.parse(event.data);
         if (data.type === "new_message") {
           const msg = data.message;
-          // Ensure displayName exists for WebSocket messages - use enriched displayName from backend
-          const enrichedMsg = {
-            ...msg,
-            displayName: msg.displayName || msg.username || "Unknown",
-            username: msg.username || null,
-          };
-          console.log("[WS-ENRICHED]", { id: enrichedMsg.id?.substring(0, 8), displayName: enrichedMsg.displayName, wsDisplayName: msg.displayName, wsUsername: msg.username });
           setMessages((prev) => {
-            if (prev.some((m) => m.id === enrichedMsg.id)) return prev;
-            return [...prev, enrichedMsg];
+            if (prev.some((m) => m.id === msg.id)) return prev;
+            return [...prev, msg];
           });
         }
       } catch (error) {
@@ -492,19 +418,6 @@ export default function TournamentMatch() {
             <p className="text-sm text-muted-foreground mt-1">
               Team managers and organizer only
             </p>
-            {/* DEBUG: Show first message data to diagnose displayName issue */}
-            {messages.length > 0 && (
-              <div className="mt-4 p-3 bg-destructive/10 rounded-md border border-destructive/30 text-xs font-mono">
-                <div className="font-bold mb-2">DEBUG - First Message Data:</div>
-                <div>ID: {messages[0]?.id?.substring(0, 8)}</div>
-                <div>displayName: "{messages[0]?.displayName}"</div>
-                <div>username: "{messages[0]?.username}"</div>
-                <div>userId: "{messages[0]?.userId}"</div>
-                <div>message: "{messages[0]?.message?.substring(0, 20)}"</div>
-                <div className="mt-2 font-bold">Total messages: {messages.length}</div>
-                <div className="mt-2 font-bold">userDataMap populated: {userDataMap && Object.keys(userDataMap).length > 0 ? `Yes (${Object.keys(userDataMap).length} users)` : "No"}</div>
-              </div>
-            )}
           </CardHeader>
           <CardContent className="flex flex-col gap-4 h-96">
             {/* Messages */}
@@ -515,33 +428,7 @@ export default function TournamentMatch() {
                 </div>
               ) : (
                 messages.map((msg: ChatMessage) => {
-                  // CRITICAL: Priority order: backend displayName → backend username → userDataMap displayName → userDataMap username → "Unknown"
-                  let senderName = "";
-                  
-                  // 1. Try backend enriched displayName first (most important - from backend API enrichment)
-                  if (msg.displayName && msg.displayName.trim()) {
-                    senderName = msg.displayName.trim();
-                  }
-                  // 2. Fallback to backend username
-                  else if (msg.username && msg.username.trim()) {
-                    senderName = msg.username.trim();
-                  }
-                  // 3. Try userDataMap if we have userId and userDataMap
-                  else if (msg.userId && userDataMap?.[msg.userId]) {
-                    const userData = userDataMap[msg.userId];
-                    if (userData.displayName && userData.displayName.trim()) {
-                      senderName = userData.displayName.trim();
-                    } else if (userData.username && userData.username.trim()) {
-                      senderName = userData.username.trim();
-                    }
-                  }
-                  // 4. Last resort
-                  if (!senderName) {
-                    senderName = "Unknown";
-                  }
-                  
-                  console.log(`[RENDER-MSG ${msg.id?.substring(0, 8)}] Final name="${senderName}" (displayName="${msg.displayName}" username="${msg.username}" userId="${msg.userId}")`);
-                  
+                  const senderName = msg.displayName || msg.username || "Unknown";
                   const initials = senderName.substring(0, 2).toUpperCase();
                   const timestamp = new Date(msg.createdAt).toLocaleTimeString(
                     "en-US",
