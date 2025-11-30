@@ -1042,10 +1042,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         enrichedMessage.displayName = sender?.displayName?.trim() || sender?.username || "Unknown";
         enrichedMessage.username = sender?.username || undefined;
         enrichedMessage.avatarUrl = sender?.avatarUrl || undefined;
+        console.log("[WS-BROADCAST] Enriching message from user:", message.userId, "displayName:", enrichedMessage.displayName, "username:", enrichedMessage.username);
       } else {
         enrichedMessage.displayName = "Unknown";
         enrichedMessage.username = undefined;
       }
+
+      console.log("[WS-BROADCAST] Sending message:", JSON.stringify({ type: "new_message", message: enrichedMessage }, null, 2));
 
       broadcastToMatch(req.params.matchId, {
         type: "new_message",
