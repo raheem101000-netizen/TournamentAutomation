@@ -62,9 +62,6 @@ interface ChatMessage {
   imageUrl?: string;
   userId?: string;
   username?: string;
-  displayName?: string;
-  avatarUrl?: string;
-  teamId?: string;
   isSystem: number;
   createdAt: string;
 }
@@ -126,14 +123,9 @@ export default function TournamentMatch() {
       try {
         const data = JSON.parse(event.data);
         if (data.type === "new_message") {
-          console.log("[WS-RECEIVE] New message from server:", data.message);
-          console.log("[WS-RECEIVE] Message displayName:", data.message.displayName);
-          console.log("[WS-RECEIVE] Message userId:", data.message.userId);
           setMessages((prev) => {
             if (prev.some((m) => m.id === data.message.id)) return prev;
-            const updated = [...prev, data.message];
-            console.log("[WS-RECEIVE] Messages state after update:", updated);
-            return updated;
+            return [...prev, data.message];
           });
         }
       } catch (error) {
@@ -419,11 +411,9 @@ export default function TournamentMatch() {
             {/* Messages */}
             <div className="flex-1 overflow-y-auto space-y-4 pr-2">
               {messages.map((msg) => {
-                const displayName = msg.displayName?.trim() || msg.username || "Unknown";
-                const parts = displayName.split(' ').filter((p: string) => p);
-                const initials = parts.length > 1
-                  ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-                  : displayName.substring(0, 2).toUpperCase();
+                const initials = (msg.username || "U")
+                  .substring(0, 2)
+                  .toUpperCase();
                 const timestamp = new Date(msg.createdAt).toLocaleTimeString(
                   "en-US",
                   {
@@ -447,7 +437,7 @@ export default function TournamentMatch() {
                     <div className="flex-1">
                       <div className="flex items-baseline gap-2">
                         <span className="text-sm font-semibold">
-                          {displayName}
+                          {msg.username}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {timestamp}

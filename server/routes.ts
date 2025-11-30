@@ -132,7 +132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   httpServer.on('upgrade', async (request, socket, head) => {
     const pathname = new URL(request.url || "", `http://${request.headers.host}`).pathname;
     
-    if (pathname === '/ws/chat' || pathname === '/ws/channel' || pathname === '/ws/match') {
+    if (pathname === '/ws/chat' || pathname === '/ws/channel') {
       // Verify authentication before upgrading
       const userInfo = await getSessionUserId(request);
       
@@ -214,13 +214,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Handle incoming messages
       ws.on("message", async (data) => {
         try {
-          console.log(`[WS-MATCH] Received message in match ${matchId} from user ${userInfo.userId}`);
           const messageData = JSON.parse(data.toString());
           
           // Validate using schema and ensure matchId from URL is used
           const validatedData = insertChatMessageSchema.parse({
             matchId: matchId, // Use matchId from connection URL for security
-            userId: userInfo.userId, // Include authenticated user ID
             teamId: messageData.teamId || null, // Optional field
             message: messageData.message,
             imageUrl: messageData.imageUrl || null, // Optional field
@@ -228,18 +226,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Save message to storage
           const savedMessage = await storage.createChatMessage(validatedData);
-          console.log(`[WS-MATCH] Saved message with userId: ${savedMessage.userId}`);
-
-          // Enrich message before broadcasting
-          const enrichedMessage = await enrichChatMessage(savedMessage);
-          console.log(`[WS-MATCH] Enriched message displayName: ${enrichedMessage.displayName}`);
 
           // Broadcast to all connections in this match with consistent format
           const broadcastPayload = {
             type: "new_message",
-            message: enrichedMessage,
+            message: savedMessage,
           };
-          console.log(`[WS-MATCH] Broadcasting to ${matchConnections.get(matchId)?.size || 0} connections`);
           broadcastToMatch(matchId, broadcastPayload);
         } catch (error: any) {
           console.error("Error handling WebSocket message:", error);
@@ -257,34 +249,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  const enrichChatMessage = async (msg: any) => {
-    console.log(`[ENRICH] Processing message ID ${msg.id}, userId: ${msg.userId}`);
-    if (msg.userId) {
-      try {
-        const sender = await storage.getUser(msg.userId);
-        console.log(`[ENRICH] Found user for ${msg.userId}:`, sender ? `${sender.displayName}/${sender.username}` : "NOT FOUND");
-        const displayName = sender?.displayName?.trim() || sender?.username || "Unknown";
-        const enriched = {
-          ...msg,
-          displayName: displayName,
-          avatarUrl: sender?.avatarUrl || undefined,
-        };
-        console.log(`[ENRICH] Enriched message with displayName: ${displayName}`);
-        return enriched;
-      } catch (error) {
-        console.error(`[ENRICH] Error enriching message for userId ${msg.userId}:`, error);
-        return { ...msg, displayName: "Unknown" };
-      }
-    }
-    console.log(`[ENRICH] No userId in message, returning Unknown`);
-    return {
-      ...msg,
-      displayName: "Unknown",
-    };
-  };
-
   const broadcastToMatch = (matchId: string, data: any) => {
-    console.log(`[BROADCAST] Sending to match ${matchId}:`, JSON.stringify(data, null, 2));
     const connections = matchConnections.get(matchId);
     if (connections) {
       const message = JSON.stringify(data);
@@ -1043,7 +1008,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (msg.userId) {
             const sender = await storage.getUser(msg.userId);
             const displayName = sender?.displayName?.trim() || sender?.username || "Unknown";
-            console.log(`[ENRICH-DETAIL] Message ${msg.id}: userId=${msg.userId}, displayName=${displayName}, sender=${JSON.stringify({id: sender?.id, displayName: sender?.displayName, username: sender?.username})}`);
             return {
               ...msg,
               displayName: displayName,
@@ -1056,10 +1020,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         })
       );
-      console.log("[MATCH-MSG-ENRICHMENT] Total messages enriched:", enrichedMessages.length);
-      enrichedMessages.forEach((m, i) => {
-        console.log(`  [${i}] ${m.id}: displayName="${m.displayName}" message="${m.message}"`);
-      });
+      console.log("[MATCH-MSG-ENRICHMENT] Total messages enriched:", enrichedMessages.length, "- Sample:", JSON.stringify(enrichedMessages.slice(0, 1), null, 2));
       res.json(enrichedMessages);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -1074,12 +1035,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       const message = await storage.createChatMessage(validatedData);
 
-      // Enrich message before broadcasting
-      const enrichedMessage = await enrichChatMessage(message);
-
       broadcastToMatch(req.params.matchId, {
         type: "new_message",
-        message: enrichedMessage,
+        message,
       });
 
       res.status(201).json(message);
