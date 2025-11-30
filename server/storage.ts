@@ -803,7 +803,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAchievementsByUser(userId: string): Promise<any[]> {
-    const achievementsList = await db.select().from(achievements)
+    const achievementsList = await db.select({
+      id: achievements.id,
+      userId: achievements.userId,
+      serverId: achievements.serverId,
+      title: achievements.title,
+      description: achievements.description,
+      iconUrl: achievements.iconUrl,
+      reward: achievements.reward,
+      game: achievements.game,
+      region: achievements.region,
+      achievedAt: achievements.achievedAt,
+      category: achievements.category,
+      type: achievements.type,
+      awardedBy: achievements.awardedBy,
+      createdAt: achievements.createdAt,
+    }).from(achievements)
       .where(eq(achievements.userId, userId))
       .orderBy(achievements.achievedAt);
     
