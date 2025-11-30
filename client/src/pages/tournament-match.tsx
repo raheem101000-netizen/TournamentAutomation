@@ -428,7 +428,7 @@ export default function TournamentMatch() {
                 </div>
               ) : (
                 messages.map((msg: ChatMessage) => {
-                  const senderName = msg.displayName || msg.username || "Unknown";
+                  const senderName = msg.username || "Unknown";
                   const initials = senderName.substring(0, 2).toUpperCase();
                   const timestamp = new Date(msg.createdAt).toLocaleTimeString(
                     "en-US",

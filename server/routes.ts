@@ -1002,23 +1002,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/matches/:matchId/messages", async (req, res) => {
     try {
       const messages = await storage.getChatMessagesByMatch(req.params.matchId);
-      // Enrich messages with sender displayName, username and avatarUrl from users table
+      // Enrich messages with sender username from users table
       const enrichedMessages = await Promise.all(
         messages.map(async (msg: any) => {
-          let displayName = "Unknown";
-          let username = null;
+          let username = "Unknown";
           
           if (msg.userId) {
             try {
               const sender = await storage.getUser(msg.userId);
-              if (sender) {
-                // Drizzle maps display_name column to displayName property
-                const senderDisplayName = (sender as any).displayName || (sender as any).display_name;
-                displayName = senderDisplayName?.trim() || sender.username || "Unknown";
-                username = sender.username || null;
-                console.log("[MSG-ENRICHMENT] User:", sender.username, "displayName:", displayName, "from field:", senderDisplayName);
-              } else {
-                console.log("[RAHEEM-DEBUG] getUser returned null for userId:", msg.userId);
+              if (sender && sender.username) {
+                username = sender.username;
               }
             } catch (e) {
               console.error("[ENRICHMENT-ERROR] Failed to get user:", msg.userId, e);
@@ -1034,7 +1027,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             imageUrl: msg.imageUrl || null,
             isSystem: msg.isSystem,
             createdAt: msg.createdAt,
-            displayName,
             username,
           };
         })
@@ -1044,7 +1036,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader("Pragma", "no-cache");
       res.setHeader("Expires", "0");
       res.setHeader("X-Timestamp", Date.now().toString());
-      console.log("[MSG-ENDPOINT-DEBUG] ALL enrichedMessages:", JSON.stringify(enrichedMessages, null, 2));
       res.json(enrichedMessages);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -1059,7 +1050,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       const message = await storage.createChatMessage(validatedData);
 
-      // Enrich message with displayName before broadcasting
+      // Enrich message with username before broadcasting
       const enrichedMessage: any = {
         id: message.id,
         matchId: message.matchId,
@@ -1073,13 +1064,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (message.userId) {
         const sender = await storage.getUser(message.userId);
-        const senderDisplayName = (sender as any)?.displayName || (sender as any)?.display_name;
-        enrichedMessage.displayName = senderDisplayName?.trim() || sender?.username || "Unknown";
-        enrichedMessage.username = sender?.username || null;
-        enrichedMessage.avatarUrl = sender?.avatarUrl || undefined;
+        enrichedMessage.username = sender?.username || "Unknown";
       } else {
-        enrichedMessage.displayName = "Unknown";
-        enrichedMessage.username = null;
+        enrichedMessage.username = "Unknown";
       }
 
       broadcastToMatch(req.params.matchId, {
