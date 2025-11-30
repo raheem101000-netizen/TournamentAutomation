@@ -314,7 +314,7 @@ export default function TournamentMatch() {
         </Card>
 
         {/* Match Chat */}
-        <Card>
+        <Card className="flex flex-col min-h-0">
           <CardHeader className="pb-4">
             <CardTitle className="font-display flex items-center gap-2">
               Match Chat
@@ -323,8 +323,8 @@ export default function TournamentMatch() {
               </Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 flex flex-col gap-4 p-0 px-6 pb-6">
-            <ScrollArea className="h-80 pr-4">
+          <CardContent className="flex-1 flex flex-col gap-4 p-0 px-6 pb-6 min-h-0">
+            <ScrollArea className="flex-1 pr-4">
               <div className="space-y-4">
                 {messagesLoading ? (
                   <div className="flex justify-center py-8">
@@ -337,6 +337,7 @@ export default function TournamentMatch() {
                 ) : (
                   chatMessages.map((msg) => {
                     const isOwn = msg.userId === currentUser?.id;
+                    const isSystem = false;
 
                     const getInitials = () => {
                       const name = (msg as any).displayName?.trim() || msg.username?.trim() || '';
@@ -349,6 +350,17 @@ export default function TournamentMatch() {
                     };
 
                     const senderName = (msg as any).displayName?.trim() || msg.username?.trim() || 'Unknown User';
+
+                    if (isSystem) {
+                      return (
+                        <div key={msg.id} className="flex justify-center">
+                          <Badge variant="outline" className="gap-2 py-1">
+                            <AlertCircle className="w-3 h-3" />
+                            {msg.message}
+                          </Badge>
+                        </div>
+                      );
+                    }
 
                     return (
                       <div 
@@ -373,7 +385,7 @@ export default function TournamentMatch() {
                         )}
                         <div className={`flex flex-col gap-1 max-w-[70%] ${isOwn ? 'items-end' : ''}`}>
                           {msg.userId ? (
-                            <Link to={`/profile/${msg.userId}`} className="text-xs text-muted-foreground hover:underline cursor-pointer">
+                            <Link to={`/profile/${msg.userId}`} className="text-xs text-muted-foreground hover:underline cursor-pointer" data-testid={`user-link-${msg.id}`}>
                               {senderName}
                             </Link>
                           ) : (
@@ -393,27 +405,29 @@ export default function TournamentMatch() {
               </div>
             </ScrollArea>
 
-            <div className="flex gap-2">
-              <Input
-                placeholder="Type a message..."
-                value={messageInput}
-                onChange={(e) => setMessageInput(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                disabled={sendMessageMutation.isPending}
-                data-testid="input-message"
-              />
-              <Button
-                size="icon"
-                onClick={handleSendMessage}
-                disabled={sendMessageMutation.isPending || !messageInput.trim()}
-                data-testid="button-send-message"
-              >
-                {sendMessageMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-              </Button>
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Type a message..."
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                  className="flex-1"
+                  data-testid="input-message"
+                />
+                <Button 
+                  size="icon" 
+                  onClick={handleSendMessage}
+                  disabled={!messageInput.trim() || sendMessageMutation.isPending}
+                  data-testid="button-send-message"
+                >
+                  {sendMessageMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
