@@ -1002,7 +1002,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/matches/:matchId/messages", async (req, res) => {
     try {
       const messages = await storage.getChatMessagesByMatch(req.params.matchId);
-      // Enrich messages with sender displayName and avatarUrl from users table
+      // Enrich messages with sender displayName, username and avatarUrl from users table
       const enrichedMessages = await Promise.all(
         messages.map(async (msg) => {
           if (msg.userId) {
@@ -1011,6 +1011,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return {
               ...msg,
               displayName: displayName,
+              username: sender?.username,
               avatarUrl: sender?.avatarUrl || undefined,
             };
           }
@@ -1020,7 +1021,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         })
       );
-      console.log("[MATCH-MSG-ENRICHMENT] Total messages enriched:", enrichedMessages.length, "- Sample:", JSON.stringify(enrichedMessages.slice(0, 1), null, 2));
+      console.log("[MATCH-MSG-ENRICHMENT] Total messages enriched:", enrichedMessages.length, "- Full:", JSON.stringify(enrichedMessages, null, 2));
       res.json(enrichedMessages);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
