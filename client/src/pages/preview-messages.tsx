@@ -163,15 +163,25 @@ export default function PreviewMessages() {
     queryKey: ["/api/message-threads"],
   });
 
-  // Fetch match details when viewing a match chat
+  // Fetch match details + tournament teams when viewing a match chat
   const { data: matchDetails } = useQuery<any>({
     queryKey: ["match-details", selectedChat?.matchId || "none"],
     enabled: !!selectedChat?.matchId,
     queryFn: async () => {
       if (!selectedChat?.matchId) return null;
-      const response = await fetch(`/api/matches/${selectedChat.matchId}`);
-      if (!response.ok) return null;
-      return response.json();
+      const matchResponse = await fetch(`/api/matches/${selectedChat.matchId}`);
+      if (!matchResponse.ok) return null;
+      const match = await matchResponse.json();
+      
+      // Fetch tournament teams for this match
+      const teamsResponse = await fetch(`/api/tournaments/${match.tournamentId}/teams`);
+      if (teamsResponse.ok) {
+        const teams = await teamsResponse.json();
+        const team1 = teams.find((t: any) => t.id === match.team1Id);
+        const team2 = teams.find((t: any) => t.id === match.team2Id);
+        return { ...match, team1, team2 };
+      }
+      return match;
     },
   });
 
@@ -630,7 +640,7 @@ export default function PreviewMessages() {
                         data-testid="button-team1-wins"
                       >
                         <Trophy className="w-4 h-4 mr-2" />
-                        Team 1
+                        {matchDetails.team1?.name || "Team 1"}
                       </Button>
                       <Button
                         onClick={() => setWinnerMutation.mutate(matchDetails.team2Id)}
@@ -639,7 +649,7 @@ export default function PreviewMessages() {
                         data-testid="button-team2-wins"
                       >
                         <Trophy className="w-4 h-4 mr-2" />
-                        Team 2
+                        {matchDetails.team2?.name || "Team 2"}
                       </Button>
                     </div>
                   </div>
