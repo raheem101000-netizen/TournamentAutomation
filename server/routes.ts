@@ -2848,5 +2848,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Send friend request
+  app.post("/api/friend-request", async (req, res) => {
+    try {
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { recipientId } = req.body;
+      if (!recipientId) {
+        return res.status(400).json({ error: "Recipient ID required" });
+      }
+
+      if (recipientId === req.session.userId) {
+        return res.status(400).json({ error: "Cannot send friend request to yourself" });
+      }
+
+      // Create notification for friend request
+      const notification = await storage.createNotification({
+        userId: recipientId,
+        senderId: req.session.userId,
+        type: "friend_request",
+        title: `Friend request`,
+        message: `You have a new friend request`,
+        read: false,
+      });
+
+      res.json({ success: true, notification });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }

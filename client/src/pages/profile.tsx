@@ -1,11 +1,12 @@
+import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
-import { ChevronLeft, MessageSquare } from "lucide-react";
+import { ChevronLeft, MessageSquare, UserPlus, UserCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface UserProfile {
@@ -33,6 +34,7 @@ export default function Profile() {
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
   const userId = params?.userId;
+  const [isFriendRequestSent, setIsFriendRequestSent] = useState(false);
 
   const handleMessage = async () => {
     if (!userProfile) return;
@@ -62,6 +64,35 @@ export default function Profile() {
       toast({
         title: "Error",
         description: "Failed to open message thread",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAddFriend = async () => {
+    if (!userProfile || !currentUser) return;
+    
+    try {
+      const response = await fetch("/api/friend-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipientId: userProfile.id,
+        }),
+        credentials: "include",
+      });
+
+      if (!response.ok) throw new Error("Failed to send friend request");
+      
+      setIsFriendRequestSent(true);
+      toast({
+        title: "Friend request sent!",
+        description: `Request sent to ${userProfile.displayName || userProfile.username}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send friend request",
         variant: "destructive",
       });
     }
@@ -136,10 +167,30 @@ export default function Profile() {
                 )}
               </div>
               {!isOwnProfile && (
-                <Button onClick={handleMessage} data-testid="button-message-user">
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  Message
-                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={handleMessage} data-testid="button-message-user">
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Message
+                  </Button>
+                  <Button 
+                    onClick={handleAddFriend} 
+                    disabled={isFriendRequestSent}
+                    variant={isFriendRequestSent ? "secondary" : "outline"}
+                    data-testid="button-add-friend"
+                  >
+                    {isFriendRequestSent ? (
+                      <>
+                        <UserCheck className="w-4 h-4 mr-2" />
+                        Requested
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Add Friend
+                      </>
+                    )}
+                  </Button>
+                </div>
               )}
             </div>
           </CardHeader>
