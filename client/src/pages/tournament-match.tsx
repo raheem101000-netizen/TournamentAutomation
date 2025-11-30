@@ -99,6 +99,11 @@ export default function TournamentMatch() {
   const { data: matchThread, isLoading: threadLoading } = useQuery<any>({
     queryKey: ["/api/matches", matchId, "thread"],
     enabled: !!matchId,
+    queryFn: async () => {
+      const response = await fetch(`/api/matches/${matchId}/thread`);
+      if (!response.ok) throw new Error("Failed to fetch thread");
+      return response.json();
+    },
   });
 
   // Fetch messages for the match thread
