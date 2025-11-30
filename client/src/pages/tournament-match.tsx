@@ -458,18 +458,24 @@ export default function TournamentMatch() {
 
         {/* Match Chat */}
         <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Match Chat</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              Team managers and organizer only
-            </p>
+          <CardHeader className="pb-4">
+            <CardTitle className="font-display flex items-center gap-2">
+              Match Chat
+              <Badge variant="outline" className="font-normal">
+                {messages.length} messages
+              </Badge>
+            </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4 h-96">
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-              {messages.length === 0 ? (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                  No messages yet
+          <CardContent className="flex-1 flex flex-col gap-4 p-0 px-6 pb-6 min-h-0">
+            <ScrollArea className="flex-1 pr-4">
+              <div className="space-y-4">
+              {messagesLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No messages yet. Start the conversation!</p>
                 </div>
               ) : (
                 messages.map((msg: ChatMessage) => {
@@ -550,62 +556,56 @@ export default function TournamentMatch() {
                   );
                 })
               )}
-              <div ref={messagesEndRef} />
-            </div>
+              </div>
+            </ScrollArea>
 
-            {/* Input */}
-            {(isTeam1Manager || isTeam2Manager || isOrganizer) ? (
-              <div className="space-y-2 pt-3 border-t">
-                {messageImage && (
-                  <div className="relative rounded max-w-xs">
-                    <img
-                      src={messageImage}
-                      alt="Message attachment"
-                      className="w-full h-32 object-cover rounded"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="absolute top-1 right-1 h-6 w-6"
-                      onClick={() => setMessageImage(null)}
-                      data-testid="button-remove-message-image"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                )}
-                <form className="flex gap-2" onSubmit={handleSendMessage}>
-                  <Input
-                    placeholder="Send a message..."
-                    value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
-                    data-testid="input-match-message"
+            <div className="space-y-2">
+              {messageImage && (
+                <div className="relative inline-block">
+                  <img 
+                    src={messageImage} 
+                    alt="Preview" 
+                    className="max-h-32 rounded-md border"
                   />
-                  <ObjectUploader
-                    maxNumberOfFiles={1}
-                    maxFileSize={10485760}
-                    onGetUploadParameters={handleGetUploadParameters}
-                    onComplete={handleUploadComplete}
-                    buttonClassName="h-9 px-3"
-                  >
-                    <UploadIcon className="h-4 w-4" />
-                  </ObjectUploader>
                   <Button
                     size="icon"
-                    type="submit"
-                    disabled={(!messageInput.trim() && !messageImage) || !ws || isUploadingImage}
-                    data-testid="button-send-match-message"
+                    variant="destructive"
+                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                    onClick={() => setMessageImage(null)}
+                    data-testid="button-remove-image"
                   >
-                    <Send className="h-4 w-4" />
+                    <X className="w-3 h-3" />
                   </Button>
-                </form>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <ObjectUploader
+                  maxNumberOfFiles={1}
+                  maxFileSize={10485760}
+                  onGetUploadParameters={handleGetUploadParameters}
+                  onComplete={handleUploadComplete}
+                  buttonClassName="h-9 px-3"
+                >
+                  <ImageIcon className="h-4 w-4" />
+                </ObjectUploader>
+                <Input
+                  placeholder="Type a message or attach an image..."
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage(e as any)}
+                  className="flex-1"
+                  data-testid="input-message"
+                />
+                <Button 
+                  size="icon" 
+                  onClick={(e) => handleSendMessage(e as any)}
+                  disabled={!messageInput.trim() || isUploadingImage || sendMessageMutation.isPending}
+                  data-testid="button-send-message"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
               </div>
-            ) : (
-              <div className="text-center text-sm text-muted-foreground py-2">
-                Only team managers and organizer can send messages
-              </div>
-            )}
+            </div>
           </CardContent>
         </Card>
       </div>
