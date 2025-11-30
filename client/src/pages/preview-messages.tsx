@@ -899,22 +899,25 @@ export default function PreviewMessages() {
                   <div>
                     <h3 className="text-sm font-semibold mb-3">Achievements</h3>
                     <div className="grid grid-cols-1 gap-3">
-                      {previewAchievements.map((achievement) => (
-                        <div key={achievement.id} className="flex gap-3 p-3 rounded-lg bg-muted/50">
-                          <div className="text-2xl flex-shrink-0">
-                            {achievement.icon || '🏆'}
+                      {previewAchievements.map((achievement) => {
+                        console.log('Achievement data:', achievement);
+                        return (
+                          <div key={achievement.id} className="flex gap-3 p-3 rounded-lg bg-muted/50">
+                            <div className="text-2xl flex-shrink-0">
+                              {achievement.icon || '🏆'}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-sm">{achievement.title}</h4>
+                              {achievement.game && (
+                                <p className="text-xs text-muted-foreground">{achievement.game}</p>
+                              )}
+                              {achievement.serverName && (
+                                <p className="text-xs text-muted-foreground">{achievement.serverName}</p>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold text-sm">{achievement.title}</h4>
-                            {achievement.game && (
-                              <p className="text-xs text-muted-foreground">{achievement.game}</p>
-                            )}
-                            {achievement.serverName && (
-                              <p className="text-xs text-muted-foreground">{achievement.serverName}</p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
