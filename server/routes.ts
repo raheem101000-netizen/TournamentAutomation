@@ -1014,6 +1014,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if (sender) {
                 displayName = sender.displayName?.trim() || sender.username || "Unknown";
                 username = sender.username || null;
+                if (msg.message && msg.message.includes("Dont get it")) {
+                  console.log("[RAHEEM-DEBUG] User:", sender.username, "displayName:", displayName, "from DB displayName:", sender.displayName);
+                }
+              } else {
+                console.log("[RAHEEM-DEBUG] getUser returned null for userId:", msg.userId);
               }
             } catch (e) {
               console.error("[ENRICHMENT-ERROR] Failed to get user:", msg.userId, e);
@@ -1034,9 +1039,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         })
       );
-      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      res.removeHeader("ETag");
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, private, max-age=0");
       res.setHeader("Pragma", "no-cache");
       res.setHeader("Expires", "0");
+      res.setHeader("X-Timestamp", Date.now().toString());
       res.json(enrichedMessages);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
