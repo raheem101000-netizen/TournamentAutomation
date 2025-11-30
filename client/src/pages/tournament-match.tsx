@@ -108,6 +108,11 @@ export default function TournamentMatch() {
 
   useEffect(() => {
     if (messagesData && Array.isArray(messagesData)) {
+      console.log("[TOURNAMENT-MATCH] Messages received:", messagesData);
+      if (messagesData.length > 0) {
+        console.log("[TOURNAMENT-MATCH] First message:", messagesData[0]);
+        console.log("[TOURNAMENT-MATCH] First message userId:", messagesData[0].userId);
+      }
       setMessages(messagesData);
     }
   }, [messagesData]);
