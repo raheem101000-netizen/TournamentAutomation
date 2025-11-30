@@ -2418,6 +2418,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get or create message thread for a match (for tournament match chat)
+  app.get("/api/matches/:matchId/thread", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { matchId } = req.params;
+      
+      // Try to find existing thread for this match
+      const existingThread = await storage.pool.query(
+        'SELECT * FROM message_threads WHERE match_id = $1 LIMIT 1',
+        [matchId]
+      );
+      
+      if (existingThread.rows.length > 0) {
+        return res.json(existingThread.rows[0]);
+      }
+      
+      // Create new match thread if it doesn't exist
+      const matchDetails = await storage.pool.query(
+        'SELECT tournaments.name FROM matches JOIN tournaments ON matches.tournament_id = tournaments.id WHERE matches.id = $1',
+        [matchId]
+      );
+      
+      if (matchDetails.rows.length === 0) {
+        return res.status(404).json({ error: "Match not found" });
+      }
+      
+      const threadName = `Match: ${matchDetails.rows[0].name}`;
+      const newThread = await storage.pool.query(
+        `INSERT INTO message_threads (match_id, participant_name, last_message, last_message_time, unread_count)
+         VALUES ($1, $2, $3, NOW(), 0) RETURNING *`,
+        [matchId, threadName, "Match discussion started"]
+      );
+      
+      res.json(newThread.rows[0]);
+    } catch (error: any) {
+      console.error("Error getting/creating match thread:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.patch("/api/message-threads/:id", async (req, res) => {
     try {
       if (!req.session.userId) {

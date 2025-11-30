@@ -35,10 +35,6 @@ import { ObjectUploader } from "@/components/ObjectUploader";
 import type { Match, Team, Tournament } from "@shared/schema";
 import type { UploadResult } from "@uppy/core";
 
-const achievementIconOptions = [
-  "🏆", "⭐", "🥇", "🎖️", "👑", "🔥", "💎", "🌟", "✨", "🎯", "🏅", "🎪"
-];
-
 const awardAchievementSchema = z.object({
   playerId: z.string().min(1, "Please select a player"),
   title: z.string().min(1, "Achievement title is required").max(50),
@@ -56,17 +52,23 @@ interface MatchDetails {
   team2Players: any[];
 }
 
-interface ChatMessage {
+interface ThreadMessage {
   id: string;
-  matchId: string;
-  teamId?: string;
-  userId?: string;
-  username?: string | null;
-  displayName?: string | null;
-  message?: string | null;
-  imageUrl?: string | null;
-  isSystem: number;
+  threadId: string;
+  userId: string;
+  username: string;
+  message: string;
   createdAt: string;
+  imageUrl?: string;
+  avatarUrl?: string;
+  displayName?: string;
+}
+
+interface User {
+  id: string;
+  username: string;
+  email?: string;
+  displayName?: string;
   avatarUrl?: string;
 }
 
@@ -80,11 +82,7 @@ export default function TournamentMatch() {
   const tournamentId = params?.tournamentId;
 
   const [messageInput, setMessageInput] = useState("");
-  const [messageImage, setMessageImage] = useState<string | null>(null);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [ws, setWs] = useState<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const objectPathRef = useRef<string | null>(null);
 
   // Fetch match details
   const { data: matchDetails, isLoading: matchLoading } = useQuery<MatchDetails>({
@@ -93,137 +91,48 @@ export default function TournamentMatch() {
   });
 
   // Fetch current user
-  const { data: currentUser } = useQuery<any>({
+  const { data: currentUser } = useQuery<User>({
     queryKey: ["/api/auth/me"],
   });
 
-  // Fetch messages for this match - with short staleTime to ensure fresh data
-  const { data: messagesData = [], isLoading: messagesLoading } = useQuery<ChatMessage[]>({
-    queryKey: ["/api/matches", matchId, "messages"],
+  // Get or create message thread for this match
+  const { data: matchThread, isLoading: threadLoading } = useQuery({
+    queryKey: ["/api/matches", matchId, "thread"],
     enabled: !!matchId,
-    queryFn: async () => {
-      if (!matchId) return [];
-      const response = await fetch(`/api/matches/${matchId}/messages`);
-      if (!response.ok) throw new Error("Failed to fetch messages");
-      return response.json();
-    },
-    staleTime: 1000, // 1 second stale time so WebSocket refetch works immediately
+  });
+
+  // Fetch messages for the match thread
+  const { data: threadMessages = [], isLoading: messagesLoading } = useQuery<ThreadMessage[]>({
+    queryKey: ["/api/message-threads", matchThread?.id, "messages"],
+    enabled: !!matchThread?.id,
   });
 
   const qc = useQueryClient();
 
-  // DEBUG: Log messagesData whenever it changes
-  useEffect(() => {
-    console.log("[TOURNAMENT-MATCH] messagesData:", messagesData);
-    if (messagesData.length > 0) {
-      console.log("[TOURNAMENT-MATCH] First message userId:", messagesData[0].userId);
-      console.log("[TOURNAMENT-MATCH] First message username:", messagesData[0].username);
-    }
-  }, [messagesData]);
-
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messagesData]);
+  }, [threadMessages]);
 
-  // WebSocket connection
-  useEffect(() => {
-    if (!matchId) return;
-
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws/match?matchId=${matchId}`;
-    const websocket = new WebSocket(wsUrl);
-
-    websocket.onopen = () => {
-      console.log("WebSocket connected to match:", matchId);
-    };
-
-    websocket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === "new_message") {
-          // Force immediate refetch to get new message with userId enrichment
-          qc.refetchQueries({
-            queryKey: ["/api/matches", matchId, "messages"],
-          });
-        }
-      } catch (error) {
-        console.error("Error parsing message:", error);
-      }
-    };
-
-    websocket.onerror = (error) => {
-      console.error("WebSocket error:", error);
-      toast({
-        title: "Connection Error",
-        description: "Failed to connect. Retrying...",
-        variant: "destructive",
-      });
-    };
-
-    websocket.onclose = () => {
-      console.log("WebSocket disconnected");
-    };
-
-    setWs(websocket);
-
-    return () => {
-      websocket.close();
-    };
-  }, [matchId, toast, qc]);
-
-  const closeMatchMutation = useMutation({
-    mutationFn: async () => {
-      if (!matchId) throw new Error("Match ID required");
-      return await apiRequest("PATCH", `/api/matches/${matchId}`, {
-        status: "completed",
-      });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Match Closed",
-        description: "The match has been closed successfully.",
-      });
-      setLocation("/");
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to close match",
-        variant: "destructive",
-      });
-    },
-  });
-
+  // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: async (messageData: any) => {
-      const url = `/api/matches/${matchId}/messages`;
-      const body = {
-        userId: currentUser?.id,
-        username: currentUser?.username,
-        ...messageData,
-      };
-
-      const response = await fetch(url, {
+    mutationFn: async (message: string) => {
+      if (!matchThread?.id) throw new Error("No thread available");
+      
+      const response = await fetch(`/api/message-threads/${matchThread.id}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ message }),
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to send message");
-      }
-
+      
+      if (!response.ok) throw new Error("Failed to send message");
       return response.json();
     },
     onSuccess: () => {
       setMessageInput("");
-      setMessageImage(null);
-      toast({
-        title: "Message sent!",
-      });
+      toast({ title: "Message sent!" });
       qc.refetchQueries({
-        queryKey: ["/api/matches", matchId, "messages"],
+        queryKey: ["/api/message-threads", matchThread?.id, "messages"],
       });
     },
     onError: () => {
@@ -235,380 +144,251 @@ export default function TournamentMatch() {
     },
   });
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!messageInput.trim() && !messageImage) return;
-
-    const messageData: any = {};
-    if (messageInput.trim()) {
-      messageData.message = messageInput.trim();
-    }
-    if (messageImage) {
-      messageData.imageUrl = messageImage;
-    }
-
-    sendMessageMutation.mutate(messageData);
+  const handleSendMessage = () => {
+    if (!messageInput.trim()) return;
+    sendMessageMutation.mutate(messageInput);
   };
 
-  const handleGetUploadParameters = async () => {
-    const response = await apiRequest("POST", "/api/objects/upload");
-    const data = await response.json();
-    objectPathRef.current = data.objectPath;
-    return {
-      method: "PUT" as const,
-      url: data.uploadURL,
-    };
-  };
+  const handleUpdateScore = async (team: "team1" | "team2") => {
+    if (!matchDetails) return;
+    
+    const score = team === "team1" 
+      ? (matchDetails.match.team1Score || 0) + 1 
+      : (matchDetails.match.team2Score || 0) + 1;
 
-  const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
-    if (result.successful && result.successful.length > 0) {
-      setIsUploadingImage(true);
-      try {
-        const uploadedObjectPath = objectPathRef.current;
-        
-        if (!uploadedObjectPath) {
-          throw new Error("No object path available");
-        }
-        
-        const response = await apiRequest("POST", "/api/objects/normalize", {
-          objectPath: uploadedObjectPath
-        });
-        
-        if (!response.ok) {
-          throw new Error("Failed to process uploaded image");
-        }
-        
-        const data = await response.json();
-        setMessageImage(data.objectPath);
-        
-        toast({
-          title: "Image uploaded",
-          description: "Image ready to send",
-        });
-      } catch (error) {
-        console.error("Error uploading image:", error);
-        toast({
-          title: "Upload failed",
-          description: error instanceof Error ? error.message : "Failed to upload image",
-          variant: "destructive",
-        });
-      } finally {
-        setIsUploadingImage(false);
-      }
+    try {
+      await apiRequest("PATCH", `/api/matches/${matchId}`, {
+        [team === "team1" ? "team1Score" : "team2Score"]: score,
+        status: "in_progress",
+      });
+      
+      qc.invalidateQueries({
+        queryKey: [`/api/tournaments/${tournamentId}/matches/${matchId}/details`],
+      });
+      
+      toast({ title: `${team === "team1" ? "Team 1" : "Team 2"} score updated!` });
+    } catch (error: any) {
+      toast({
+        title: "Error updating score",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
-  if (matchLoading) {
+  if (matchLoading || threadLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-muted-foreground">Loading match...</p>
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (!matchDetails) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-muted-foreground">Match not found</p>
+      <div className="flex items-center justify-center h-screen">
+        <Card className="w-96">
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground">Match not found</p>
+            <Button onClick={() => setLocation("/tournament")} className="w-full mt-4">
+              Back to Tournaments
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  const { match: matchData, tournament, team1, team2, team1Players = [], team2Players = [] } = matchDetails;
-  const isOrganizer = tournament.organizerId === user?.id;
-  const isTeam1Manager = team1Players?.some((p: any) => p.userId === user?.id);
-  const isTeam2Manager = team2Players?.some((p: any) => p.userId === user?.id);
+  const { match: m, tournament, team1, team2, team1Players, team2Players } = matchDetails;
+  const isTeam1Manager = currentUser?.id === team1.managerId;
+  const isTeam2Manager = currentUser?.id === team2.managerId;
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
-        <div className="container max-w-6xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => setLocation("/")}
-                data-testid="button-back"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
-              <div>
-                <h1 className="text-xl font-bold">{tournament.name}</h1>
-                <p className="text-sm text-muted-foreground">
-                  Round {matchData.round}
-                </p>
-              </div>
-            </div>
-            {isOrganizer && matchData.status === "in_progress" && (
-              <Button
-                variant="destructive"
-                onClick={() => closeMatchMutation.mutate()}
-                disabled={closeMatchMutation.isPending}
-                data-testid="button-close-match"
-              >
-                {closeMatchMutation.isPending ? "Closing..." : "Close Match"}
-              </Button>
-            )}
+    <div className="min-h-screen bg-background p-4 pb-20">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => setLocation(`/tournament/${tournamentId}`)}
+            data-testid="button-back-to-tournament"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">{tournament.name}</h1>
+            <p className="text-sm text-muted-foreground">Match Details</p>
           </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <div className="flex-1 container max-w-6xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Player - Team 1 */}
-          <Card className="lg:col-span-1">
-            <CardHeader className="pb-3">
+        {/* Match Info */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Trophy className="w-5 h-5" />
+              {team1.name} vs {team2.name}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="text-center">
-                <h2 className="text-lg font-bold">{team1.name}</h2>
-                <Badge variant="secondary" className="mt-2">
-                  {team1.wins}W - {team1.losses}L
-                </Badge>
+                <p className="text-sm text-muted-foreground mb-2">{team1.name}</p>
+                <p className="text-4xl font-bold">{m.team1Score || 0}</p>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col items-center gap-2">
-                <Avatar className="w-20 h-20">
-                  <AvatarFallback className="text-lg">
-                    {team1.name.substring(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+              <div className="flex items-center justify-center">
+                <Badge variant="outline">Round {m.round}</Badge>
               </div>
-              <Separator />
-              <div className="space-y-2 text-center">
-                <p className="text-2xl font-bold text-primary">
-                  {matchData.team1Score ?? "-"}
-                </p>
-                <p className="text-sm text-muted-foreground">Score</p>
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-2">{team2.name}</p>
+                <p className="text-4xl font-bold">{m.team2Score || 0}</p>
               </div>
-              {isTeam1Manager && (
-                <Badge className="w-full justify-center">You</Badge>
-              )}
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Center - Match Info & VS */}
-          <Card className="lg:col-span-1">
-            <CardHeader className="text-center pb-3">
-              <CardTitle>VS</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground mb-2">Match Status</p>
-                <Badge
-                  variant={
-                    matchData.status === "completed" ? "default" : "secondary"
-                  }
-                >
-                  {matchData.status === "pending"
-                    ? "Pending"
-                    : matchData.status === "in_progress"
-                      ? "In Progress"
-                      : "Completed"}
-                </Badge>
-              </div>
-              <Separator />
-              {isOrganizer && (
-                <div className="text-center">
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Match Organizer
-                  </p>
-                  <Badge variant="outline">Organizer</Badge>
+            <Separator />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="font-semibold mb-3">{team1.name} Players</p>
+                <div className="space-y-2">
+                  {team1Players.map((player) => (
+                    <div key={player.id} className="text-sm text-muted-foreground">
+                      {player.name}
+                    </div>
+                  ))}
                 </div>
-              )}
-              <Separator />
-              <div className="text-center space-y-1">
-                <p className="text-xs text-muted-foreground">Round</p>
-                <p className="text-xl font-bold">{matchData.round}</p>
               </div>
-            </CardContent>
-          </Card>
+              <div>
+                <p className="font-semibold mb-3">{team2.name} Players</p>
+                <div className="space-y-2">
+                  {team2Players.map((player) => (
+                    <div key={player.id} className="text-sm text-muted-foreground">
+                      {player.name}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
 
-          {/* Right Player - Team 2 */}
-          <Card className="lg:col-span-1">
-            <CardHeader className="pb-3">
-              <div className="text-center">
-                <h2 className="text-lg font-bold">{team2.name}</h2>
-                <Badge variant="secondary" className="mt-2">
-                  {team2.wins}W - {team2.losses}L
-                </Badge>
+            {(isTeam1Manager || isTeam2Manager) && (
+              <div className="flex gap-2 pt-4">
+                {isTeam1Manager && (
+                  <Button onClick={() => handleUpdateScore("team1")} className="flex-1">
+                    +1 Score ({team1.name})
+                  </Button>
+                )}
+                {isTeam2Manager && (
+                  <Button onClick={() => handleUpdateScore("team2")} className="flex-1">
+                    +1 Score ({team2.name})
+                  </Button>
+                )}
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col items-center gap-2">
-                <Avatar className="w-20 h-20">
-                  <AvatarFallback className="text-lg">
-                    {team2.name.substring(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
-              <Separator />
-              <div className="space-y-2 text-center">
-                <p className="text-2xl font-bold text-primary">
-                  {matchData.team2Score ?? "-"}
-                </p>
-                <p className="text-sm text-muted-foreground">Score</p>
-              </div>
-              {isTeam2Manager && (
-                <Badge className="w-full justify-center">You</Badge>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+            )}
+          </CardContent>
+        </Card>
 
-        {/* Match Chat */}
-        <Card className="mt-6">
+        {/* Match Chat - Using Message Thread System */}
+        <Card>
           <CardHeader className="pb-4">
             <CardTitle className="font-display flex items-center gap-2">
               Match Chat
               <Badge variant="outline" className="font-normal">
-                {messagesData.length} messages
+                {threadMessages.length} messages
               </Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 flex flex-col gap-4 p-0 px-6 pb-6 min-h-0">
-            <ScrollArea className="flex-1 pr-4">
+          <CardContent className="flex-1 flex flex-col gap-4 p-0 px-6 pb-6">
+            <ScrollArea className="h-80 pr-4">
               <div className="space-y-4">
-              {messagesLoading ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : messagesData.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>No messages yet. Start the conversation!</p>
-                </div>
-              ) : (
-                messagesData.map((msg: ChatMessage) => {
-                  console.log("[TOURNAMENT-MATCH-RENDER] Message:", msg.id, "userId:", msg.userId, "username:", msg.username);
-                  const isOwn = msg.userId === currentUser?.id;
-                  const isSystem = false;
+                {messagesLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : threadMessages.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>No messages yet. Start the conversation!</p>
+                  </div>
+                ) : (
+                  threadMessages.map((msg) => {
+                    const isOwn = msg.userId === currentUser?.id;
 
-                  // Get proper initials (e.g., "Eli" -> "EL", "Raheem" -> "RA", "John Doe" -> "JD")
-                  const getInitials = () => {
-                    // Use enriched displayName first, fallback to username, then message username
-                    const name = (msg as any).displayName?.trim() || msg.username?.trim() || '';
-                    if (!name) return 'U';
-                    const parts = name.split(' ').filter((p: string) => p);
-                    if (parts.length > 1) {
-                      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-                    }
-                    return name.substring(0, 2).toUpperCase();
-                  };
+                    // Get proper initials
+                    const getInitials = () => {
+                      const name = (msg as any).displayName?.trim() || msg.username?.trim() || '';
+                      if (!name) return 'U';
+                      const parts = name.split(' ').filter((p: string) => p);
+                      if (parts.length > 1) {
+                        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                      }
+                      return name.substring(0, 2).toUpperCase();
+                    };
 
-                  // Get sender name to display
-                  const senderName = (msg as any).displayName?.trim() || msg.username?.trim() || 'Unknown User';
-                  const senderUsername = msg.username?.trim() || '';
-                  console.log("[TOURNAMENT-MATCH-RENDER] senderName:", senderName, "Will render Link?", !!msg.userId);
+                    const senderName = (msg as any).displayName?.trim() || msg.username?.trim() || 'Unknown User';
 
-                  if (isSystem) {
                     return (
-                      <div key={msg.id} className="flex justify-center">
-                        <Badge variant="outline" className="gap-2 py-1">
-                          <AlertCircle className="w-3 h-3" />
-                          {msg.message}
-                        </Badge>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div 
-                      key={msg.id} 
-                      className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : ''}`}
-                      data-testid={`message-${msg.id}`}
-                    >
-                      {msg.userId ? (
-                        <Link to={`/profile/${msg.userId}`}>
-                          <Avatar className="h-8 w-8 cursor-pointer hover-elevate">
+                      <div 
+                        key={msg.id} 
+                        className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : ''}`}
+                        data-testid={`message-${msg.id}`}
+                      >
+                        {msg.userId ? (
+                          <Link to={`/profile/${msg.userId}`}>
+                            <Avatar className="h-8 w-8 cursor-pointer hover-elevate">
+                              <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                                {getInitials()}
+                              </AvatarFallback>
+                            </Avatar>
+                          </Link>
+                        ) : (
+                          <Avatar className="h-8 w-8">
                             <AvatarFallback className="bg-primary/10 text-primary text-xs">
                               {getInitials()}
                             </AvatarFallback>
                           </Avatar>
-                        </Link>
-                      ) : (
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                            {getInitials()}
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
-                      <div className={`flex flex-col gap-1 max-w-[70%] ${isOwn ? 'items-end' : ''}`}>
-                        {msg.userId ? (
-                          <Link to={`/profile/${msg.userId}`} className="text-xs text-muted-foreground hover:underline cursor-pointer" data-testid={`user-link-${msg.id}`}>
-                            {senderName}
-                          </Link>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">
-                            {senderName}
-                          </span>
                         )}
-                        {msg.imageUrl && (
-                          <img 
-                            src={msg.imageUrl} 
-                            alt="Shared image" 
-                            className="max-w-full h-auto max-h-60 object-contain rounded-md"
-                            data-testid={`img-message-${msg.id}`}
-                          />
-                        )}
-                        {msg.message && (
-                          <p className="text-sm text-foreground">{msg.message}</p>
-                        )}
+                        <div className={`flex flex-col gap-1 max-w-[70%] ${isOwn ? 'items-end' : ''}`}>
+                          {msg.userId ? (
+                            <Link to={`/profile/${msg.userId}`} className="text-xs text-muted-foreground hover:underline cursor-pointer" data-testid={`user-link-${msg.id}`}>
+                              {senderName}
+                            </Link>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              {senderName}
+                            </span>
+                          )}
+                          {msg.message && (
+                            <p className="text-sm text-foreground">{msg.message}</p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })
-              )}
+                    );
+                  })
+                )}
+                <div ref={messagesEndRef} />
               </div>
             </ScrollArea>
 
-            <div className="space-y-2">
-              {messageImage && (
-                <div className="relative inline-block">
-                  <img 
-                    src={messageImage} 
-                    alt="Preview" 
-                    className="max-h-32 rounded-md border"
-                  />
-                  <Button
-                    size="icon"
-                    variant="destructive"
-                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                    onClick={() => setMessageImage(null)}
-                    data-testid="button-remove-image"
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                </div>
-              )}
-              <div className="flex gap-2">
-                <ObjectUploader
-                  maxNumberOfFiles={1}
-                  maxFileSize={10485760}
-                  onGetUploadParameters={handleGetUploadParameters}
-                  onComplete={handleUploadComplete}
-                  buttonClassName="h-9 px-3"
-                >
-                  <ImageIcon className="h-4 w-4" />
-                </ObjectUploader>
-                <Input
-                  placeholder="Type a message or attach an image..."
-                  value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage(e as any)}
-                  className="flex-1"
-                  data-testid="input-message"
-                />
-                <Button 
-                  size="icon" 
-                  onClick={(e) => handleSendMessage(e as any)}
-                  disabled={!messageInput.trim() || isUploadingImage || sendMessageMutation.isPending}
-                  data-testid="button-send-message"
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Type a message..."
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                disabled={sendMessageMutation.isPending}
+                data-testid="input-message"
+              />
+              <Button
+                size="icon"
+                onClick={handleSendMessage}
+                disabled={sendMessageMutation.isPending || !messageInput.trim()}
+                data-testid="button-send-message"
+              >
+                {sendMessageMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+              </Button>
             </div>
           </CardContent>
         </Card>
