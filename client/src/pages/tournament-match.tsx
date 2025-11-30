@@ -473,7 +473,7 @@ export default function TournamentMatch() {
                 </div>
               ) : (
                 messages.map((msg: ChatMessage) => {
-                  const isOwn = msg.userId === user?.id;
+                  const isOwn = msg.userId === currentUser?.id;
                   const isSystem = false;
 
                   // Get proper initials (e.g., "Eli" -> "EL", "Raheem" -> "RA", "John Doe" -> "JD")
