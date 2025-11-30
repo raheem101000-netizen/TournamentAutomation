@@ -68,6 +68,7 @@ export const registrationConfigs = pgTable("registration_configs", {
   entryFee: text("entry_fee"),
   paymentUrl: text("payment_url"),
   paymentInstructions: text("payment_instructions"),
+  headerFieldId: varchar("header_field_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

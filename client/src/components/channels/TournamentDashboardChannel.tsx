@@ -531,45 +531,56 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                   {registrations.length} registration{registrations.length !== 1 ? 's' : ''}
                 </p>
                 <div className="space-y-2">
-                  {registrations.map((reg) => (
-                    <Card key={reg.id}>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                        <div className="flex items-center gap-3 flex-1">
-                          {reg.userAvatar && (
-                            <img 
-                              src={reg.userAvatar} 
-                              alt={reg.userUsername}
-                              className="w-10 h-10 rounded-full object-cover"
-                              data-testid={`img-avatar-${reg.userId}`}
-                            />
-                          )}
-                          <div className="flex-1">
-                            <Button 
-                              variant="link" 
-                              className="p-0 h-auto text-base font-semibold"
-                              onClick={() => {
-                                // Navigate to user profile
-                                window.location.href = `/profile/${reg.userId}`;
-                              }}
-                              data-testid={`button-view-profile-${reg.userId}`}
-                            >
-                              @{reg.userUsername}
-                            </Button>
-                            <p className="text-sm text-muted-foreground">
-                              Team: {reg.teamName}
-                            </p>
+                  {registrations.map((reg) => {
+                    // Get header field value from responses or use teamName as fallback
+                    let headerValue = reg.teamName;
+                    if (registrationConfig?.headerFieldId && reg.responses) {
+                      const headerResponse = reg.responses.find((r: any) => r.fieldId === registrationConfig.headerFieldId);
+                      if (headerResponse) {
+                        headerValue = headerResponse.value;
+                      }
+                    }
+                    
+                    return (
+                      <Card key={reg.id}>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                          <div className="flex items-center gap-3 flex-1">
+                            {reg.userAvatar && (
+                              <img 
+                                src={reg.userAvatar} 
+                                alt={reg.userUsername}
+                                className="w-10 h-10 rounded-full object-cover"
+                                data-testid={`img-avatar-${reg.userId}`}
+                              />
+                            )}
+                            <div className="flex-1">
+                              <Button 
+                                variant="link" 
+                                className="p-0 h-auto text-base font-semibold"
+                                onClick={() => {
+                                  // Navigate to user profile
+                                  window.location.href = `/profile/${reg.userId}`;
+                                }}
+                                data-testid={`button-view-profile-${reg.userId}`}
+                              >
+                                @{reg.userUsername}
+                              </Button>
+                              <p className="text-sm text-muted-foreground">
+                                {headerValue}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                        <Badge variant={
-                          reg.status === 'approved' ? 'default' : 
-                          reg.status === 'submitted' ? 'secondary' : 
-                          'outline'
-                        }>
-                          {reg.status.charAt(0).toUpperCase() + reg.status.slice(1)}
-                        </Badge>
-                      </CardHeader>
-                    </Card>
-                  ))}
+                          <Badge variant={
+                            reg.status === 'approved' ? 'default' : 
+                            reg.status === 'submitted' ? 'secondary' : 
+                            'outline'
+                          }>
+                            {reg.status.charAt(0).toUpperCase() + reg.status.slice(1)}
+                          </Badge>
+                        </CardHeader>
+                      </Card>
+                    );
+                  })}
                 </div>
               </div>
             ) : (
