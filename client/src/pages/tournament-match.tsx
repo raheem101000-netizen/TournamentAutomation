@@ -94,7 +94,7 @@ export default function TournamentMatch() {
   });
 
   // Fetch current user
-  const { data: currentUser } = useQuery({
+  const { data: currentUser } = useQuery<any>({
     queryKey: ["/api/auth/me"],
   });
 
@@ -168,6 +168,8 @@ export default function TournamentMatch() {
     };
   }, [matchId, toast]);
 
+  const qc = useQueryClient();
+
   const closeMatchMutation = useMutation({
     mutationFn: async () => {
       if (!matchId) throw new Error("Match ID required");
@@ -191,19 +193,59 @@ export default function TournamentMatch() {
     },
   });
 
+  const sendMessageMutation = useMutation({
+    mutationFn: async (messageData: any) => {
+      const url = `/api/matches/${matchId}/messages`;
+      const body = {
+        userId: currentUser?.id,
+        username: currentUser?.username,
+        ...messageData,
+      };
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send message");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      setMessageInput("");
+      setMessageImage(null);
+      toast({
+        title: "Message sent!",
+      });
+      qc.invalidateQueries({
+        queryKey: ["/api/matches", matchId, "messages"],
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!messageInput.trim() && !messageImage) return;
 
-    if (!messageInput.trim() || !ws) return;
+    const messageData: any = {};
+    if (messageInput.trim()) {
+      messageData.message = messageInput.trim();
+    }
+    if (messageImage) {
+      messageData.imageUrl = messageImage;
+    }
 
-    const messageData = {
-      message: messageInput.trim(),
-      imageUrl: messageImage || null,
-    };
-
-    ws.send(JSON.stringify(messageData));
-    setMessageInput("");
-    setMessageImage(null);
+    sendMessageMutation.mutate(messageData);
   };
 
   const handleGetUploadParameters = async () => {
