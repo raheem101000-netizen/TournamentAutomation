@@ -94,7 +94,7 @@ export default function TournamentMatch() {
 
   // Fetch messages with cache busting
   const { data: initialMessages, refetch: refetchMessages } = useQuery<any[]>({
-    queryKey: [`/api/matches/${matchId}/messages`],
+    queryKey: ["/api/matches", matchId, "messages"],
     enabled: !!matchId,
     staleTime: 0,
     gcTime: 0,
