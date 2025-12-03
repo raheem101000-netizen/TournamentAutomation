@@ -1352,6 +1352,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
           teamId: team.id,
           userId: req.session.userId,
         });
+
+        // Auto-generate fixtures when a team registers
+        try {
+          const allTeams = await storage.getTeamsByTournament(tournament.id);
+          const existingMatches = await storage.getMatchesByTournament(tournament.id);
+          
+          // Only generate if no matches exist yet
+          if (existingMatches.length === 0 && allTeams.length > 0) {
+            let matches;
+            if (tournament.format === "round_robin") {
+              matches = generateRoundRobinBracket(tournament.id, allTeams).matches;
+            } else if (tournament.format === "single_elimination") {
+              matches = generateSingleEliminationBracket(tournament.id, allTeams).matches;
+            } else if (tournament.format === "swiss") {
+              matches = generateSwissSystemRound(tournament.id, allTeams, 1, []).matches;
+            }
+
+            if (matches && matches.length > 0) {
+              // Create all matches
+              await Promise.all(matches.map((match) => storage.createMatch(match)));
+              
+              // Create message threads for each match
+              for (const match of matches) {
+                const team1 = allTeams.find(t => t.id === match.team1Id);
+                const team2 = allTeams.find(t => t.id === match.team2Id);
+                
+                // Skip bye matches
+                if (!team1 || !team2) continue;
+                
+                const threadName = `${team1.name} vs ${team2.name}`;
+                await storage.createMessageThread({
+                  userId: tournament.organizerId || 'system',
+                  participantName: threadName,
+                  participantAvatar: null,
+                  lastMessage: `Match created: ${threadName}`,
+                  unreadCount: 0,
+                });
+              }
+            }
+          }
+        } catch (error) {
+          console.error("[FIXTURES] Error auto-generating fixtures:", error);
+          // Don't fail registration if fixture generation fails
+        }
       }
 
       res.status(201).json(registration);
@@ -1424,6 +1468,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         await storage.updateRegistration(registration.id, { status: "approved" });
+
+        // Auto-generate fixtures when a team registers
+        try {
+          const tournament = await storage.getTournament(registration.tournamentId);
+          if (tournament) {
+            const allTeams = await storage.getTeamsByTournament(tournament.id);
+            const existingMatches = await storage.getMatchesByTournament(tournament.id);
+            
+            // Only generate if no matches exist yet
+            if (existingMatches.length === 0 && allTeams.length > 0) {
+              let matches;
+              if (tournament.format === "round_robin") {
+                matches = generateRoundRobinBracket(tournament.id, allTeams).matches;
+              } else if (tournament.format === "single_elimination") {
+                matches = generateSingleEliminationBracket(tournament.id, allTeams).matches;
+              } else if (tournament.format === "swiss") {
+                matches = generateSwissSystemRound(tournament.id, allTeams, 1, []).matches;
+              }
+
+              if (matches && matches.length > 0) {
+                // Create all matches
+                await Promise.all(matches.map((match) => storage.createMatch(match)));
+                
+                // Create message threads for each match
+                for (const match of matches) {
+                  const team1 = allTeams.find(t => t.id === match.team1Id);
+                  const team2 = allTeams.find(t => t.id === match.team2Id);
+                  
+                  // Skip bye matches
+                  if (!team1 || !team2) continue;
+                  
+                  const threadName = `${team1.name} vs ${team2.name}`;
+                  await storage.createMessageThread({
+                    userId: tournament.organizerId || 'system',
+                    participantName: threadName,
+                    participantAvatar: null,
+                    lastMessage: `Match created: ${threadName}`,
+                    unreadCount: 0,
+                  });
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error("[FIXTURES] Error auto-generating fixtures:", error);
+          // Don't fail registration if fixture generation fails
+        }
       }
 
       res.json(registration);
