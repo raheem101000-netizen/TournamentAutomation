@@ -440,6 +440,24 @@ export default function ServerSettings() {
     );
   }
 
+  // Only server owner can access settings
+  if (!user || server.ownerId !== user.id) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <Shield className="w-10 h-10 text-muted-foreground" />
+        <div className="text-center space-y-2">
+          <h2 className="text-lg font-semibold">Access Denied</h2>
+          <p className="text-sm text-muted-foreground">
+            Only the server owner can access settings.
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => navigate(`/server/${serverId}`)}>
+          Back to Server
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container max-w-4xl mx-auto px-4 py-8">
