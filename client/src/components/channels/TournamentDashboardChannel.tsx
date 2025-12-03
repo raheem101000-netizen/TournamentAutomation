@@ -173,6 +173,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
   const { data: selectedTournamentMatches = [] } = useQuery<Match[]>({
     queryKey: [`/api/tournaments/${selectedTournamentId}/matches`],
     enabled: !!selectedTournamentId,
+    refetchInterval: 2000,
   });
 
   const { data: registrationConfig } = useQuery<RegistrationFormConfig>({
