@@ -2342,26 +2342,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/channels/:channelId/messages", async (req, res) => {
-    try {
-      const validatedData = insertChannelMessageSchema.parse({
-        channelId: req.params.channelId,
-        userId: req.body.userId,
-        username: req.body.username,
-        message: req.body.message,
-        imageUrl: req.body.imageUrl,
-        fileUrl: req.body.fileUrl,
-        fileName: req.body.fileName,
-        replyToId: req.body.replyToId,
-      });
-      const message = await storage.createChannelMessage(validatedData);
-      res.status(201).json(message);
-    } catch (error: any) {
-      console.error("Error creating message:", error);
-      res.status(400).json({ error: error.message });
-    }
-  });
-
   app.patch("/api/messages/:id", async (req, res) => {
     try {
       const updatedMessage = await storage.updateChannelMessage(req.params.id, { message: req.body.message });
