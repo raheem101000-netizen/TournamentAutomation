@@ -282,13 +282,14 @@ export default function PreviewDiscovery() {
 
                 <Button 
                   className="w-full" 
-                  data-testid={`button-view-server-${server.id}`}
+                  data-testid={`button-join-server-${server.id}`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    setLocation(`/server/${server.id}/preview`);
+                    joinServerMutation.mutate(server.id);
                   }}
+                  disabled={joinServerMutation.isPending}
                 >
-                  Preview Server
+                  {joinServerMutation.isPending ? "Joining..." : "Join Server"}
                 </Button>
               </CardContent>
             </Card>
