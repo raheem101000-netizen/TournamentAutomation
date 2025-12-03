@@ -508,10 +508,40 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
 
           <TabsContent value="match-chat" className="space-y-4">
             {selectedTournamentMatches.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-[600px]">
-                <div className="lg:col-span-1 space-y-2 border rounded-lg p-4 bg-card">
-                  <h3 className="font-semibold text-sm">Matches</h3>
-                  <div className="space-y-2 max-h-[500px] overflow-y-auto">
+              showMatchChat && selectedMatch ? (
+                // Full match chat view with back button
+                <div className="space-y-3 min-h-[600px] flex flex-col">
+                  <div className="flex items-center gap-3 border-b pb-3">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => setShowMatchChat(false)}
+                      data-testid="button-back-to-fixtures"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <div className="flex-1">
+                      <h3 className="font-semibold">{getTeamById(selectedMatch.team1Id)?.name || 'Team 1'} vs {getTeamById(selectedMatch.team2Id)?.name || 'Team 2'}</h3>
+                      <p className="text-xs text-muted-foreground">Round {selectedMatch.round} • Status: {selectedMatch.status}</p>
+                    </div>
+                  </div>
+                  <div className="flex-1 overflow-hidden min-h-0">
+                    {selectedMatch && (
+                      <RichMatchChat 
+                        matchId={selectedMatch.id}
+                        team1Name={getTeamById(selectedMatch.team1Id)?.name || 'Team 1'}
+                        team2Name={getTeamById(selectedMatch.team2Id)?.name || 'Team 2'}
+                        team1Id={selectedMatch.team1Id || ''}
+                        team2Id={selectedMatch.team2Id || ''}
+                      />
+                    )}
+                  </div>
+                </div>
+              ) : (
+                // Grid of match fixture cards
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">Click a fixture to view chat</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {selectedTournamentMatches.map((match) => {
                       const team1 = getTeamById(match.team1Id);
                       const team2 = getTeamById(match.team2Id);
@@ -522,46 +552,23 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                             handleMatchClick(match.id);
                             setShowMatchChat(true);
                           }}
-                          className={`w-full text-left p-2 rounded-md text-sm transition-colors ${
+                          className={`p-3 rounded-lg border transition-all ${
                             selectedMatchId === match.id
-                              ? 'bg-accent text-accent-foreground'
-                              : 'hover:bg-muted'
+                              ? 'bg-accent text-accent-foreground border-accent'
+                              : 'bg-card border-border hover:border-primary/50 hover-elevate'
                           }`}
                           data-testid={`button-match-${match.id}`}
                         >
-                          <div className="font-medium truncate">{team1?.name || 'Team 1'} vs {team2?.name || 'Team 2'}</div>
-                          <div className="text-xs text-muted-foreground">Round {match.round}</div>
+                          <div className="font-semibold text-sm text-center">{team1?.name || 'Team 1'}</div>
+                          <div className="text-xs text-muted-foreground text-center my-1">vs</div>
+                          <div className="font-semibold text-sm text-center">{team2?.name || 'Team 2'}</div>
+                          <div className="text-xs text-muted-foreground text-center mt-2">Round {match.round}</div>
                         </button>
                       );
                     })}
                   </div>
                 </div>
-                <div className="lg:col-span-2">
-                  {selectedMatch ? (
-                    <div className="space-y-3 h-full flex flex-col">
-                      <div className="border-b pb-3">
-                        <h3 className="font-semibold text-sm">{getTeamById(selectedMatch.team1Id)?.name || 'Team 1'} vs {getTeamById(selectedMatch.team2Id)?.name || 'Team 2'}</h3>
-                        <p className="text-xs text-muted-foreground">Round {selectedMatch.round} • Status: {selectedMatch.status}</p>
-                      </div>
-                      <div className="flex-1 overflow-hidden min-h-0">
-                        {selectedMatch && (
-                          <RichMatchChat 
-                            matchId={selectedMatch.id}
-                            team1Name={getTeamById(selectedMatch.team1Id)?.name || 'Team 1'}
-                            team2Name={getTeamById(selectedMatch.team2Id)?.name || 'Team 2'}
-                            team1Id={selectedMatch.team1Id || ''}
-                            team2Id={selectedMatch.team2Id || ''}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <Card className="flex items-center justify-center h-full p-8">
-                      <p className="text-muted-foreground text-sm">Select a match to view chat</p>
-                    </Card>
-                  )}
-                </div>
-              </div>
+              )
             ) : (
               <Card className="p-8">
                 <p className="text-center text-muted-foreground">
