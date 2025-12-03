@@ -107,13 +107,28 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
         registrationConfigSteps: data.registrationConfig?.steps?.length || 0,
         registrationConfigData: JSON.stringify(data.registrationConfig, null, 2)
       });
-      return apiRequest('POST', '/api/tournaments', data);
+      const tournament = await apiRequest('POST', '/api/tournaments', data);
+      
+      // Auto-generate fixtures based on format
+      if (tournament && data.teamNames.length > 0) {
+        try {
+          await apiRequest('POST', `/api/tournaments/${tournament.id}/generate-fixtures`, {
+            format: data.format,
+            teamNames: data.teamNames,
+          });
+          console.log('[MUTATION-CREATE] Fixtures auto-generated for tournament:', tournament.id);
+        } catch (fixtureError) {
+          console.warn('[MUTATION-CREATE] Failed to auto-generate fixtures:', fixtureError);
+        }
+      }
+      
+      return tournament;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
       toast({
         title: "Tournament created",
-        description: "Your tournament has been created successfully.",
+        description: "Your tournament has been created successfully with auto-generated fixtures.",
       });
       setIsCreateDialogOpen(false);
     },
@@ -389,6 +404,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
             <TabsTrigger value="bracket" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Bracket</TabsTrigger>
             <TabsTrigger value="standings" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Standings</TabsTrigger>
             <TabsTrigger value="matches" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Matches</TabsTrigger>
+            {selectedMatchId && showMatchChat && <TabsTrigger value="match-chat" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Match Chat</TabsTrigger>}
             <TabsTrigger value="registrations" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Registrations</TabsTrigger>
             <TabsTrigger value="participants" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Participants</TabsTrigger>
             <TabsTrigger value="teams" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Teams</TabsTrigger>
@@ -710,6 +726,24 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                   No teams registered yet
                 </p>
               </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="match-chat">
+            {selectedMatch && selectedMatchId && (
+              <SubmitScoreDialog
+                open={!!selectedMatchId}
+                onOpenChange={(open) => {
+                  if (!open) {
+                    setSelectedMatchId(null);
+                    setShowMatchChat(false);
+                  }
+                }}
+                match={selectedMatch}
+                team1={getTeamById(selectedMatch.team1Id) || { id: selectedMatch.team1Id || "", name: "Team 1", wins: 0, losses: 0, points: 0, isRemoved: false }}
+                team2={getTeamById(selectedMatch.team2Id) || { id: selectedMatch.team2Id || "", name: "Team 2", wins: 0, losses: 0, points: 0, isRemoved: false }}
+                onSubmitScore={handleSubmitScore}
+              />
             )}
           </TabsContent>
 
