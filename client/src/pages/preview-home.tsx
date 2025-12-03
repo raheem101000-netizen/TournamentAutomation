@@ -436,6 +436,7 @@ export default function PreviewHome() {
               key={poster.id}
               className="overflow-hidden hover-elevate cursor-pointer w-full"
               data-testid={`tournament-poster-${poster.id}`}
+              onClick={() => setLocation(`/tournament/${poster.id}/view`)}
             >
               <div className="relative h-[600px] overflow-hidden">
                 <img
@@ -518,7 +519,7 @@ export default function PreviewHome() {
                       size="icon"
                       variant="outline"
                       className="bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20 rounded-full shrink-0"
-                      onClick={() => setDetailsModal(poster)}
+                      onClick={() => setLocation(`/tournament/${poster.id}/view`)}
                       data-testid={`button-details-${poster.id}`}
                     >
                       <Info className="w-4 h-4" />

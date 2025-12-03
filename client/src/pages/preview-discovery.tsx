@@ -225,6 +225,7 @@ export default function PreviewDiscovery() {
               key={server.id}
               className="overflow-hidden hover-elevate cursor-pointer"
               data-testid={`server-card-${server.id}`}
+              onClick={() => setLocation(`/server/${server.id}/preview`)}
             >
               <div className="relative h-32 overflow-hidden">
                 <img
@@ -281,11 +282,13 @@ export default function PreviewDiscovery() {
 
                 <Button 
                   className="w-full" 
-                  data-testid={`button-join-${server.id}`}
-                  onClick={() => joinServerMutation.mutate(server.id)}
-                  disabled={joinServerMutation.isPending}
+                  data-testid={`button-view-server-${server.id}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLocation(`/server/${server.id}/preview`);
+                  }}
                 >
-                  {joinServerMutation.isPending ? "Joining..." : "Join Server"}
+                  Preview Server
                 </Button>
               </CardContent>
             </Card>
