@@ -13,7 +13,7 @@ export default function MatchChatContent({ matchId }: MatchChatContentProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { data: initialMessages } = useQuery<ChatMessage[]>({
-    queryKey: [`/api/matches/${matchId}/chat`],
+    queryKey: [`/api/matches/${matchId}/messages`],
     enabled: !!matchId,
   });
 
