@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRoute, useLocation } from "wouter";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -109,6 +110,7 @@ const AVAILABLE_PERMISSIONS = [
 
 export default function ServerSettings() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [, params] = useRoute("/server/:serverId/settings");
   const [, navigate] = useLocation();
   const serverId = params?.serverId;
