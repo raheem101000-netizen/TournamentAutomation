@@ -32,7 +32,7 @@ import CreateTournamentDialog from "@/components/CreateTournamentDialog";
 import BracketView from "@/components/BracketView";
 import StandingsTable from "@/components/StandingsTable";
 import MatchCard from "@/components/MatchCard";
-import MatchChatContent from "@/components/MatchChatContent";
+import RichMatchChat from "@/components/RichMatchChat";
 import ImageUploadField from "@/components/ImageUploadField";
 import RegistrationFormBuilder from "@/modules/registration/RegistrationFormBuilder";
 import type { Tournament, InsertTournament, Team, Match } from "@shared/schema";
@@ -535,18 +535,26 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                 </div>
                 <div className="lg:col-span-2">
                   {selectedMatch ? (
-                    <div className="space-y-4 h-full flex flex-col border rounded-lg p-4 bg-card">
-                      <div className="border-b pb-4">
-                        <h3 className="font-semibold">{getTeamById(selectedMatch.team1Id)?.name || 'Team 1'} vs {getTeamById(selectedMatch.team2Id)?.name || 'Team 2'}</h3>
-                        <p className="text-sm text-muted-foreground">Round {selectedMatch.round} • Status: {selectedMatch.status}</p>
+                    <div className="space-y-3 h-full flex flex-col">
+                      <div className="border-b pb-3">
+                        <h3 className="font-semibold text-sm">{getTeamById(selectedMatch.team1Id)?.name || 'Team 1'} vs {getTeamById(selectedMatch.team2Id)?.name || 'Team 2'}</h3>
+                        <p className="text-xs text-muted-foreground">Round {selectedMatch.round} • Status: {selectedMatch.status}</p>
                       </div>
-                      <div className="flex-1 overflow-hidden">
-                        {selectedMatch && <MatchChatContent matchId={selectedMatch.id} />}
+                      <div className="flex-1 overflow-hidden min-h-0">
+                        {selectedMatch && (
+                          <RichMatchChat 
+                            matchId={selectedMatch.id}
+                            team1Name={getTeamById(selectedMatch.team1Id)?.name || 'Team 1'}
+                            team2Name={getTeamById(selectedMatch.team2Id)?.name || 'Team 2'}
+                            team1Id={selectedMatch.team1Id || ''}
+                            team2Id={selectedMatch.team2Id || ''}
+                          />
+                        )}
                       </div>
                     </div>
                   ) : (
                     <Card className="flex items-center justify-center h-full p-8">
-                      <p className="text-muted-foreground">Select a match to view chat</p>
+                      <p className="text-muted-foreground text-sm">Select a match to view chat</p>
                     </Card>
                   )}
                 </div>
