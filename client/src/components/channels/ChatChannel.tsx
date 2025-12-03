@@ -12,9 +12,10 @@ import type { ChannelMessage } from "@shared/schema";
 
 interface ChatChannelProps {
   channelId: string;
+  isPreview?: boolean;
 }
 
-export default function ChatChannel({ channelId }: ChatChannelProps) {
+export default function ChatChannel({ channelId, isPreview = false }: ChatChannelProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [messages, setMessages] = useState<ChannelMessage[]>([]);
@@ -168,12 +169,12 @@ export default function ChatChannel({ channelId }: ChatChannelProps) {
           return (
             <div 
               key={message.id} 
-              className="flex gap-3 cursor-pointer hover-elevate rounded-md p-2 -m-2" 
+              className={`flex gap-3 rounded-md p-2 -m-2 ${!isPreview ? 'cursor-pointer hover-elevate' : ''}`}
               data-testid={`message-${message.id}`}
-              onClick={() => handleMessageClick(message)}
-              onTouchStart={() => handleTouchStart(message)}
+              onClick={() => !isPreview && handleMessageClick(message)}
+              onTouchStart={() => !isPreview && handleTouchStart(message)}
               onTouchEnd={handleTouchEnd}
-              onMouseDown={() => handleMouseDown(message)}
+              onMouseDown={() => !isPreview && handleMouseDown(message)}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
             >
@@ -206,7 +207,7 @@ export default function ChatChannel({ channelId }: ChatChannelProps) {
 
       <Card className="mt-auto">
         <CardContent className="p-3">
-          {replyingTo && (
+          {!isPreview && replyingTo && (
             <div className="flex items-center justify-between gap-2 mb-2 p-2 bg-muted rounded-md">
               <div className="flex items-start gap-2 flex-1 min-w-0">
                 <Reply className="w-4 h-4 mt-0.5 text-muted-foreground flex-shrink-0" />
@@ -226,36 +227,42 @@ export default function ChatChannel({ channelId }: ChatChannelProps) {
               </Button>
             </div>
           )}
-          <form className="flex gap-2" onSubmit={handleSendMessage}>
-            <Button 
-              size="icon" 
-              variant="ghost"
-              type="button"
-              onClick={handleFileUpload}
-              data-testid="button-attach-file"
-            >
-              <Paperclip className="h-4 w-4" />
-            </Button>
-            <Button 
-              size="icon" 
-              variant="ghost"
-              type="button"
-              onClick={handleImageUpload}
-              data-testid="button-attach-image"
-            >
-              <ImageIcon className="h-4 w-4" />
-            </Button>
-            <Input
-              placeholder={replyingTo ? `Reply to ${replyingTo.username}...` : "Type a message..."}
-              className="flex-1"
-              value={messageInput}
-              onChange={(e) => setMessageInput(e.target.value)}
-              data-testid="input-chat-message"
-            />
-            <Button size="icon" type="submit" data-testid="button-send-message">
-              <Send className="h-4 w-4" />
-            </Button>
-          </form>
+          {isPreview ? (
+            <div className="w-full p-2 bg-muted rounded-md text-center text-sm text-muted-foreground">
+              Join the server to send messages
+            </div>
+          ) : (
+            <form className="flex gap-2" onSubmit={handleSendMessage}>
+              <Button 
+                size="icon" 
+                variant="ghost"
+                type="button"
+                onClick={handleFileUpload}
+                data-testid="button-attach-file"
+              >
+                <Paperclip className="h-4 w-4" />
+              </Button>
+              <Button 
+                size="icon" 
+                variant="ghost"
+                type="button"
+                onClick={handleImageUpload}
+                data-testid="button-attach-image"
+              >
+                <ImageIcon className="h-4 w-4" />
+              </Button>
+              <Input
+                placeholder={replyingTo ? `Reply to ${replyingTo.username}...` : "Type a message..."}
+                className="flex-1"
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
+                data-testid="input-chat-message"
+              />
+              <Button size="icon" type="submit" data-testid="button-send-message">
+                <Send className="h-4 w-4" />
+              </Button>
+            </form>
+          )}
           <input
             ref={fileInputRef}
             type="file"
