@@ -14,6 +14,7 @@ import type { ChatMessage } from "@shared/schema";
 
 interface RichMatchChatProps {
   matchId: string;
+  tournamentId?: string;
   team1Name?: string;
   team2Name?: string;
   team1Id?: string;
@@ -22,6 +23,7 @@ interface RichMatchChatProps {
 
 export default function RichMatchChat({ 
   matchId, 
+  tournamentId,
   team1Name = "Team 1", 
   team2Name = "Team 2",
   team1Id = "",
@@ -54,6 +56,9 @@ export default function RichMatchChat({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/matches/${matchId}/messages`] });
+      if (tournamentId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}/matches`] });
+      }
     },
   });
 

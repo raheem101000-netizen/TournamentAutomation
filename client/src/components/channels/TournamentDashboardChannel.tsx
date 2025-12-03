@@ -529,6 +529,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                     {selectedMatch && (
                       <RichMatchChat 
                         matchId={selectedMatch.id}
+                        tournamentId={selectedTournamentId}
                         team1Name={getTeamById(selectedMatch.team1Id)?.name || 'Team 1'}
                         team2Name={getTeamById(selectedMatch.team2Id)?.name || 'Team 2'}
                         team1Id={selectedMatch.team1Id || ''}
