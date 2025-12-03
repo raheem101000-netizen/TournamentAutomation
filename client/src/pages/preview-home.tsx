@@ -436,7 +436,7 @@ export default function PreviewHome() {
               key={poster.id}
               className="overflow-hidden hover-elevate cursor-pointer w-full"
               data-testid={`tournament-poster-${poster.id}`}
-              onClick={() => setLocation(`/tournament/${poster.id}/view`)}
+              onClick={() => setDetailsModal(poster)}
             >
               <div className="relative h-[600px] overflow-hidden">
                 <img
