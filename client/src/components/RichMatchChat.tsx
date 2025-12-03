@@ -67,7 +67,14 @@ export default function RichMatchChat({
       });
       queryClient.invalidateQueries({ queryKey: [`/api/matches/${matchId}/messages`] });
       if (tournamentId) {
-        queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}/matches`] });
+        // Immediately update the cache with the new data
+        queryClient.setQueryData([`/api/tournaments/${tournamentId}/matches`], (oldData: any) => {
+          if (!Array.isArray(oldData)) return oldData;
+          return oldData.map((match: any) => 
+            match.id === matchId ? { ...match, winnerId, status: 'completed' } : match
+          );
+        });
+        // Then refetch to ensure we have the latest
         queryClient.refetchQueries({ queryKey: [`/api/tournaments/${tournamentId}/matches`] });
       }
     },

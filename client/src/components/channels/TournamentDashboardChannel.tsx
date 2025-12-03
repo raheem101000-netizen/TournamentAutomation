@@ -555,7 +555,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                             handleMatchClick(match.id);
                             setShowMatchChat(true);
                           }}
-                          className={`p-3 rounded-lg border transition-all ${
+                          className={`p-3 rounded-lg border transition-all text-left ${
                             selectedMatchId === match.id
                               ? 'bg-accent text-accent-foreground border-accent'
                               : 'bg-card border-border hover:border-primary/50 hover-elevate'
@@ -567,7 +567,16 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                             <div className="text-xs text-muted-foreground whitespace-nowrap">vs</div>
                             <div className="font-semibold text-sm truncate">{team2?.name || 'Team 2'}</div>
                           </div>
-                          <div className="text-xs text-muted-foreground text-center">Round {match.round}</div>
+                          <div className="text-xs text-muted-foreground text-center mb-2">Round {match.round}</div>
+                          <div className="text-xs text-center">
+                            {match.winnerId ? (
+                              <div className="font-semibold text-green-600 dark:text-green-400">
+                                Winner: {getTeamById(match.winnerId)?.name || 'Unknown'}
+                              </div>
+                            ) : (
+                              <div className="text-muted-foreground">{match.status}</div>
+                            )}
+                          </div>
                         </button>
                       );
                     })}
