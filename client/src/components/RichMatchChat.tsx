@@ -9,6 +9,7 @@ import { Send, Trophy, ImageIcon, Loader2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import UserProfileModal from "./UserProfileModal";
 import type { ChatMessage } from "@shared/schema";
 
@@ -34,6 +35,7 @@ export default function RichMatchChat({
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const { user: currentUser } = useAuth();
+  const { toast } = useToast();
 
   const { data: threadMessages = [], isLoading: messagesLoading } = useQuery<ChatMessage[]>({
     queryKey: [`/api/matches/${matchId}/messages`],
@@ -54,11 +56,24 @@ export default function RichMatchChat({
     mutationFn: async (winnerId: string) => {
       return await apiRequest("POST", `/api/matches/${matchId}/winner`, { winnerId });
     },
-    onSuccess: () => {
+    onSuccess: (data, winnerId) => {
+      const winnerName = winnerId === team1Id ? team1Name : team2Name;
+      toast({
+        title: "Winner Selected",
+        description: `${winnerName} has been set as the winner!`,
+        variant: "default",
+      });
       queryClient.invalidateQueries({ queryKey: [`/api/matches/${matchId}/messages`] });
       if (tournamentId) {
         queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}/matches`] });
       }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to set winner. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
