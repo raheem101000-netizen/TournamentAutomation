@@ -401,9 +401,8 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full h-auto inline-flex flex-row flex-nowrap bg-transparent p-0 gap-2">
             <TabsTrigger value="overview" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Overview</TabsTrigger>
-            <TabsTrigger value="bracket" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Bracket</TabsTrigger>
+            <TabsTrigger value="bracket" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Bracket & Chat</TabsTrigger>
             <TabsTrigger value="standings" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Standings</TabsTrigger>
-            <TabsTrigger value="match-chat" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Match Chat</TabsTrigger>
             <TabsTrigger value="registrations" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Registrations</TabsTrigger>
             <TabsTrigger value="participants" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Participants</TabsTrigger>
             <TabsTrigger value="teams" className="whitespace-nowrap rounded-md border border-border px-3 py-2">Teams</TabsTrigger>
@@ -489,11 +488,59 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
 
           <TabsContent value="bracket">
             {selectedTournamentMatches.length > 0 ? (
-              <BracketView
-                matches={selectedTournamentMatches}
-                teams={selectedTournamentTeams}
-                format={selectedTournament.format}
-              />
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 min-h-[600px]">
+                <div className="lg:col-span-2">
+                  <BracketView
+                    matches={selectedTournamentMatches}
+                    teams={selectedTournamentTeams}
+                    format={selectedTournament.format}
+                  />
+                </div>
+                <div className="lg:col-span-2 space-y-4 flex flex-col">
+                  <div className="space-y-2 border rounded-lg p-4 bg-card flex-1 flex flex-col">
+                    <h3 className="font-semibold text-sm">Match Chat</h3>
+                    <div className="space-y-2 flex-1 overflow-y-auto mb-3">
+                      {selectedTournamentMatches.map((match) => {
+                        const team1 = getTeamById(match.team1Id);
+                        const team2 = getTeamById(match.team2Id);
+                        return (
+                          <button
+                            key={match.id}
+                            onClick={() => {
+                              handleMatchClick(match.id);
+                              setShowMatchChat(true);
+                            }}
+                            className={`w-full text-left p-2 rounded-md text-sm transition-colors ${
+                              selectedMatchId === match.id
+                                ? 'bg-accent text-accent-foreground'
+                                : 'hover:bg-muted'
+                            }`}
+                            data-testid={`button-match-${match.id}`}
+                          >
+                            <div className="font-medium truncate">{team1?.name || 'Team 1'} vs {team2?.name || 'Team 2'}</div>
+                            <div className="text-xs text-muted-foreground">Round {match.round}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  {selectedMatch ? (
+                    <div className="space-y-3 border rounded-lg p-4 bg-card flex-1 flex flex-col">
+                      <div className="border-b pb-3">
+                        <h3 className="font-semibold text-sm">{getTeamById(selectedMatch.team1Id)?.name || 'Team 1'} vs {getTeamById(selectedMatch.team2Id)?.name || 'Team 2'}</h3>
+                        <p className="text-xs text-muted-foreground">Round {selectedMatch.round} • Status: {selectedMatch.status}</p>
+                      </div>
+                      <div className="flex-1 overflow-hidden">
+                        {selectedMatch && <MatchChatContent matchId={selectedMatch.id} />}
+                      </div>
+                    </div>
+                  ) : (
+                    <Card className="flex items-center justify-center p-8">
+                      <p className="text-muted-foreground text-sm">Select a match to view chat</p>
+                    </Card>
+                  )}
+                </div>
+              </div>
             ) : (
               <Card className="p-8">
                 <p className="text-center text-muted-foreground">
@@ -515,62 +562,6 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
             )}
           </TabsContent>
 
-          <TabsContent value="match-chat" className="space-y-4">
-            {selectedTournamentMatches.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-[600px]">
-                <div className="lg:col-span-1 space-y-2 border rounded-lg p-4 bg-card">
-                  <h3 className="font-semibold text-sm">Matches</h3>
-                  <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                    {selectedTournamentMatches.map((match) => {
-                      const team1 = getTeamById(match.team1Id);
-                      const team2 = getTeamById(match.team2Id);
-                      return (
-                        <button
-                          key={match.id}
-                          onClick={() => {
-                            handleMatchClick(match.id);
-                            setShowMatchChat(true);
-                          }}
-                          className={`w-full text-left p-2 rounded-md text-sm transition-colors ${
-                            selectedMatchId === match.id
-                              ? 'bg-accent text-accent-foreground'
-                              : 'hover:bg-muted'
-                          }`}
-                          data-testid={`button-match-${match.id}`}
-                        >
-                          <div className="font-medium truncate">{team1?.name || 'Team 1'} vs {team2?.name || 'Team 2'}</div>
-                          <div className="text-xs text-muted-foreground">Round {match.round}</div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div className="lg:col-span-2">
-                  {selectedMatch ? (
-                    <div className="space-y-4 h-full flex flex-col">
-                      <div className="border-b pb-4">
-                        <h3 className="font-semibold">{getTeamById(selectedMatch.team1Id)?.name || 'Team 1'} vs {getTeamById(selectedMatch.team2Id)?.name || 'Team 2'}</h3>
-                        <p className="text-sm text-muted-foreground">Round {selectedMatch.round} • Status: {selectedMatch.status}</p>
-                      </div>
-                      <div className="flex-1 overflow-y-auto border rounded-lg p-4 bg-card">
-                        {selectedMatch && <MatchChatContent matchId={selectedMatch.id} />}
-                      </div>
-                    </div>
-                  ) : (
-                    <Card className="flex items-center justify-center h-full p-8">
-                      <p className="text-muted-foreground">Select a match to view chat</p>
-                    </Card>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <Card className="p-8">
-                <p className="text-center text-muted-foreground">
-                  No matches scheduled yet. Matches will be auto-generated when teams register.
-                </p>
-              </Card>
-            )}
-          </TabsContent>
 
           <TabsContent value="registrations">
             {registrations.length > 0 ? (
