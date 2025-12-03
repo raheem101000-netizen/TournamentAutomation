@@ -522,13 +522,14 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                     </Button>
                     <div className="flex-1">
                       <h3 className="font-semibold">{getTeamById(selectedMatch.team1Id)?.name || 'Team 1'} vs {getTeamById(selectedMatch.team2Id)?.name || 'Team 2'}</h3>
-                      <p className="text-xs text-muted-foreground">Round {selectedMatch.round} • Status: {selectedMatch.status}</p>
+                      <p className="text-xs text-muted-foreground">Round {selectedMatch.round} • Status: {selectedMatch.status}{selectedMatch.winnerId ? ` • Winner: ${getTeamById(selectedMatch.winnerId)?.name || 'Unknown'}` : ''}</p>
                     </div>
                   </div>
                   <div className="flex-1 overflow-hidden min-h-0">
                     {selectedMatch && (
                       <RichMatchChat 
                         matchId={selectedMatch.id}
+                        winnerId={selectedMatch.winnerId}
                         tournamentId={selectedTournamentId}
                         team1Name={getTeamById(selectedMatch.team1Id)?.name || 'Team 1'}
                         team2Name={getTeamById(selectedMatch.team2Id)?.name || 'Team 2'}
