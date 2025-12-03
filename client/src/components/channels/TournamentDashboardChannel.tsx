@@ -797,28 +797,6 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
           </TabsContent>
         </Tabs>
 
-
-        {selectedMatch && selectedMatchId && (
-          <SubmitScoreDialog
-            open={!!selectedMatchId}
-            onOpenChange={(open) => !open && setSelectedMatchId(null)}
-            team1={getTeamById(selectedMatch.team1Id) || { id: selectedMatch.team1Id, name: "Team 1", wins: 0, losses: 0, points: 0, isRemoved: false }}
-            team2={getTeamById(selectedMatch.team2Id) || { id: selectedMatch.team2Id, name: "Team 2", wins: 0, losses: 0, points: 0, isRemoved: false }}
-            matchId={selectedMatch.id}
-            onSelectWinner={(winnerId) => {
-              return new Promise((resolve, reject) => {
-                selectWinnerMutation.mutate(
-                  { matchId: selectedMatch.id, winnerId },
-                  {
-                    onSuccess: () => resolve(),
-                    onError: (error) => reject(error),
-                  }
-                );
-              });
-            }}
-          />
-        )}
-
         <Dialog open={isCreateMatchDialogOpen} onOpenChange={setIsCreateMatchDialogOpen}>
           <DialogContent>
             <DialogHeader>
