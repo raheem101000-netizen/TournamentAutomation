@@ -1,7 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Send } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { ChatMessage } from "@shared/schema";
 
 interface MatchChatContentProps {
@@ -10,11 +15,25 @@ interface MatchChatContentProps {
 
 export default function MatchChatContent({ matchId }: MatchChatContentProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messageText, setMessageText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
 
   const { data: initialMessages } = useQuery<ChatMessage[]>({
     queryKey: [`/api/matches/${matchId}/messages`],
     enabled: !!matchId,
+  });
+
+  const sendMessageMutation = useMutation({
+    mutationFn: async (text: string) => {
+      return await apiRequest("POST", `/api/matches/${matchId}/messages`, {
+        message: text,
+      });
+    },
+    onSuccess: () => {
+      setMessageText("");
+      queryClient.invalidateQueries({ queryKey: [`/api/matches/${matchId}/messages`] });
+    },
   });
 
   useEffect(() => {
@@ -26,6 +45,12 @@ export default function MatchChatContent({ matchId }: MatchChatContentProps) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const handleSendMessage = () => {
+    if (messageText.trim() && !sendMessageMutation.isPending) {
+      sendMessageMutation.mutate(messageText);
+    }
+  };
 
   if (!messages || messages.length === 0) {
     return (
@@ -41,12 +66,15 @@ export default function MatchChatContent({ matchId }: MatchChatContentProps) {
     <div className="flex flex-col h-full gap-3">
       <div className="flex-1 overflow-y-auto space-y-3">
         {messages.map((message) => {
-          const initials = message.message?.charAt(0).toUpperCase() || "?";
+          const initials = (message as any).displayName?.charAt(0).toUpperCase() || 
+                          (message as any).username?.charAt(0).toUpperCase() || 
+                          message.message?.charAt(0).toUpperCase() || "?";
           const timestamp = new Date(message.createdAt).toLocaleTimeString('en-US', {
             hour: 'numeric',
             minute: '2-digit',
             hour12: true
           });
+          const senderName = (message as any).displayName || (message as any).username || "Team";
 
           return (
             <div key={message.id} className="flex gap-2">
@@ -57,7 +85,7 @@ export default function MatchChatContent({ matchId }: MatchChatContentProps) {
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-sm font-semibold">Team</span>
+                  <span className="text-sm font-semibold">{senderName}</span>
                   <span className="text-xs text-muted-foreground">{timestamp}</span>
                 </div>
                 <p className="text-sm mt-0.5">{message.message}</p>
@@ -66,6 +94,29 @@ export default function MatchChatContent({ matchId }: MatchChatContentProps) {
           );
         })}
         <div ref={messagesEndRef} />
+      </div>
+      <div className="border-t pt-3 flex gap-2">
+        <Input
+          placeholder="Type a message..."
+          value={messageText}
+          onChange={(e) => setMessageText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleSendMessage();
+            }
+          }}
+          disabled={sendMessageMutation.isPending}
+          data-testid="input-match-message"
+        />
+        <Button
+          size="icon"
+          onClick={handleSendMessage}
+          disabled={!messageText.trim() || sendMessageMutation.isPending}
+          data-testid="button-send-message"
+        >
+          <Send className="w-4 h-4" />
+        </Button>
       </div>
     </div>
   );

@@ -32,7 +32,6 @@ import CreateTournamentDialog from "@/components/CreateTournamentDialog";
 import BracketView from "@/components/BracketView";
 import StandingsTable from "@/components/StandingsTable";
 import MatchCard from "@/components/MatchCard";
-import SubmitScoreDialog from "@/components/SubmitScoreDialog";
 import MatchChatContent from "@/components/MatchChatContent";
 import ImageUploadField from "@/components/ImageUploadField";
 import RegistrationFormBuilder from "@/modules/registration/RegistrationFormBuilder";
