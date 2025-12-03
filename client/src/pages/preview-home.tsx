@@ -519,7 +519,10 @@ export default function PreviewHome() {
                       size="icon"
                       variant="outline"
                       className="bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20 rounded-full shrink-0"
-                      onClick={() => setDetailsModal(poster)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDetailsModal(poster);
+                      }}
                       data-testid={`button-details-${poster.id}`}
                     >
                       <Info className="w-4 h-4" />
