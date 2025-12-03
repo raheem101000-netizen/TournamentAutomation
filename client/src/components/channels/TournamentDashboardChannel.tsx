@@ -559,10 +559,12 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
                           }`}
                           data-testid={`button-match-${match.id}`}
                         >
-                          <div className="font-semibold text-sm text-center">{team1?.name || 'Team 1'}</div>
-                          <div className="text-xs text-muted-foreground text-center my-1">vs</div>
-                          <div className="font-semibold text-sm text-center">{team2?.name || 'Team 2'}</div>
-                          <div className="text-xs text-muted-foreground text-center mt-2">Round {match.round}</div>
+                          <div className="flex items-center justify-center gap-2 mb-2">
+                            <div className="font-semibold text-sm truncate">{team1?.name || 'Team 1'}</div>
+                            <div className="text-xs text-muted-foreground whitespace-nowrap">vs</div>
+                            <div className="font-semibold text-sm truncate">{team2?.name || 'Team 2'}</div>
+                          </div>
+                          <div className="text-xs text-muted-foreground text-center">Round {match.round}</div>
                         </button>
                       );
                     })}
