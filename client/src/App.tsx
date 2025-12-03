@@ -37,6 +37,8 @@ import TournamentMatch from "@/pages/tournament-match";
 import TournamentRegister from "@/pages/tournament-register";
 import AdminPanel from "@/pages/admin-panel";
 import Profile from "@/pages/profile";
+import ServerPreview from "@/pages/server-preview";
+import TournamentPublicView from "@/pages/tournament-public-view";
 import { User, Search, Bell, Trophy, Server, MessageSquare } from "lucide-react";
 import { initializeApp } from "../../lib/initializeApp";
 
@@ -118,6 +120,12 @@ function Router() {
       </Route>
       <Route path="/tournament/:id/register">
         {() => <ProtectedRoute component={TournamentRegister} />}
+      </Route>
+      <Route path="/tournament/:id/view">
+        {() => <TournamentPublicView />}
+      </Route>
+      <Route path="/server/:serverId/preview">
+        {() => <ServerPreview />}
       </Route>
       <Route path="/admin">
         {() => <ProtectedRoute component={AdminPanel} />}

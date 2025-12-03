@@ -76,6 +76,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
   const [selectedTeam1Id, setSelectedTeam1Id] = useState<string | null>(null);
   const [selectedTeam2Id, setSelectedTeam2Id] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
+  const [showMatchChat, setShowMatchChat] = useState(false);
   const { toast} = useToast();
   const { user } = useAuth();
 
@@ -337,6 +338,7 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
 
   const handleMatchClick = (matchId: string) => {
     setSelectedMatchId(matchId);
+    setShowMatchChat(true);
   };
 
   const handleSubmitScore = (winnerId: string, team1Score: number, team2Score: number) => {
