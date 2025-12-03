@@ -1,15 +1,15 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Send, Trophy, ImageIcon, X, Loader2 } from "lucide-react";
+import { Send, Trophy, ImageIcon, Loader2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import UserProfileModal from "./UserProfileModal";
 import type { ChatMessage } from "@shared/schema";
 
 interface RichMatchChatProps {
@@ -18,15 +18,6 @@ interface RichMatchChatProps {
   team2Name?: string;
   team1Id?: string;
   team2Id?: string;
-}
-
-interface UserProfile {
-  id: string;
-  username: string;
-  displayName?: string;
-  email?: string;
-  avatarUrl?: string;
-  bio?: string;
 }
 
 export default function RichMatchChat({ 
@@ -41,16 +32,6 @@ export default function RichMatchChat({
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const { user: currentUser } = useAuth();
-
-  const { data: profileData } = useQuery<UserProfile>({
-    queryKey: ["user-profile", selectedProfileId],
-    enabled: !!selectedProfileId,
-    queryFn: async () => {
-      const response = await fetch(`/api/users/${selectedProfileId}`);
-      if (!response.ok) throw new Error("Failed to fetch user");
-      return response.json();
-    },
-  });
 
   const { data: threadMessages = [], isLoading: messagesLoading } = useQuery<ChatMessage[]>({
     queryKey: [`/api/matches/${matchId}/messages`],
@@ -257,46 +238,11 @@ export default function RichMatchChat({
         </CardContent>
       </Card>
 
-      <Dialog open={profileModalOpen} onOpenChange={setProfileModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          {profileData ? (
-            <div className="space-y-6">
-              <DialogHeader>
-                <DialogTitle>User Profile</DialogTitle>
-              </DialogHeader>
-              
-              <div className="flex gap-4 items-start">
-                <Avatar className="w-20 h-20">
-                  {profileData.avatarUrl && (
-                    <AvatarImage src={profileData.avatarUrl} alt={profileData.displayName || profileData.username} />
-                  )}
-                  <AvatarFallback className="bg-primary/10 text-primary text-2xl">
-                    {profileData.displayName?.[0]?.toUpperCase() || profileData.username?.[0]?.toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <h2 className="text-2xl font-bold">{profileData.displayName || profileData.username}</h2>
-                  <p className="text-sm text-muted-foreground">@{profileData.username}</p>
-                  {profileData.email && (
-                    <p className="text-sm text-muted-foreground">{profileData.email}</p>
-                  )}
-                </div>
-              </div>
-
-              {profileData.bio && (
-                <div>
-                  <h3 className="text-sm font-semibold mb-2">Bio</h3>
-                  <p className="text-sm text-foreground">{profileData.bio}</p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="flex justify-center py-12">
-              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <UserProfileModal 
+        userId={selectedProfileId} 
+        open={profileModalOpen} 
+        onOpenChange={setProfileModalOpen} 
+      />
     </div>
   );
 }

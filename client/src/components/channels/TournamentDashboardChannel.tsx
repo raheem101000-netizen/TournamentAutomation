@@ -33,6 +33,7 @@ import BracketView from "@/components/BracketView";
 import StandingsTable from "@/components/StandingsTable";
 import MatchCard from "@/components/MatchCard";
 import RichMatchChat from "@/components/RichMatchChat";
+import UserProfileModal from "@/components/UserProfileModal";
 import ImageUploadField from "@/components/ImageUploadField";
 import RegistrationFormBuilder from "@/modules/registration/RegistrationFormBuilder";
 import type { Tournament, InsertTournament, Team, Match } from "@shared/schema";
@@ -77,6 +78,8 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
   const [selectedTeam2Id, setSelectedTeam2Id] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [showMatchChat, setShowMatchChat] = useState(false);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const { toast} = useToast();
   const { user } = useAuth();
 
@@ -967,6 +970,12 @@ export default function TournamentDashboardChannel({ serverId }: TournamentDashb
         form={achievementForm}
         onSubmit={(data) => awardAchievementMutation.mutate(data)}
         isPending={awardAchievementMutation.isPending}
+      />
+
+      <UserProfileModal 
+        userId={selectedProfileId} 
+        open={profileModalOpen} 
+        onOpenChange={setProfileModalOpen} 
       />
     </div>
   );
