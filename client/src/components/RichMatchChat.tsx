@@ -46,7 +46,10 @@ export default function RichMatchChat({
 
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
-      return await apiRequest("POST", `/api/matches/${matchId}/messages`, { message });
+      return await apiRequest("POST", `/api/matches/${matchId}/messages`, { 
+        message,
+        userId: currentUser?.id 
+      });
     },
     onSuccess: () => {
       setMessageInput("");

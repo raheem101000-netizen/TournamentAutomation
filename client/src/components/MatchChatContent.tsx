@@ -28,6 +28,7 @@ export default function MatchChatContent({ matchId }: MatchChatContentProps) {
     mutationFn: async (text: string) => {
       return await apiRequest("POST", `/api/matches/${matchId}/messages`, {
         message: text,
+        userId: user?.id,
       });
     },
     onSuccess: () => {
