@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Trophy, ImageIcon, Loader2 } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Send, Trophy, ImageIcon, Loader2, X } from "lucide-react";
 import { useRef, useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -40,6 +41,7 @@ export default function RichMatchChat({
   const [mentionQuery, setMentionQuery] = useState("");
   const [mentionIndex, setMentionIndex] = useState(-1);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
@@ -394,12 +396,17 @@ export default function RichMatchChat({
                           </span>
                         )}
                         {msg.imageUrl && (
-                          <img 
-                            src={msg.imageUrl} 
-                            alt="Shared image" 
-                            className="max-w-full h-auto max-h-60 object-contain rounded-md"
+                          <button
+                            onClick={() => setEnlargedImageUrl(msg.imageUrl)}
+                            className="p-0 border-0 bg-transparent cursor-pointer hover-elevate rounded-md overflow-hidden block"
                             data-testid={`img-message-${msg.id}`}
-                          />
+                          >
+                            <img 
+                              src={msg.imageUrl} 
+                              alt="Shared image" 
+                              className="max-w-full h-auto max-h-60 object-contain rounded-md"
+                            />
+                          </button>
                         )}
                         {msg.message && (
                           <p className="text-sm text-foreground">{renderMessageWithMentions(msg.message)}</p>
@@ -528,6 +535,26 @@ export default function RichMatchChat({
         open={profileModalOpen} 
         onOpenChange={setProfileModalOpen} 
       />
+
+      <Dialog open={!!enlargedImageUrl} onOpenChange={(open) => !open && setEnlargedImageUrl(null)}>
+        <DialogContent className="max-w-4xl w-full max-h-[90vh] p-0 border-0 bg-black/90 flex items-center justify-center">
+          <button
+            onClick={() => setEnlargedImageUrl(null)}
+            className="absolute top-4 right-4 z-50 p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+            data-testid="button-close-enlarged-image"
+          >
+            <X className="w-6 h-6 text-white" />
+          </button>
+          {enlargedImageUrl && (
+            <img 
+              src={enlargedImageUrl} 
+              alt="Enlarged image" 
+              className="max-w-full max-h-[90vh] object-contain"
+              data-testid="img-enlarged"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
