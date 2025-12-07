@@ -74,8 +74,9 @@ export default function RichMatchChat({
             match.id === matchId ? { ...match, winnerId, status: 'completed' } : match
           );
         });
-        // Then refetch to ensure we have the latest
+        // Invalidate and refetch BOTH matches and teams - teams data changes when winner is selected
         queryClient.refetchQueries({ queryKey: [`/api/tournaments/${tournamentId}/matches`] });
+        queryClient.refetchQueries({ queryKey: [`/api/tournaments/${tournamentId}/teams`] });
       }
     },
     onError: (error: any) => {
