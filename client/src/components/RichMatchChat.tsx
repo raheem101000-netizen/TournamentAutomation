@@ -12,7 +12,6 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import UserProfileModal from "./UserProfileModal";
 import { Command, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { ChatMessage } from "@shared/schema";
 
 interface RichMatchChatProps {
@@ -308,7 +307,7 @@ export default function RichMatchChat({
           )}
 
           <div className="border-t pt-3 space-y-2">
-            <div className="flex gap-2">
+            <div className="flex gap-2 relative">
               <input
                 type="file"
                 accept="image/*"
@@ -326,25 +325,23 @@ export default function RichMatchChat({
               >
                 <ImageIcon className="w-4 h-4" />
               </Button>
-              <Popover open={mentionOpen} onOpenChange={setMentionOpen}>
-                <PopoverTrigger asChild>
-                  <Input
-                    placeholder="Type @ to mention... or type a message"
-                    value={messageInput}
-                    onChange={handleInputChange}
-                    onKeyDown={(e) => {
-                      if (mentionOpen && e.key === 'ArrowDown') {
-                        e.preventDefault();
-                      } else if (e.key === 'Enter' && !e.shiftKey && !mentionOpen) {
-                        handleSendMessage();
-                      }
-                    }}
-                    className="flex-1 h-9"
-                    data-testid="input-message"
-                  />
-                </PopoverTrigger>
+              <div className="flex-1 relative">
+                <Input
+                  placeholder="Type @ to mention... or type a message"
+                  value={messageInput}
+                  onChange={handleInputChange}
+                  onKeyDown={(e) => {
+                    if (mentionOpen && e.key === 'ArrowDown') {
+                      e.preventDefault();
+                    } else if (e.key === 'Enter' && !e.shiftKey && !mentionOpen) {
+                      handleSendMessage();
+                    }
+                  }}
+                  className="w-full h-9"
+                  data-testid="input-message"
+                />
                 {mentionOpen && filteredUsers.length > 0 && (
-                  <PopoverContent className="w-56 p-0" side="top" align="start">
+                  <div className="absolute bottom-full right-0 w-56 mb-2 z-50 border border-border rounded-md bg-background shadow-lg">
                     <Command>
                       <CommandEmpty>No users found</CommandEmpty>
                       <CommandGroup>
@@ -372,9 +369,9 @@ export default function RichMatchChat({
                         ))}
                       </CommandGroup>
                     </Command>
-                  </PopoverContent>
+                  </div>
                 )}
-              </Popover>
+              </div>
               <Button 
                 size="icon"
                 className="h-9 w-9"
