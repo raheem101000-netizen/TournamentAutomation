@@ -39,6 +39,7 @@ export default function RichMatchChat({
   const [mentionOpen, setMentionOpen] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
   const [mentionIndex, setMentionIndex] = useState(-1);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
@@ -252,11 +253,55 @@ export default function RichMatchChat({
     }
   };
 
-  const handleImageSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // Placeholder for image upload
-      console.log("Image selected:", file.name);
+    if (!file) return;
+
+    setIsUploadingImage(true);
+    try {
+      // Upload image to server
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const uploadResponse = await fetch('/api/objects/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload image');
+      }
+
+      const uploadData = await uploadResponse.json();
+      const imageUrl = uploadData.url || uploadData.fileUrl;
+
+      // Send message with image
+      await apiRequest("POST", `/api/matches/${matchId}/messages`, {
+        message: "",
+        imageUrl: imageUrl,
+        userId: currentUser?.id
+      });
+
+      // Clear input and refresh messages
+      if (imageInputRef.current) {
+        imageInputRef.current.value = '';
+      }
+      queryClient.invalidateQueries({ queryKey: [`/api/matches/${matchId}/messages`] });
+      
+      toast({
+        title: "Image Uploaded",
+        description: "Your image has been shared!",
+        variant: "default",
+      });
+    } catch (error: any) {
+      console.error("Image upload error:", error);
+      toast({
+        title: "Upload Failed",
+        description: error.message || "Failed to upload image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
@@ -408,9 +453,14 @@ export default function RichMatchChat({
                 variant="outline"
                 className="h-9 w-9"
                 onClick={() => imageInputRef.current?.click()}
+                disabled={isUploadingImage}
                 data-testid="button-upload-image"
               >
-                <ImageIcon className="w-4 h-4" />
+                {isUploadingImage ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ImageIcon className="w-4 h-4" />
+                )}
               </Button>
               <div className="flex-1 relative">
                 <Input
