@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Trophy, ImageIcon, Loader2 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import UserProfileModal from "./UserProfileModal";
+import { Command, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { ChatMessage } from "@shared/schema";
 
 interface RichMatchChatProps {
@@ -35,6 +37,9 @@ export default function RichMatchChat({
   const [messageInput, setMessageInput] = useState("");
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [mentionOpen, setMentionOpen] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState("");
+  const [mentionIndex, setMentionIndex] = useState(-1);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
@@ -43,6 +48,71 @@ export default function RichMatchChat({
     queryKey: [`/api/matches/${matchId}/messages`],
     enabled: !!matchId,
   });
+
+  // Extract unique users from thread messages
+  const chatUsers = useMemo(() => {
+    const userMap = new Map<string, any>();
+    threadMessages.forEach((msg) => {
+      if (msg.userId && !userMap.has(msg.userId)) {
+        userMap.set(msg.userId, {
+          id: msg.userId,
+          username: msg.username,
+          displayName: (msg as any).displayName?.trim() || msg.username,
+          avatarUrl: (msg as any).avatarUrl,
+        });
+      }
+    });
+    return Array.from(userMap.values());
+  }, [threadMessages]);
+
+  // Filter users based on mention query
+  const filteredUsers = useMemo(() => {
+    if (!mentionQuery) return chatUsers;
+    const query = mentionQuery.toLowerCase();
+    return chatUsers.filter(user =>
+      user.username.toLowerCase().includes(query) ||
+      user.displayName.toLowerCase().includes(query)
+    );
+  }, [chatUsers, mentionQuery]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const text = e.target.value;
+    setMessageInput(text);
+
+    // Detect mention: find @ and track what comes after it
+    const cursorPos = e.target.selectionStart || text.length;
+    const textBeforeCursor = text.substring(0, cursorPos);
+    const lastAtIndex = textBeforeCursor.lastIndexOf("@");
+
+    if (lastAtIndex !== -1) {
+      const afterAt = textBeforeCursor.substring(lastAtIndex + 1);
+      // Check if we're still in the mention (no space after @)
+      if (!afterAt.includes(" ")) {
+        setMentionIndex(lastAtIndex);
+        setMentionQuery(afterAt);
+        setMentionOpen(true);
+        return;
+      }
+    }
+
+    setMentionOpen(false);
+    setMentionQuery("");
+    setMentionIndex(-1);
+  };
+
+  const selectMention = (user: any) => {
+    if (mentionIndex === -1) return;
+
+    const beforeMention = messageInput.substring(0, mentionIndex);
+    const afterMention = messageInput.substring(mentionIndex + mentionQuery.length + 1);
+    
+    // Insert mention tag in format: @username
+    const newMessage = `${beforeMention}@${user.username} ${afterMention}`;
+    setMessageInput(newMessage);
+    setMentionOpen(false);
+    setMentionQuery("");
+    setMentionIndex(-1);
+  };
 
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
@@ -256,14 +326,55 @@ export default function RichMatchChat({
               >
                 <ImageIcon className="w-4 h-4" />
               </Button>
-              <Input
-                placeholder="Type a message..."
-                value={messageInput}
-                onChange={(e) => setMessageInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                className="flex-1 h-9"
-                data-testid="input-message"
-              />
+              <Popover open={mentionOpen} onOpenChange={setMentionOpen}>
+                <PopoverTrigger asChild>
+                  <Input
+                    placeholder="Type @ to mention... or type a message"
+                    value={messageInput}
+                    onChange={handleInputChange}
+                    onKeyDown={(e) => {
+                      if (mentionOpen && e.key === 'ArrowDown') {
+                        e.preventDefault();
+                      } else if (e.key === 'Enter' && !e.shiftKey && !mentionOpen) {
+                        handleSendMessage();
+                      }
+                    }}
+                    className="flex-1 h-9"
+                    data-testid="input-message"
+                  />
+                </PopoverTrigger>
+                {mentionOpen && filteredUsers.length > 0 && (
+                  <PopoverContent className="w-56 p-0" side="top" align="start">
+                    <Command>
+                      <CommandEmpty>No users found</CommandEmpty>
+                      <CommandGroup>
+                        {filteredUsers.map((user) => (
+                          <CommandItem
+                            key={user.id}
+                            value={user.username}
+                            onSelect={() => selectMention(user)}
+                            className="cursor-pointer"
+                            data-testid={`mention-option-${user.id}`}
+                          >
+                            <Avatar className="h-6 w-6 mr-2">
+                              {user.avatarUrl && (
+                                <AvatarImage src={user.avatarUrl} alt={user.displayName} />
+                              )}
+                              <AvatarFallback className="text-xs">
+                                {user.displayName.substring(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium">{user.displayName}</span>
+                              <span className="text-xs text-muted-foreground">@{user.username}</span>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                )}
+              </Popover>
               <Button 
                 size="icon"
                 className="h-9 w-9"
