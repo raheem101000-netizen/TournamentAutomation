@@ -10,6 +10,25 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### December 7, 2025 (Mention System Implementation - COMPLETE ✅)
+- **Fixed mention dropdown to only trigger on "@" symbol**:
+  - ✅ Removed PopoverTrigger that was auto-opening dropdown
+  - ✅ Dropdown now only appears when typing "@"
+  - ✅ Mentions don't open on input focus
+  - ✅ Positioned dropdown controlled purely by mention state
+
+- **Made mentions clickable and visually distinct**:
+  - ✅ Added `renderMessageWithMentions()` parser function
+  - ✅ Parses @username patterns using regex
+  - ✅ Mentions render as styled buttons with primary color background
+  - ✅ Clicking a mention opens that user's profile modal
+  - ✅ Visual distinction: primary/10 background with hover effect
+
+- **Implemented mention notifications**:
+  - ✅ When sending a message with mentions, toast notification shows who was mentioned
+  - ✅ Detection logic extracts all @usernames from message text
+  - ✅ Notification displays "You mentioned: @user1, @user2" etc.
+
 ### November 27, 2025 (Registration Fields Save Fix - COMPLETE ✅)
 - **Fixed registration fields not being saved to database**:
   - ✅ Auto-initialize registration config with default "Team Name" field when registration is enabled

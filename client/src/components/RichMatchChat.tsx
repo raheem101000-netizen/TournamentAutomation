@@ -160,9 +160,96 @@ export default function RichMatchChat({
     },
   });
 
+  // Parse mentions from message text and create interactive elements
+  const renderMessageWithMentions = (text: string) => {
+    if (!text) return null;
+    
+    // Regex to find @username mentions
+    const mentionRegex = /@([\w-]+)/g;
+    const parts: Array<{ type: 'mention' | 'text'; content: string; username?: string }> = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = mentionRegex.exec(text)) !== null) {
+      // Add text before mention
+      if (match.index > lastIndex) {
+        parts.push({
+          type: 'text',
+          content: text.substring(lastIndex, match.index)
+        });
+      }
+      // Add mention
+      parts.push({
+        type: 'mention',
+        content: match[0],
+        username: match[1]
+      });
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push({
+        type: 'text',
+        content: text.substring(lastIndex)
+      });
+    }
+
+    return parts.length === 0 ? text : (
+      <>
+        {parts.map((part, idx) => {
+          if (part.type === 'text') {
+            return part.content;
+          } else {
+            // Find the user by username
+            const mentionedUser = chatUsers.find(u => u.username === part.username);
+            return (
+              <button
+                key={idx}
+                onClick={() => {
+                  if (mentionedUser) {
+                    setSelectedProfileId(mentionedUser.id);
+                    setProfileModalOpen(true);
+                  }
+                }}
+                className="bg-primary/10 text-primary hover:bg-primary/20 px-1.5 py-0.5 rounded font-semibold text-sm hover-elevate cursor-pointer"
+                data-testid={`mention-${part.username}`}
+              >
+                {part.content}
+              </button>
+            );
+          }
+        })}
+      </>
+    );
+  };
+
   const handleSendMessage = () => {
     if (!messageInput.trim()) return;
+    
+    // Detect if current user is mentioned
+    const mentionRegex = /@([\w-]+)/g;
+    let match;
+    const mentionedUsernames = new Set<string>();
+    
+    while ((match = mentionRegex.exec(messageInput)) !== null) {
+      mentionedUsernames.add(match[1]);
+    }
+    
+    // Check if current user is mentioned
+    const currentUserMentioned = mentionedUsernames.has(currentUser?.username || '');
+    
     sendMessageMutation.mutate(messageInput);
+    
+    // Show notification if user mentions themselves or others are mentioned
+    if (mentionedUsernames.size > 0) {
+      const mentionedList = Array.from(mentionedUsernames).join(', ');
+      toast({
+        title: "Mentions Sent",
+        description: `You mentioned: @${mentionedList}`,
+        variant: "default",
+      });
+    }
   };
 
   const handleImageSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -270,7 +357,7 @@ export default function RichMatchChat({
                           />
                         )}
                         {msg.message && (
-                          <p className="text-sm text-foreground">{msg.message}</p>
+                          <p className="text-sm text-foreground">{renderMessageWithMentions(msg.message)}</p>
                         )}
                       </div>
                     </div>
