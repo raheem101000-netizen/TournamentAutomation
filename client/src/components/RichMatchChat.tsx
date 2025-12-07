@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -154,6 +154,9 @@ export default function RichMatchChat({
                           data-testid={`button-avatar-${msg.id}`}
                         >
                           <Avatar className="h-8 w-8 flex-shrink-0 cursor-pointer hover-elevate">
+                            {(msg as any).avatarUrl && (
+                              <AvatarImage src={(msg as any).avatarUrl} alt={senderName} />
+                            )}
                             <AvatarFallback className="bg-primary/10 text-primary text-xs">
                               {getInitials()}
                             </AvatarFallback>
@@ -161,6 +164,9 @@ export default function RichMatchChat({
                         </button>
                       ) : (
                         <Avatar className="h-8 w-8 flex-shrink-0">
+                          {(msg as any).avatarUrl && (
+                            <AvatarImage src={(msg as any).avatarUrl} alt={senderName} />
+                          )}
                           <AvatarFallback className="bg-primary/10 text-primary text-xs">
                             {getInitials()}
                           </AvatarFallback>

@@ -117,8 +117,32 @@ export default function AccountSettings() {
       return await apiRequest("PATCH", `/api/users/${authUser.id}`, data);
     },
     onSuccess: () => {
+      // Invalidate user profile queries
       queryClient.invalidateQueries({ queryKey: [`/api/users/${authUser?.id}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      
+      // Invalidate all message queries so avatars refresh in Match Chat
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const queryKey = query.queryKey;
+          return Array.isArray(queryKey) && 
+                 typeof queryKey[0] === 'string' && 
+                 queryKey[0].includes('/api/matches/') && 
+                 queryKey[0].includes('/messages');
+        },
+      });
+      
+      // Invalidate all tournament queries that might include user data
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const queryKey = query.queryKey;
+          return Array.isArray(queryKey) && 
+                 typeof queryKey[0] === 'string' && 
+                 (queryKey[0].includes('/api/tournaments/') || 
+                  queryKey[0].includes('/api/servers/'));
+        },
+      });
+      
       toast({
         title: "Profile updated",
         description: "Your profile has been successfully updated.",
