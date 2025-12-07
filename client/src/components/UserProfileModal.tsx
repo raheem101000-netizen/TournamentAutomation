@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ interface UserProfile {
 export default function UserProfileModal({ userId, open, onOpenChange }: UserProfileModalProps) {
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [isFriendRequestSent, setIsFriendRequestSent] = useState(false);
 
   const { data: profileData } = useQuery<UserProfile>({
@@ -201,7 +203,20 @@ export default function UserProfileModal({ userId, open, onOpenChange }: UserPro
                         <div className="flex-1 min-w-0">
                           <h4 className="font-semibold text-sm">{achievement.title}</h4>
                           {achievement.game && <p className="text-xs text-muted-foreground">{achievement.game}</p>}
-                          {achievement.serverName && <p className="text-xs text-muted-foreground">{achievement.serverName}</p>}
+                          {achievement.serverName && (
+                            <button
+                              onClick={() => {
+                                if (achievement.serverId) {
+                                  onOpenChange(false);
+                                  setLocation(`/server/${achievement.serverId}`);
+                                }
+                              }}
+                              className="text-xs text-primary hover:underline cursor-pointer"
+                              data-testid={`link-achievement-server-${achievement.serverId}`}
+                            >
+                              {achievement.serverName}
+                            </button>
+                          )}
                         </div>
                       </div>
                     );
