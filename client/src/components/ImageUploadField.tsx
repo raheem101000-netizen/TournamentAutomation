@@ -1,11 +1,8 @@
 import { useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { X, Upload } from "lucide-react";
+import { X, Upload, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ObjectUploader } from "./ObjectUploader";
-import type { UploadResult } from "@uppy/core";
-import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 interface ImageUploadFieldProps {
@@ -24,7 +21,7 @@ export default function ImageUploadField({
   const [preview, setPreview] = useState<string | null>(value || null);
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
-  const objectPathRef = useRef<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUrlChange = (url: string) => {
     onChange(url);
@@ -36,64 +33,77 @@ export default function ImageUploadField({
     onChange("");
   };
 
-  const handleGetUploadParameters = async () => {
-    const response = await apiRequest("POST", "/api/objects/upload");
-    const data = await response.json();
-    // Store the object path for use in handleUploadComplete
-    objectPathRef.current = data.objectPath;
-    return {
-      method: "PUT" as const,
-      url: data.uploadURL,
-    };
-  };
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-  const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
-    if (result.successful && result.successful.length > 0) {
-      setIsUploading(true);
-      try {
-        const uploadedObjectPath = objectPathRef.current;
-        console.log('[ImageUpload] Upload complete, objectPath:', uploadedObjectPath);
-        
-        if (!uploadedObjectPath) {
-          throw new Error("No object path available");
-        }
-        
-        // Normalize the path to set ACL and get final path
-        const response = await apiRequest("POST", "/api/objects/normalize", {
-          objectPath: uploadedObjectPath
-        });
-        
-        console.log('[ImageUpload] Normalize response ok:', response.ok);
-        
-        if (!response.ok) {
-          throw new Error("Failed to process uploaded image");
-        }
-        
-        const data = await response.json();
-        console.log('[ImageUpload] Normalized path:', data.objectPath);
-        
-        // Use the normalized path
-        onChange(data.objectPath);
-        setPreview(data.objectPath);
-        
-        toast({
-          title: "Image uploaded",
-          description: "Your image has been uploaded successfully.",
-        });
-      } catch (error) {
-        console.error("Error normalizing uploaded image:", error);
-        // Clear any stale preview
-        setPreview(value || null);
-        
-        toast({
-          title: "Upload failed",
-          description: error instanceof Error ? error.message : "Failed to upload image. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsUploading(false);
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image under 10MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/objects/upload', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const data = await response.json();
+      const fileUrl = data.fileUrl || data.url;
+      
+      console.log('[ImageUpload] File uploaded successfully:', fileUrl);
+      
+      onChange(fileUrl);
+      setPreview(fileUrl);
+      
+      toast({
+        title: "Image uploaded",
+        description: "Your image has been uploaded successfully.",
+      });
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      toast({
+        title: "Upload failed",
+        description: error instanceof Error ? error.message : "Failed to upload image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
       }
     }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -112,18 +122,35 @@ export default function ImageUploadField({
         </p>
       </div>
 
-      <ObjectUploader
-        maxNumberOfFiles={1}
-        maxFileSize={10485760}
-        onGetUploadParameters={handleGetUploadParameters}
-        onComplete={handleUploadComplete}
-        buttonClassName="w-full"
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        className="hidden"
+        data-testid="input-file-upload"
+      />
+      
+      <Button
+        type="button"
+        variant="outline"
+        onClick={handleUploadClick}
+        disabled={isUploading}
+        className="w-full"
+        data-testid="button-upload-image"
       >
-        <div className="flex items-center gap-2">
-          <Upload className="w-4 h-4" />
-          <span>{isUploading ? "Uploading..." : "Upload from Camera or Files"}</span>
-        </div>
-      </ObjectUploader>
+        {isUploading ? (
+          <div className="flex items-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>Uploading...</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Upload className="w-4 h-4" />
+            <span>Upload from Camera or Files</span>
+          </div>
+        )}
+      </Button>
 
       {preview && (
         <div className="relative rounded-md border overflow-hidden" data-testid="image-preview">
