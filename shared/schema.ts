@@ -184,7 +184,11 @@ export type Team = typeof teams.$inferSelect;
 export type InsertMatch = z.infer<typeof insertMatchSchema>;
 export type Match = typeof matches.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
-export type ChatMessage = typeof chatMessages.$inferSelect & { username?: string | null };
+export type ChatMessage = typeof chatMessages.$inferSelect & { 
+  username?: string | null;
+  avatarUrl?: string | null;
+  displayName?: string | null;
+};
 export type EnrichedChatMessage = ChatMessage & { username: string };
 export type InsertRegistrationConfig = z.infer<typeof insertRegistrationConfigSchema>;
 export type RegistrationConfig = typeof registrationConfigs.$inferSelect;
