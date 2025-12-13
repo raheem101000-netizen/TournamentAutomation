@@ -51,21 +51,6 @@ export default function RichMatchChat({
     enabled: !!matchId,
   });
 
-  // Debug: Log messages as they come in
-  React.useEffect(() => {
-    if (threadMessages.length > 0) {
-      console.log('[RichMatchChat] Received', threadMessages.length, 'messages');
-      threadMessages.forEach((msg, idx) => {
-        console.log(`[RichMatchChat] Message ${idx}:`, {
-          id: msg.id,
-          userId: msg.userId,
-          username: msg.username,
-          avatarUrl: (msg as any).avatarUrl,
-          displayName: (msg as any).displayName
-        });
-      });
-    }
-  }, [threadMessages]);
 
   // Extract unique users from thread messages
   const chatUsers = useMemo(() => {
@@ -80,7 +65,6 @@ export default function RichMatchChat({
         });
       }
     });
-    console.log('[RichMatchChat] chatUsers extracted:', userMap.size, 'unique users');
     return Array.from(userMap.values());
   }, [threadMessages]);
 
@@ -377,15 +361,12 @@ export default function RichMatchChat({
                           data-testid={`button-avatar-${msg.id}`}
                         >
                           <Avatar className="h-8 w-8 flex-shrink-0 cursor-pointer hover-elevate">
-                            <AvatarImage 
-                              src={(msg as any).avatarUrl || ""} 
-                              alt={senderName}
-                              onLoadingStatusChange={(status) => {
-                                if ((msg as any).avatarUrl) {
-                                  console.log(`[Avatar] ${msg.id} status: ${status}, url: ${(msg as any).avatarUrl}`);
-                                }
-                              }}
-                            />
+                            {(msg as any).avatarUrl && (
+                              <AvatarImage 
+                                src={(msg as any).avatarUrl} 
+                                alt={senderName}
+                              />
+                            )}
                             <AvatarFallback className="bg-primary/10 text-primary text-xs">
                               {getInitials()}
                             </AvatarFallback>
@@ -393,10 +374,12 @@ export default function RichMatchChat({
                         </button>
                       ) : (
                         <Avatar className="h-8 w-8 flex-shrink-0">
-                          <AvatarImage 
-                            src={(msg as any).avatarUrl || ""} 
-                            alt={senderName} 
-                          />
+                          {(msg as any).avatarUrl && (
+                            <AvatarImage 
+                              src={(msg as any).avatarUrl} 
+                              alt={senderName} 
+                            />
+                          )}
                           <AvatarFallback className="bg-primary/10 text-primary text-xs">
                             {getInitials()}
                           </AvatarFallback>
