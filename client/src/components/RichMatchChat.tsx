@@ -377,9 +377,15 @@ export default function RichMatchChat({
                           data-testid={`button-avatar-${msg.id}`}
                         >
                           <Avatar className="h-8 w-8 flex-shrink-0 cursor-pointer hover-elevate">
-                            {(msg as any).avatarUrl && (
-                              <AvatarImage src={(msg as any).avatarUrl} alt={senderName} />
-                            )}
+                            <AvatarImage 
+                              src={(msg as any).avatarUrl || ""} 
+                              alt={senderName}
+                              onLoadingStatusChange={(status) => {
+                                if ((msg as any).avatarUrl) {
+                                  console.log(`[Avatar] ${msg.id} status: ${status}, url: ${(msg as any).avatarUrl}`);
+                                }
+                              }}
+                            />
                             <AvatarFallback className="bg-primary/10 text-primary text-xs">
                               {getInitials()}
                             </AvatarFallback>
@@ -387,9 +393,10 @@ export default function RichMatchChat({
                         </button>
                       ) : (
                         <Avatar className="h-8 w-8 flex-shrink-0">
-                          {(msg as any).avatarUrl && (
-                            <AvatarImage src={(msg as any).avatarUrl} alt={senderName} />
-                          )}
+                          <AvatarImage 
+                            src={(msg as any).avatarUrl || ""} 
+                            alt={senderName} 
+                          />
                           <AvatarFallback className="bg-primary/10 text-primary text-xs">
                             {getInitials()}
                           </AvatarFallback>
