@@ -2197,22 +2197,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // File upload endpoint - saves to disk
-  app.post("/api/objects/upload", upload.single("file"), async (req, res) => {
+  // Get S3 upload parameters for client-side upload via ObjectUploader
+  app.post("/api/objects/upload", requireAuth, async (req, res) => {
     try {
-      const file = req.file as Express.Multer.File | undefined;
-      if (!file) {
-        return res.status(400).json({ error: "No file provided" });
-      }
-
-      // Extract just the filename without extension
-      const filename = path.basename(file.filename, path.extname(file.filename));
-      
-      // Return a URL to retrieve the file
-      const fileUrl = `/api/uploads/${filename}`;
-      res.json({ url: fileUrl, fileUrl });
+      const objectStorageService = new ObjectStorageService();
+      const { uploadURL, objectPath } = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL, objectPath });
     } catch (error: any) {
-      console.error("Error uploading file:", error);
+      console.error("Error getting upload URL:", error);
       res.status(500).json({ error: error.message });
     }
   });
