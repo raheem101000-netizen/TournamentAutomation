@@ -466,12 +466,38 @@ export default function PreviewMessages() {
     }
   };
 
-  const handleAcceptRequest = (request: Chat) => {
-    setMessageRequests(prev => prev.filter(r => r.id !== request.id));
-    toast({
-      title: "Message request accepted",
-      description: `You can now chat with ${request.name}`,
-    });
+  const handleAcceptRequest = async (request: Chat) => {
+    try {
+      // Create a message thread from the request
+      const response = await fetch("/api/message-threads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          participantName: request.name,
+          participantAvatar: request.avatar || request.groupImage,
+        }),
+        credentials: "include",
+      });
+
+      if (!response.ok) throw new Error("Failed to accept request");
+      
+      // Refetch threads to show in personal messages
+      queryClient.invalidateQueries({ queryKey: ["/api/message-threads"] });
+      
+      // Remove from message requests
+      setMessageRequests(prev => prev.filter(r => r.id !== request.id));
+      
+      toast({
+        title: "Message request accepted",
+        description: `You can now chat with ${request.name}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to accept message request",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDeclineRequest = (request: Chat) => {
