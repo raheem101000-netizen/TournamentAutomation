@@ -1888,12 +1888,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isDisabled: z.coerce.number().optional(),
       });
       const validatedData = updateSchema.parse(req.body);
+      console.log('[PATCH-USER] Updating user:', req.params.id, 'with data:', JSON.stringify(validatedData));
       const user = await storage.updateUser(req.params.id, validatedData);
+      console.log('[PATCH-USER] Update result:', JSON.stringify(user));
       if (!user) {
+        console.log('[PATCH-USER] User not found:', req.params.id);
         return res.status(404).json({ error: "User not found" });
       }
+      console.log('[PATCH-USER] Returning user:', JSON.stringify(user));
       res.json(user);
     } catch (error: any) {
+      console.error('[PATCH-USER] Error:', error.message);
       res.status(400).json({ error: error.message });
     }
   });

@@ -769,7 +769,14 @@ export class DatabaseStorage implements IStorage {
       .set(data)
       .where(eq(users.id, id))
       .returning();
-    return user || undefined;
+    
+    // Fallback: if returning() returns nothing, fetch the user after update
+    if (!user) {
+      const [fetchedUser] = await db.select().from(users).where(eq(users.id, id));
+      return fetchedUser || undefined;
+    }
+    
+    return user;
   }
 
   async changeUserPassword(id: string, currentPassword: string, newPassword: string): Promise<boolean> {
