@@ -51,6 +51,22 @@ export default function RichMatchChat({
     enabled: !!matchId,
   });
 
+  // Debug: Log messages as they come in
+  React.useEffect(() => {
+    if (threadMessages.length > 0) {
+      console.log('[RichMatchChat] Received', threadMessages.length, 'messages');
+      threadMessages.forEach((msg, idx) => {
+        console.log(`[RichMatchChat] Message ${idx}:`, {
+          id: msg.id,
+          userId: msg.userId,
+          username: msg.username,
+          avatarUrl: (msg as any).avatarUrl,
+          displayName: (msg as any).displayName
+        });
+      });
+    }
+  }, [threadMessages]);
+
   // Extract unique users from thread messages
   const chatUsers = useMemo(() => {
     const userMap = new Map<string, any>();
@@ -64,6 +80,7 @@ export default function RichMatchChat({
         });
       }
     });
+    console.log('[RichMatchChat] chatUsers extracted:', userMap.size, 'unique users');
     return Array.from(userMap.values());
   }, [threadMessages]);
 

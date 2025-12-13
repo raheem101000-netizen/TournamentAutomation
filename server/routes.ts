@@ -1087,7 +1087,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const sender = await storage.getUser(msg.userId);
               if (sender) {
                 username = sender.username || "Unknown";
-                avatarUrl = sender.avatarUrl || undefined;
+                avatarUrl = sender.avatarUrl ?? undefined;
                 displayName = sender.displayName?.trim() || sender.username || "Unknown";
                 console.log(`[DASHBOARD-MATCH-CHAT-ENRICH] Message ${msg.id}: username=${username}, displayName=${displayName}, avatarUrl=${avatarUrl}`);
               } else {
@@ -1100,7 +1100,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log(`[DASHBOARD-MATCH-CHAT-ENRICH] Message ${msg.id}: no userId`);
           }
           
-          const enriched = {
+          const enriched: any = {
             id: msg.id,
             matchId: msg.matchId,
             teamId: msg.teamId || null,
@@ -1110,9 +1110,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             isSystem: msg.isSystem,
             createdAt: msg.createdAt,
             username,
-            avatarUrl,
             displayName,
           };
+          
+          // Only include avatarUrl if it's actually defined
+          if (avatarUrl) {
+            enriched.avatarUrl = avatarUrl;
+          }
+          
           console.log(`[DASHBOARD-MATCH-CHAT-ENRICH] Final enriched message:`, JSON.stringify(enriched));
           return enriched;
         })
@@ -1162,8 +1167,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const sender = await storage.getUser(message.userId);
         if (sender) {
           enrichedMessage.username = sender.username || "Unknown";
-          enrichedMessage.avatarUrl = sender.avatarUrl || undefined;
           enrichedMessage.displayName = sender.displayName?.trim() || sender.username || "Unknown";
+          if (sender.avatarUrl) {
+            enrichedMessage.avatarUrl = sender.avatarUrl;
+          }
           console.log(`[DASHBOARD-MATCH-CHAT-POST] Enriched: username=${enrichedMessage.username}, displayName=${enrichedMessage.displayName}, avatarUrl=${enrichedMessage.avatarUrl}`);
         } else {
           enrichedMessage.username = "Unknown";
