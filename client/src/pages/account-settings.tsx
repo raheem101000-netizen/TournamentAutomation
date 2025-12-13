@@ -63,7 +63,6 @@ const passwordSchema = z.object({
 export default function AccountSettings() {
   const { toast } = useToast();
   const { user: authUser } = useAuth();
-  const [avatarUrl, setAvatarUrl] = useState<string>("");
 
   const { data: user, isLoading } = useQuery<UserType>({
     queryKey: [`/api/users/${authUser?.id}`],
@@ -96,7 +95,6 @@ export default function AccountSettings() {
         bio: user.bio || "",
         avatarUrl: user.avatarUrl || "",
       });
-      setAvatarUrl(user.avatarUrl || "");
     }
   }, [user, profileForm]);
 
@@ -234,7 +232,8 @@ export default function AccountSettings() {
   });
 
   const onProfileSubmit = (data: z.infer<typeof profileSchema>) => {
-    updateProfileMutation.mutate({ ...data, avatarUrl: avatarUrl || data.avatarUrl });
+    console.log('[ProfileSubmit] Submitting form data:', data);
+    updateProfileMutation.mutate(data);
   };
 
   const onPasswordSubmit = (data: z.infer<typeof passwordSchema>) => {
@@ -300,20 +299,33 @@ export default function AccountSettings() {
                   <div className="flex items-start gap-6">
                     <div className="flex flex-col items-center gap-4">
                       <Avatar className="w-24 h-24">
-                        <AvatarImage src={avatarUrl || user?.avatarUrl || ""} />
+                        <AvatarImage src={profileForm.watch('avatarUrl') || user?.avatarUrl || ""} />
                         <AvatarFallback>
                           {user?.username?.substring(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <ImageUploadField
-                        value={avatarUrl}
-                        onChange={setAvatarUrl}
+                        value={profileForm.watch('avatarUrl')}
+                        onChange={(url) => {
+                          profileForm.setValue('avatarUrl', url, { shouldDirty: true });
+                        }}
                         label="Change Avatar"
                         placeholder="Enter avatar URL"
                       />
                     </div>
 
                     <div className="flex-1 space-y-4">
+                      <FormField
+                        control={profileForm.control}
+                        name="avatarUrl"
+                        render={({ field }) => (
+                          <FormItem hidden>
+                            <FormControl>
+                              <Input type="hidden" {...field} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
                       <FormField
                         control={profileForm.control}
                         name="username"

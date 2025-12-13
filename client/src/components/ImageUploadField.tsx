@@ -52,6 +52,7 @@ export default function ImageUploadField({
       setIsUploading(true);
       try {
         const uploadedObjectPath = objectPathRef.current;
+        console.log('[ImageUpload] Upload complete, objectPath:', uploadedObjectPath);
         
         if (!uploadedObjectPath) {
           throw new Error("No object path available");
@@ -62,11 +63,14 @@ export default function ImageUploadField({
           objectPath: uploadedObjectPath
         });
         
+        console.log('[ImageUpload] Normalize response ok:', response.ok);
+        
         if (!response.ok) {
           throw new Error("Failed to process uploaded image");
         }
         
         const data = await response.json();
+        console.log('[ImageUpload] Normalized path:', data.objectPath);
         
         // Use the normalized path
         onChange(data.objectPath);
