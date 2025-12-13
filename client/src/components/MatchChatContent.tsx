@@ -7,6 +7,7 @@ import { Send } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import UserProfileModal from "./UserProfileModal";
 import type { ChatMessage } from "@shared/schema";
 
 interface MatchChatContentProps {
@@ -16,6 +17,8 @@ interface MatchChatContentProps {
 export default function MatchChatContent({ matchId }: MatchChatContentProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [messageText, setMessageText] = useState("");
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
 
@@ -53,6 +56,13 @@ export default function MatchChatContent({ matchId }: MatchChatContentProps) {
     }
   };
 
+  const openUserProfile = (userId: string | null | undefined) => {
+    if (userId) {
+      setSelectedProfileId(userId);
+      setProfileModalOpen(true);
+    }
+  };
+
   if (!messages || messages.length === 0) {
     return (
       <Card className="flex items-center justify-center h-full p-8">
@@ -79,17 +89,44 @@ export default function MatchChatContent({ matchId }: MatchChatContentProps) {
 
           return (
             <div key={message.id} className="flex gap-2">
-              <Avatar className="h-8 w-8 flex-shrink-0">
-                {(message as any).avatarUrl && (
-                  <AvatarImage src={(message as any).avatarUrl} alt={senderName} />
-                )}
-                <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
+              {message.userId ? (
+                <button
+                  onClick={() => openUserProfile(message.userId)}
+                  className="p-0 border-0 bg-transparent cursor-pointer"
+                  data-testid={`button-avatar-${message.id}`}
+                >
+                  <Avatar className="h-8 w-8 flex-shrink-0 cursor-pointer hover-elevate">
+                    {(message as any).avatarUrl && (
+                      <AvatarImage src={(message as any).avatarUrl} alt={senderName} />
+                    )}
+                    <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              ) : (
+                <Avatar className="h-8 w-8 flex-shrink-0">
+                  {(message as any).avatarUrl && (
+                    <AvatarImage src={(message as any).avatarUrl} alt={senderName} />
+                  )}
+                  <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+              )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-sm font-semibold">{senderName}</span>
+                  {message.userId ? (
+                    <button
+                      onClick={() => openUserProfile(message.userId)}
+                      className="text-sm font-semibold hover:underline cursor-pointer p-0 border-0 bg-transparent text-left"
+                      data-testid={`user-link-${message.id}`}
+                    >
+                      {senderName}
+                    </button>
+                  ) : (
+                    <span className="text-sm font-semibold">{senderName}</span>
+                  )}
                   <span className="text-xs text-muted-foreground">{timestamp}</span>
                 </div>
                 <p className="text-sm mt-0.5">{message.message}</p>
@@ -122,6 +159,12 @@ export default function MatchChatContent({ matchId }: MatchChatContentProps) {
           <Send className="w-4 h-4" />
         </Button>
       </div>
+
+      <UserProfileModal 
+        userId={selectedProfileId} 
+        open={profileModalOpen} 
+        onOpenChange={setProfileModalOpen} 
+      />
     </div>
   );
 }
