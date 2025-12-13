@@ -112,38 +112,44 @@ export default function AccountSettings() {
       if (!authUser?.id) {
         throw new Error("Not authenticated");
       }
-      return await apiRequest("PATCH", `/api/users/${authUser.id}`, data);
+      console.log('[UpdateMutation] Sending PATCH with data:', JSON.stringify(data, null, 2));
+      const response = await apiRequest("PATCH", `/api/users/${authUser.id}`, data);
+      console.log('[UpdateMutation] Response:', response);
+      return response;
     },
-    onSuccess: () => {
-      // Invalidate user profile queries
+    onSuccess: (response: any) => {
+      console.log('[UpdateMutation] onSuccess triggered, response:', response);
+      
+      // Invalidate user profile queries immediately
       queryClient.invalidateQueries({ queryKey: [`/api/users/${authUser?.id}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       
-      // Invalidate all message queries so avatars refresh in Match Chat
+      // Clear ALL cache related to messages and users to ensure fresh data
+      queryClient.removeQueries({ queryKey: ['/api/matches'] });
+      
+      // Invalidate all message queries with proper matching
       queryClient.invalidateQueries({
         predicate: (query) => {
           const queryKey = query.queryKey;
           return Array.isArray(queryKey) && 
-                 typeof queryKey[0] === 'string' && 
-                 queryKey[0].includes('/api/matches/') && 
-                 queryKey[0].includes('/messages');
+                 queryKey.some(key => typeof key === 'string' && key.includes('/messages'));
         },
       });
       
-      // Invalidate all tournament queries that might include user data
+      // Invalidate tournament queries
       queryClient.invalidateQueries({
         predicate: (query) => {
           const queryKey = query.queryKey;
           return Array.isArray(queryKey) && 
                  typeof queryKey[0] === 'string' && 
-                 (queryKey[0].includes('/api/tournaments/') || 
-                  queryKey[0].includes('/api/servers/'));
+                 (queryKey[0].includes('/api/tournaments') || 
+                  queryKey[0].includes('/api/servers'));
         },
       });
       
       toast({
-        title: "Profile updated",
-        description: "Your profile has been successfully updated.",
+        title: "Profile updated successfully",
+        description: "Your changes have been saved and synchronized across all views.",
       });
     },
     onError: (error: Error) => {
@@ -232,7 +238,11 @@ export default function AccountSettings() {
   });
 
   const onProfileSubmit = (data: z.infer<typeof profileSchema>) => {
-    console.log('[ProfileSubmit] Submitting form data:', data);
+    console.log('[ProfileSubmit] Submitting form data:', JSON.stringify(data, null, 2));
+    console.log('[ProfileSubmit] avatarUrl in data:', data.avatarUrl);
+    if (!data.avatarUrl || data.avatarUrl.trim() === '') {
+      console.warn('[ProfileSubmit] Warning: avatarUrl is empty');
+    }
     updateProfileMutation.mutate(data);
   };
 
@@ -315,17 +325,6 @@ export default function AccountSettings() {
                     </div>
 
                     <div className="flex-1 space-y-4">
-                      <FormField
-                        control={profileForm.control}
-                        name="avatarUrl"
-                        render={({ field }) => (
-                          <FormItem hidden>
-                            <FormControl>
-                              <Input type="hidden" {...field} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
                       <FormField
                         control={profileForm.control}
                         name="username"
