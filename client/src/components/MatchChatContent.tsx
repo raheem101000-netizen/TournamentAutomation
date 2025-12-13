@@ -39,6 +39,15 @@ export default function MatchChatContent({ matchId }: MatchChatContentProps) {
 
   useEffect(() => {
     if (initialMessages) {
+      console.log('[MatchChatContent] Received messages:', initialMessages.length);
+      initialMessages.forEach((msg, idx) => {
+        console.log(`[MatchChatContent] Message ${idx}:`, {
+          id: msg.id,
+          username: (msg as any).username,
+          avatarUrl: (msg as any).avatarUrl,
+          displayName: (msg as any).displayName
+        });
+      });
       setMessages(initialMessages);
     }
   }, [initialMessages]);
