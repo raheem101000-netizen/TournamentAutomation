@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -14,6 +14,9 @@ interface ChatMessage {
   id: string;
   matchId: string;
   teamId?: string;
+  userId?: string;
+  username?: string;
+  avatarUrl?: string;
   message: string;
   imageUrl?: string;
   isSystem: number;
@@ -138,8 +141,9 @@ export default function ChatRoom() {
                 >
                   {!msg.isSystem && (
                     <Avatar>
+                      {msg.avatarUrl && <AvatarImage src={msg.avatarUrl} alt={msg.username} />}
                       <AvatarFallback>
-                        {msg.teamId?.slice(0, 2).toUpperCase() || "U"}
+                        {msg.username?.substring(0, 2).toUpperCase() || msg.teamId?.slice(0, 2).toUpperCase() || "U"}
                       </AvatarFallback>
                     </Avatar>
                   )}
@@ -150,7 +154,7 @@ export default function ChatRoom() {
                   >
                     {!msg.isSystem && (
                       <div className="text-sm font-medium mb-1">
-                        Team {msg.teamId}
+                        {msg.username || `Team ${msg.teamId}`}
                       </div>
                     )}
                     <div

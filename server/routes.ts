@@ -237,7 +237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`[WS-SAVE] Input validatedData:`, { userId: validatedData.userId, matchId: validatedData.matchId });
           console.log(`[WS-SAVE] Saved message from DB:`, { id: savedMessage.id, userId: savedMessage.userId, matchId: savedMessage.matchId });
 
-          // Enrich message with username before broadcasting
+          // Enrich message with username and avatarUrl before broadcasting
           const enrichedMessage: any = {
             id: savedMessage.id,
             matchId: savedMessage.matchId,
@@ -254,9 +254,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (savedMessage.userId) {
             const sender = await storage.getUser(savedMessage.userId);
             enrichedMessage.username = sender?.username || "Unknown";
-            console.log(`[WS-ENRICH] User lookup: userId=${savedMessage.userId} -> username=${enrichedMessage.username}`);
+            enrichedMessage.avatarUrl = sender?.avatarUrl || null;
+            console.log(`[WS-ENRICH] User lookup: userId=${savedMessage.userId} -> username=${enrichedMessage.username}, avatarUrl=${enrichedMessage.avatarUrl}`);
           } else {
             enrichedMessage.username = "Unknown";
+            enrichedMessage.avatarUrl = null;
             console.log(`[WS-ENRICH] No userId in savedMessage - will broadcast: ${JSON.stringify(enrichedMessage)}`);
           }
 
