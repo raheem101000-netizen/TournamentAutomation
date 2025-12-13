@@ -121,6 +121,15 @@ export default function AccountSettings() {
     onSuccess: (response: any) => {
       console.log('[UpdateMutation] onSuccess triggered, response:', response);
       
+      // Reset form with the response data to ensure UI updates immediately
+      profileForm.reset({
+        username: response.username || "",
+        email: response.email || "",
+        displayName: response.displayName || "",
+        bio: response.bio || "",
+        avatarUrl: response.avatarUrl || "",
+      });
+      
       // Invalidate user profile queries immediately
       queryClient.invalidateQueries({ queryKey: [`/api/users/${authUser?.id}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
