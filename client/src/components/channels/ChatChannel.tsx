@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageSquare, Send, X, Reply, Image as ImageIcon, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -179,6 +179,7 @@ export default function ChatChannel({ channelId, isPreview = false }: ChatChanne
               onMouseLeave={handleMouseUp}
             >
               <Avatar className="h-8 w-8 flex-shrink-0">
+                <AvatarImage src={(message as any).avatarUrl || ""} alt={message.username} />
                 <AvatarFallback className="text-xs bg-primary/10 text-primary">
                   {initials}
                 </AvatarFallback>

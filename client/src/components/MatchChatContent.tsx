@@ -89,9 +89,7 @@ export default function MatchChatContent({ matchId }: MatchChatContentProps) {
           return (
             <div key={message.id} className="flex gap-2">
               <Avatar className="h-8 w-8 flex-shrink-0">
-                {(message as any).avatarUrl && (
-                  <AvatarImage src={(message as any).avatarUrl} alt={senderName} />
-                )}
+                <AvatarImage src={(message as any).avatarUrl || ""} alt={senderName} />
                 <AvatarFallback className="text-xs bg-primary/10 text-primary">
                   {initials}
                 </AvatarFallback>

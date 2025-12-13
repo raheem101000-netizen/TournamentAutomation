@@ -2426,7 +2426,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 100;
       const messages = await storage.getChannelMessages(req.params.channelId, limit);
-      res.status(200).json(messages);
+      
+      // Enrich messages with avatarUrl from users
+      const enrichedMessages = await Promise.all(
+        messages.map(async (msg: any) => {
+          if (msg.userId) {
+            const user = await storage.getUser(msg.userId);
+            if (user?.avatarUrl) {
+              return { ...msg, avatarUrl: user.avatarUrl };
+            }
+          }
+          return msg;
+        })
+      );
+      
+      res.status(200).json(enrichedMessages);
     } catch (error: any) {
       console.error("Error fetching messages:", error);
       res.status(500).json({ error: error.message });
