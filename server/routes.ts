@@ -3161,17 +3161,130 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "User not found" });
       }
 
+      // Check if friend request already exists between users
+      const existingRequest = await storage.getFriendRequestBetweenUsers(req.session.userId, recipientId);
+      if (existingRequest) {
+        return res.json({ 
+          success: true, 
+          friendRequest: existingRequest,
+          message: existingRequest.status === "pending" ? "Request already sent" : `Request already ${existingRequest.status}`
+        });
+      }
+
+      // Create friend request record
+      const friendRequest = await storage.createFriendRequest({
+        senderId: req.session.userId,
+        recipientId: recipientId,
+        status: "pending",
+      });
+
       // Create notification for friend request
+      const sender = await storage.getUser(req.session.userId);
       const notification = await storage.createNotification({
         userId: recipientId,
         senderId: req.session.userId,
         type: "friend_request",
         title: `Friend request`,
-        message: `You have a new friend request`,
+        message: `${sender?.displayName || sender?.username || 'Someone'} sent you a friend request`,
         read: 0,
       });
 
-      res.json({ success: true, notification });
+      res.json({ success: true, friendRequest, notification });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get friend request status between current user and another user
+  app.get("/api/friend-requests/status/:userId", async (req, res) => {
+    try {
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { userId } = req.params;
+      const request = await storage.getFriendRequestBetweenUsers(req.session.userId, userId);
+      
+      if (!request) {
+        return res.json({ status: "none" });
+      }
+
+      res.json({
+        status: request.status,
+        isSender: request.senderId === req.session.userId,
+        friendRequest: request,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get pending friend requests for current user
+  app.get("/api/friend-requests/pending", async (req, res) => {
+    try {
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const requests = await storage.getPendingFriendRequests(req.session.userId);
+      
+      // Enrich with sender info
+      const enrichedRequests = await Promise.all(
+        requests.map(async (request) => {
+          const sender = await storage.getUser(request.senderId);
+          return {
+            ...request,
+            senderName: sender?.displayName || sender?.username || "Unknown",
+            senderAvatar: sender?.avatarUrl,
+          };
+        })
+      );
+
+      res.json(enrichedRequests);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Accept friend request
+  app.post("/api/friend-requests/:id/accept", async (req, res) => {
+    try {
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const request = await storage.updateFriendRequest(req.params.id, {
+        status: "accepted",
+        respondedAt: new Date(),
+      });
+
+      if (!request) {
+        return res.status(404).json({ error: "Friend request not found" });
+      }
+
+      res.json({ success: true, friendRequest: request });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Decline friend request
+  app.post("/api/friend-requests/:id/decline", async (req, res) => {
+    try {
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const request = await storage.updateFriendRequest(req.params.id, {
+        status: "declined",
+        respondedAt: new Date(),
+      });
+
+      if (!request) {
+        return res.status(404).json({ error: "Friend request not found" });
+      }
+
+      res.json({ success: true, friendRequest: request });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

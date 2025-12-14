@@ -292,6 +292,15 @@ export const notifications = pgTable("notifications", {
   actionUrl: text("action_url"),
 });
 
+export const friendRequests = pgTable("friend_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  senderId: varchar("sender_id").notNull(),
+  recipientId: varchar("recipient_id").notNull(),
+  status: text("status", { enum: ["pending", "accepted", "declined"] }).notNull().default("pending"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  respondedAt: timestamp("responded_at"),
+});
+
 export const insertServerSchema = createInsertSchema(servers).omit({
   id: true,
   createdAt: true,
@@ -327,6 +336,12 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
   timestamp: true,
 });
 
+export const insertFriendRequestSchema = createInsertSchema(friendRequests).omit({
+  id: true,
+  createdAt: true,
+  respondedAt: true,
+});
+
 export type InsertServer = z.infer<typeof insertServerSchema>;
 export type Server = typeof servers.$inferSelect;
 export type InsertChannel = z.infer<typeof insertChannelSchema>;
@@ -339,6 +354,8 @@ export type InsertThreadMessage = z.infer<typeof insertThreadMessageSchema>;
 export type ThreadMessage = typeof threadMessages.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
+export type InsertFriendRequest = z.infer<typeof insertFriendRequestSchema>;
+export type FriendRequest = typeof friendRequests.$inferSelect;
 
 export const posterTemplates = pgTable("poster_templates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

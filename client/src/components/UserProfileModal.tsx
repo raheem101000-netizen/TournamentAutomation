@@ -3,12 +3,11 @@ import { useLocation } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, UserPlus, UserCheck, Loader2 } from "lucide-react";
+import { MessageSquare, UserPlus, UserCheck, Clock, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { getAchievementIcon, getAchievementColor } from "@/lib/achievement-utils";
-import { useState, useEffect } from "react";
 
 interface UserProfileModalProps {
   userId: string | null;
@@ -25,11 +24,16 @@ interface UserProfile {
   bio?: string;
 }
 
+interface FriendRequestStatus {
+  status: "none" | "pending" | "accepted" | "declined";
+  isSender?: boolean;
+  friendRequest?: any;
+}
+
 export default function UserProfileModal({ userId, open, onOpenChange }: UserProfileModalProps) {
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [isFriendRequestSent, setIsFriendRequestSent] = useState(false);
 
   const { data: profileData } = useQuery<UserProfile>({
     queryKey: ["/api/users", userId],
@@ -37,6 +41,18 @@ export default function UserProfileModal({ userId, open, onOpenChange }: UserPro
     queryFn: async () => {
       const response = await fetch(`/api/users/${userId}`);
       if (!response.ok) throw new Error("Failed to fetch user");
+      return response.json();
+    },
+  });
+
+  const { data: friendRequestStatus, refetch: refetchFriendStatus } = useQuery<FriendRequestStatus>({
+    queryKey: ["/api/friend-requests/status", userId],
+    enabled: !!userId && open && !!currentUser && currentUser.id !== userId,
+    queryFn: async () => {
+      const response = await fetch(`/api/friend-requests/status/${userId}`, {
+        credentials: "include",
+      });
+      if (!response.ok) return { status: "none" };
       return response.json();
     },
   });
@@ -51,13 +67,6 @@ export default function UserProfileModal({ userId, open, onOpenChange }: UserPro
       return response.json();
     },
   });
-
-  // Reset friend request state when modal closes
-  useEffect(() => {
-    if (!open) {
-      setIsFriendRequestSent(false);
-    }
-  }, [open]);
 
   const handleAddFriend = async () => {
     if (!profileData || !currentUser) return;
@@ -74,7 +83,7 @@ export default function UserProfileModal({ userId, open, onOpenChange }: UserPro
 
       if (!response.ok) throw new Error("Failed to send friend request");
       
-      setIsFriendRequestSent(true);
+      refetchFriendStatus();
       toast({
         title: "Friend request sent!",
         description: `Request sent to ${profileData.displayName || profileData.username}`,
@@ -86,6 +95,99 @@ export default function UserProfileModal({ userId, open, onOpenChange }: UserPro
         variant: "destructive",
       });
     }
+  };
+
+  const handleAcceptFriend = async () => {
+    if (!friendRequestStatus?.friendRequest?.id) return;
+    
+    try {
+      const response = await fetch(`/api/friend-requests/${friendRequestStatus.friendRequest.id}/accept`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!response.ok) throw new Error("Failed to accept friend request");
+      
+      refetchFriendStatus();
+      toast({
+        title: "Friend added!",
+        description: `You are now friends with ${profileData?.displayName || profileData?.username}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to accept friend request",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeclineFriend = async () => {
+    if (!friendRequestStatus?.friendRequest?.id) return;
+    
+    try {
+      const response = await fetch(`/api/friend-requests/${friendRequestStatus.friendRequest.id}/decline`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!response.ok) throw new Error("Failed to decline friend request");
+      
+      refetchFriendStatus();
+      toast({
+        title: "Request declined",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to decline friend request",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const renderFriendButton = () => {
+    const status = friendRequestStatus?.status || "none";
+    const isSender = friendRequestStatus?.isSender;
+
+    if (status === "accepted") {
+      return (
+        <Button variant="secondary" disabled className="flex-1" data-testid="button-friends">
+          <UserCheck className="w-4 h-4 mr-2" />
+          Friends
+        </Button>
+      );
+    }
+
+    if (status === "pending" && isSender) {
+      return (
+        <Button variant="secondary" disabled className="flex-1" data-testid="button-request-pending">
+          <Clock className="w-4 h-4 mr-2" />
+          Request Sent
+        </Button>
+      );
+    }
+
+    if (status === "pending" && !isSender) {
+      return (
+        <div className="flex gap-2 flex-1">
+          <Button onClick={handleAcceptFriend} className="flex-1" data-testid="button-accept-friend">
+            <UserCheck className="w-4 h-4 mr-2" />
+            Accept
+          </Button>
+          <Button onClick={handleDeclineFriend} variant="outline" className="flex-1" data-testid="button-decline-friend">
+            Decline
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <Button onClick={handleAddFriend} variant="outline" className="flex-1" data-testid="button-add-friend-profile">
+        <UserPlus className="w-4 h-4 mr-2" />
+        Add Friend
+      </Button>
+    );
   };
 
   const handleMessageProfile = async () => {
@@ -158,25 +260,7 @@ export default function UserProfileModal({ userId, open, onOpenChange }: UserPro
                   <MessageSquare className="w-4 h-4 mr-2" />
                   Message
                 </Button>
-                <Button 
-                  onClick={handleAddFriend} 
-                  disabled={isFriendRequestSent}
-                  variant={isFriendRequestSent ? "secondary" : "outline"}
-                  className="flex-1"
-                  data-testid="button-add-friend-profile"
-                >
-                  {isFriendRequestSent ? (
-                    <>
-                      <UserCheck className="w-4 h-4 mr-2" />
-                      Requested
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Add Friend
-                    </>
-                  )}
-                </Button>
+                {renderFriendButton()}
               </div>
             )}
 

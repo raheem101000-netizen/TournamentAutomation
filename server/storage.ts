@@ -86,6 +86,9 @@ import {
   type InsertMessageThread,
   type InsertThreadMessage,
   type InsertNotification,
+  friendRequests,
+  type FriendRequest,
+  type InsertFriendRequest,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -255,6 +258,12 @@ export interface IStorage {
   updateReport(reportId: string, data: Partial<Report>): Promise<Report | undefined>;
   getAllCustomerServiceMessages(): Promise<CustomerServiceMessage[]>;
   updateCustomerServiceMessage(messageId: string, data: Partial<CustomerServiceMessage>): Promise<CustomerServiceMessage | undefined>;
+
+  // Friend request operations
+  createFriendRequest(data: InsertFriendRequest): Promise<FriendRequest>;
+  getFriendRequestBetweenUsers(userId1: string, userId2: string): Promise<FriendRequest | undefined>;
+  getPendingFriendRequests(userId: string): Promise<FriendRequest[]>;
+  updateFriendRequest(id: string, data: Partial<FriendRequest>): Promise<FriendRequest | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1212,6 +1221,48 @@ export class DatabaseStorage implements IStorage {
       .where(eq(customerServiceMessages.id, messageId))
       .returning();
     return message || undefined;
+  }
+
+  // Friend request operations
+  async createFriendRequest(data: InsertFriendRequest): Promise<FriendRequest> {
+    const [request] = await db.insert(friendRequests).values(data).returning();
+    return request;
+  }
+
+  async getFriendRequestBetweenUsers(userId1: string, userId2: string): Promise<FriendRequest | undefined> {
+    const [request] = await db
+      .select()
+      .from(friendRequests)
+      .where(
+        or(
+          and(eq(friendRequests.senderId, userId1), eq(friendRequests.recipientId, userId2)),
+          and(eq(friendRequests.senderId, userId2), eq(friendRequests.recipientId, userId1))
+        )
+      )
+      .limit(1);
+    return request || undefined;
+  }
+
+  async getPendingFriendRequests(userId: string): Promise<FriendRequest[]> {
+    return await db
+      .select()
+      .from(friendRequests)
+      .where(
+        and(
+          eq(friendRequests.recipientId, userId),
+          eq(friendRequests.status, "pending")
+        )
+      )
+      .orderBy(friendRequests.createdAt);
+  }
+
+  async updateFriendRequest(id: string, data: Partial<FriendRequest>): Promise<FriendRequest | undefined> {
+    const [request] = await db
+      .update(friendRequests)
+      .set(data)
+      .where(eq(friendRequests.id, id))
+      .returning();
+    return request || undefined;
   }
 }
 
