@@ -33,32 +33,27 @@ export default function MobilePreviewNotifications() {
     queryKey: ["/api/mobile-preview/notifications"],
   });
 
-  const handleAcceptFriendRequest = async (notification: Notification) => {
+  const handleAcceptFriendRequest = async (notification: any) => {
     if (!notification.senderId || !user) return;
     
     setProcessingIds(prev => new Set(prev).add(notification.id));
     
     try {
-      // First get the friend request between users
-      const statusRes = await fetch(`/api/friend-requests/status/${notification.senderId}`, {
+      // Use the accept-from endpoint which handles missing friend request records
+      const acceptRes = await fetch(`/api/friend-requests/accept-from/${notification.senderId}`, {
+        method: "POST",
         credentials: "include",
       });
-      const statusData = await statusRes.json();
       
-      if (statusData.friendRequest?.id) {
-        const acceptRes = await fetch(`/api/friend-requests/${statusData.friendRequest.id}/accept`, {
-          method: "POST",
-          credentials: "include",
+      if (acceptRes.ok) {
+        setHandledIds(prev => new Set(prev).add(notification.id));
+        toast({
+          title: "Friend added!",
+          description: `You are now friends with ${notification.senderName || 'this user'}`,
         });
-        
-        if (acceptRes.ok) {
-          setHandledIds(prev => new Set(prev).add(notification.id));
-          toast({
-            title: "Friend added!",
-            description: "You are now friends",
-          });
-          queryClient.invalidateQueries({ queryKey: ["/api/mobile-preview/notifications"] });
-        }
+        queryClient.invalidateQueries({ queryKey: ["/api/mobile-preview/notifications"] });
+      } else {
+        throw new Error("Failed to accept");
       }
     } catch (error) {
       toast({
@@ -75,30 +70,25 @@ export default function MobilePreviewNotifications() {
     }
   };
 
-  const handleDeclineFriendRequest = async (notification: Notification) => {
+  const handleDeclineFriendRequest = async (notification: any) => {
     if (!notification.senderId || !user) return;
     
     setProcessingIds(prev => new Set(prev).add(notification.id));
     
     try {
-      const statusRes = await fetch(`/api/friend-requests/status/${notification.senderId}`, {
+      const declineRes = await fetch(`/api/friend-requests/decline-from/${notification.senderId}`, {
+        method: "POST",
         credentials: "include",
       });
-      const statusData = await statusRes.json();
       
-      if (statusData.friendRequest?.id) {
-        const declineRes = await fetch(`/api/friend-requests/${statusData.friendRequest.id}/decline`, {
-          method: "POST",
-          credentials: "include",
+      if (declineRes.ok) {
+        setHandledIds(prev => new Set(prev).add(notification.id));
+        toast({
+          title: "Request declined",
         });
-        
-        if (declineRes.ok) {
-          setHandledIds(prev => new Set(prev).add(notification.id));
-          toast({
-            title: "Request declined",
-          });
-          queryClient.invalidateQueries({ queryKey: ["/api/mobile-preview/notifications"] });
-        }
+        queryClient.invalidateQueries({ queryKey: ["/api/mobile-preview/notifications"] });
+      } else {
+        throw new Error("Failed to decline");
       }
     } catch (error) {
       toast({
@@ -165,7 +155,9 @@ export default function MobilePreviewNotifications() {
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground" data-testid={`notification-message-${notification.id}`}>
-                    {notification.message}
+                    {notification.type === 'friend_request' && (notification as any).senderName
+                      ? `${(notification as any).senderName} sent you a friend request`
+                      : notification.message}
                   </p>
                   
                   {notification.type === 'friend_request' && !handledIds.has(notification.id) && (

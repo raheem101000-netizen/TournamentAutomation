@@ -1620,7 +1620,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Filter notifications for current user if logged in
       if (req.session?.userId) {
         const userNotifications = notifications.filter(n => n.userId === req.session.userId);
-        return res.json(userNotifications);
+        
+        // Enrich friend request notifications with sender info
+        const enrichedNotifications = await Promise.all(
+          userNotifications.map(async (n) => {
+            if (n.type === 'friend_request' && n.senderId) {
+              const sender = await storage.getUser(n.senderId);
+              return {
+                ...n,
+                senderName: sender?.displayName || sender?.username || 'Unknown',
+                senderAvatar: sender?.avatarUrl,
+              };
+            }
+            return n;
+          })
+        );
+        
+        return res.json(enrichedNotifications);
       }
       res.json(notifications);
     } catch (error: any) {
@@ -3268,6 +3284,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json({ success: true, friendRequest: request });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Accept friend request by sender ID (for notifications without friend request record)
+  app.post("/api/friend-requests/accept-from/:senderId", async (req, res) => {
+    try {
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { senderId } = req.params;
+      
+      // Check if friend request exists
+      let request = await storage.getFriendRequestBetweenUsers(req.session.userId, senderId);
+      
+      if (!request) {
+        // Create the friend request record if it doesn't exist (for old notifications)
+        request = await storage.createFriendRequest({
+          senderId: senderId,
+          recipientId: req.session.userId,
+          status: "pending",
+        });
+      }
+
+      // Now accept it
+      const updated = await storage.updateFriendRequest(request.id, {
+        status: "accepted",
+        respondedAt: new Date(),
+      });
+
+      res.json({ success: true, friendRequest: updated });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Decline friend request by sender ID
+  app.post("/api/friend-requests/decline-from/:senderId", async (req, res) => {
+    try {
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { senderId } = req.params;
+      
+      let request = await storage.getFriendRequestBetweenUsers(req.session.userId, senderId);
+      
+      if (!request) {
+        request = await storage.createFriendRequest({
+          senderId: senderId,
+          recipientId: req.session.userId,
+          status: "pending",
+        });
+      }
+
+      const updated = await storage.updateFriendRequest(request.id, {
+        status: "declined",
+        respondedAt: new Date(),
+      });
+
+      res.json({ success: true, friendRequest: updated });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
