@@ -135,6 +135,7 @@ export default function PreviewAccount() {
   const [selectedAchievement, setSelectedAchievement] = useState<any | null>(null);
   const [serverNotFound, setServerNotFound] = useState(false);
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
+  const [showAllFriends, setShowAllFriends] = useState(false);
 
   const { user: authUser } = useAuth();
 
@@ -293,7 +294,7 @@ export default function PreviewAccount() {
               <span className="text-sm text-muted-foreground">{friends.length}</span>
             </div>
             <div className="grid grid-cols-4 gap-3">
-              {friends.slice(0, 8).map((friend: any) => (
+              {friends.slice(0, 5).map((friend: any) => (
                 <div
                   key={friend.id}
                   className="flex flex-col items-center text-center cursor-pointer hover-elevate p-2 rounded-lg"
@@ -307,14 +308,49 @@ export default function PreviewAccount() {
                   <p className="text-xs font-medium truncate w-full">{friend.displayName || friend.username}</p>
                 </div>
               ))}
+              {friends.length > 5 && (
+                <div
+                  className="flex flex-col items-center justify-center text-center cursor-pointer hover-elevate p-2 rounded-lg bg-muted/50"
+                  onClick={() => setShowAllFriends(true)}
+                  data-testid="button-show-more-friends"
+                >
+                  <div className="w-12 h-12 mb-1 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-sm font-bold text-primary">+{friends.length - 5}</span>
+                  </div>
+                  <p className="text-xs font-medium text-muted-foreground">more</p>
+                </div>
+              )}
             </div>
-            {friends.length > 8 && (
-              <Button variant="ghost" size="sm" className="w-full" data-testid="button-view-all-friends">
-                View all {friends.length} friends
-              </Button>
-            )}
           </div>
         )}
+
+        {/* All Friends Dialog */}
+        <Dialog open={showAllFriends} onOpenChange={setShowAllFriends}>
+          <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>All Friends ({friends.length})</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-4 gap-3 pt-4">
+              {friends.map((friend: any) => (
+                <div
+                  key={friend.id}
+                  className="flex flex-col items-center text-center cursor-pointer hover-elevate p-2 rounded-lg"
+                  onClick={() => {
+                    setShowAllFriends(false);
+                    setSelectedFriendId(friend.id);
+                  }}
+                  data-testid={`friend-all-${friend.id}`}
+                >
+                  <Avatar className="w-12 h-12 mb-1">
+                    <AvatarImage src={friend.avatarUrl} />
+                    <AvatarFallback>{friend.username?.[0]?.toUpperCase() || "?"}</AvatarFallback>
+                  </Avatar>
+                  <p className="text-xs font-medium truncate w-full">{friend.displayName || friend.username}</p>
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
