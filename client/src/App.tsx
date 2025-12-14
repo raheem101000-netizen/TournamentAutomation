@@ -173,6 +173,9 @@ function Router() {
       <Route path="/profile/:userId">
         {() => <ProtectedRoute component={Profile} />}
       </Route>
+      <Route path="/notifications">
+        {() => <ProtectedRoute component={MobilePreviewNotifications} />}
+      </Route>
       
       <Route path="/old" component={MobilePreviewHome} />
       <Route path="/old/discovery" component={MobilePreviewServers} />
