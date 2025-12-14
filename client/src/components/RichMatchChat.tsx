@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Send, Trophy, ImageIcon, Loader2, X } from "lucide-react";
-import { useRef, useState, useMemo } from "react";
+import { useRef, useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -43,6 +43,7 @@ export default function RichMatchChat({
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
 
@@ -51,6 +52,12 @@ export default function RichMatchChat({
     enabled: !!matchId,
   });
 
+  // Auto-scroll to latest message when messages load or change
+  useEffect(() => {
+    if (threadMessages.length > 0 && !messagesLoading) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [threadMessages, messagesLoading]);
 
   // Extract unique users from thread messages
   const chatUsers = useMemo(() => {
@@ -423,6 +430,7 @@ export default function RichMatchChat({
                   );
                 })
               )}
+              <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
 

@@ -161,6 +161,7 @@ export default function PreviewMessages() {
   const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch current user
   const { data: currentUser } = useQuery<User>({
@@ -331,6 +332,13 @@ export default function PreviewMessages() {
       return response.json();
     },
   });
+
+  // Auto-scroll to latest message when messages load or change
+  useEffect(() => {
+    if (threadMessages.length > 0 && !messagesLoading) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [threadMessages, messagesLoading]);
 
   const acceptedChats = threads.map(threadToChat);
   
@@ -796,6 +804,7 @@ export default function PreviewMessages() {
                         );
                       })
                     )}
+                    <div ref={messagesEndRef} />
                   </div>
                 </ScrollArea>
 
