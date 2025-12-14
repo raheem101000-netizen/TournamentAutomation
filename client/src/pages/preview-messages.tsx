@@ -703,7 +703,7 @@ export default function PreviewMessages() {
                         return (
                           <div 
                             key={msg.id} 
-                            className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : ''}`}
+                            className="flex gap-3"
                             data-testid={`message-${msg.id}`}
                           >
                             {msg.userId ? (
@@ -734,7 +734,7 @@ export default function PreviewMessages() {
                                 </AvatarFallback>
                               </Avatar>
                             )}
-                            <div className={`flex flex-col gap-1 max-w-[70%] ${isOwn ? 'items-end' : ''}`}>
+                            <div className="flex flex-col gap-1 max-w-[70%]">
                               {msg.userId ? (
                                 <button
                                   onClick={() => {

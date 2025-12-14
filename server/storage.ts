@@ -1,4 +1,4 @@
-import { eq, and, sql, ilike } from "drizzle-orm";
+import { eq, and, or, sql, ilike } from "drizzle-orm";
 import { db } from "./db";
 import bcrypt from "bcrypt";
 import {
@@ -85,6 +85,7 @@ import {
   type InsertChannelMessage,
   type InsertMessageThread,
   type InsertThreadMessage,
+  type InsertNotification,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -194,6 +195,8 @@ export interface IStorage {
   createThreadMessage(data: InsertThreadMessage): Promise<ThreadMessage>;
   getThreadMessages(threadId: string): Promise<ThreadMessage[]>;
   getAllNotifications(): Promise<Notification[]>;
+  createNotification(data: InsertNotification): Promise<Notification>;
+  findExistingThread(userId: string, participantId: string): Promise<MessageThread | undefined>;
 
   // Poster template operations
   createPosterTemplate(data: InsertPosterTemplate): Promise<PosterTemplate>;
@@ -580,11 +583,16 @@ export class DatabaseStorage implements IStorage {
 
     console.log("[MSG-THREADS] User tournaments found:", userTournaments.length, userTournaments);
 
-    // Get direct message threads for this user (always include these)
+    // Get direct message threads for this user (where they are creator OR participant)
     const directThreads = await db
       .select()
       .from(messageThreads)
-      .where(eq(messageThreads.userId, userId));
+      .where(
+        or(
+          eq(messageThreads.userId, userId),
+          eq(messageThreads.participantId, userId)
+        )
+      );
 
     console.log("[MSG-THREADS] Direct threads found:", directThreads.length);
 
@@ -692,6 +700,22 @@ export class DatabaseStorage implements IStorage {
 
   async getAllNotifications(): Promise<Notification[]> {
     return await db.select().from(notifications).orderBy(notifications.timestamp);
+  }
+
+  async createNotification(data: InsertNotification): Promise<Notification> {
+    const [notification] = await db.insert(notifications).values(data).returning();
+    return notification;
+  }
+
+  async findExistingThread(userId: string, participantId: string): Promise<MessageThread | undefined> {
+    // Find a thread where (userId = A AND participantId = B) OR (userId = B AND participantId = A)
+    const [thread] = await db.select().from(messageThreads).where(
+      or(
+        and(eq(messageThreads.userId, userId), eq(messageThreads.participantId, participantId)),
+        and(eq(messageThreads.userId, participantId), eq(messageThreads.participantId, userId))
+      )
+    );
+    return thread || undefined;
   }
 
   // Poster template operations

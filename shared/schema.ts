@@ -254,10 +254,12 @@ export const channelMessages = pgTable("channel_messages", {
 export const messageThreads = pgTable("message_threads", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id"),
+  participantId: varchar("participant_id"),
   matchId: varchar("match_id"),
   participantName: text("participant_name").notNull(),
   participantAvatar: text("participant_avatar"),
   lastMessage: text("last_message").notNull(),
+  lastMessageSenderId: varchar("last_message_sender_id"),
   lastMessageTime: timestamp("last_message_time").defaultNow().notNull(),
   unreadCount: integer("unread_count").default(0),
 });
@@ -279,11 +281,14 @@ export type EnrichedThreadMessage = typeof threadMessages.$inferSelect & {
 
 export const notifications = pgTable("notifications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id"),
+  senderId: varchar("sender_id"),
   type: text("type", { enum: ["match_result", "friend_request", "tournament_alert", "system"] }).notNull(),
   title: text("title").notNull(),
   message: text("message").notNull(),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
   isRead: integer("is_read").default(0),
+  read: integer("read").default(0),
   actionUrl: text("action_url"),
 });
 
