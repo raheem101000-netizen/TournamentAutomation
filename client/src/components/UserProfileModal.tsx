@@ -96,6 +96,7 @@ export default function UserProfileModal({ userId, open, onOpenChange }: UserPro
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          participantId: profileData.id,
           participantName: profileData.displayName || profileData.username,
           participantAvatar: profileData.avatarUrl,
         }),

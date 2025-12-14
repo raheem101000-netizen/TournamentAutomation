@@ -3149,6 +3149,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Cannot send friend request to yourself" });
       }
 
+      // Validate that recipientId is a valid UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(recipientId)) {
+        return res.status(400).json({ error: "Invalid recipient ID format" });
+      }
+
+      // Verify recipient exists
+      const recipient = await storage.getUser(recipientId);
+      if (!recipient) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
       // Create notification for friend request
       const notification = await storage.createNotification({
         userId: recipientId,
@@ -3156,7 +3168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: "friend_request",
         title: `Friend request`,
         message: `You have a new friend request`,
-        read: false,
+        read: 0,
       });
 
       res.json({ success: true, notification });
