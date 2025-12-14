@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Search, Plus, Users, Send, ArrowLeft, Edit, Check, X, Image as ImageIcon, Paperclip, Smile, Loader2, AlertCircle, Trophy, Trash2, MessageSquare, UserPlus, UserCheck } from "lucide-react";
+import { Search, Plus, Users, Send, ArrowLeft, Edit, Check, X, Image as ImageIcon, Paperclip, Smile, Loader2, AlertCircle, Trophy, Trash2, MessageSquare, UserPlus, UserCheck, Clock } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
@@ -207,6 +207,25 @@ export default function PreviewMessages() {
       const achievements = await response.json();
       console.log('Achievements fetched:', achievements);
       return achievements;
+    },
+  });
+
+  // Fetch friend request status for profile modal
+  const { data: friendRequestStatus, refetch: refetchFriendStatus } = useQuery<{
+    status: "none" | "pending" | "accepted" | "declined";
+    isSender?: boolean;
+    friendRequest?: any;
+  }>({
+    queryKey: ["/api/friend-requests/status", selectedProfileId],
+    enabled: !!selectedProfileId && profileModalOpen && !!currentUser && currentUser.id !== selectedProfileId,
+    staleTime: 0,
+    refetchOnMount: "always",
+    queryFn: async () => {
+      const response = await fetch(`/api/friend-requests/status/${selectedProfileId}`, {
+        credentials: "include",
+      });
+      if (!response.ok) return { status: "none" };
+      return response.json();
     },
   });
 
@@ -890,25 +909,42 @@ export default function PreviewMessages() {
                       <MessageSquare className="w-4 h-4 mr-2" />
                       Message
                     </Button>
-                    <Button 
-                      onClick={handleAddFriend} 
-                      disabled={isFriendRequestSent}
-                      variant={isFriendRequestSent ? "secondary" : "outline"}
-                      className="flex-1"
-                      data-testid="button-add-friend-profile"
-                    >
-                      {isFriendRequestSent ? (
-                        <>
-                          <UserCheck className="w-4 h-4 mr-2" />
-                          Requested
-                        </>
-                      ) : (
-                        <>
-                          <UserPlus className="w-4 h-4 mr-2" />
-                          Add Friend
-                        </>
-                      )}
-                    </Button>
+                    {friendRequestStatus?.status === "accepted" ? (
+                      <Button variant="secondary" disabled className="flex-1" data-testid="button-friends">
+                        <UserCheck className="w-4 h-4 mr-2" />
+                        Friends
+                      </Button>
+                    ) : friendRequestStatus?.status === "pending" && friendRequestStatus?.isSender ? (
+                      <Button variant="secondary" disabled className="flex-1" data-testid="button-request-pending">
+                        <Clock className="w-4 h-4 mr-2" />
+                        Request Sent
+                      </Button>
+                    ) : friendRequestStatus?.status === "pending" && !friendRequestStatus?.isSender ? (
+                      <Button onClick={handleAddFriend} className="flex-1" data-testid="button-accept-friend">
+                        <UserCheck className="w-4 h-4 mr-2" />
+                        Accept Request
+                      </Button>
+                    ) : (
+                      <Button 
+                        onClick={handleAddFriend} 
+                        disabled={isFriendRequestSent}
+                        variant={isFriendRequestSent ? "secondary" : "outline"}
+                        className="flex-1"
+                        data-testid="button-add-friend-profile"
+                      >
+                        {isFriendRequestSent ? (
+                          <>
+                            <UserCheck className="w-4 h-4 mr-2" />
+                            Requested
+                          </>
+                        ) : (
+                          <>
+                            <UserPlus className="w-4 h-4 mr-2" />
+                            Add Friend
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </div>
                 )}
 

@@ -3224,24 +3224,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { userId } = req.params;
-      console.log(`[FRIEND-STATUS] Checking status between ${req.session.userId} and ${userId}`);
       const request = await storage.getFriendRequestBetweenUsers(req.session.userId, userId);
-      console.log(`[FRIEND-STATUS] Request found:`, request);
       
       if (!request) {
-        console.log(`[FRIEND-STATUS] No request found, returning status: none`);
         return res.json({ status: "none" });
       }
 
-      const response = {
+      res.json({
         status: request.status,
         isSender: request.senderId === req.session.userId,
         friendRequest: request,
-      };
-      console.log(`[FRIEND-STATUS] Returning:`, response);
-      res.json(response);
+      });
     } catch (error: any) {
-      console.error(`[FRIEND-STATUS] Error:`, error);
       res.status(500).json({ error: error.message });
     }
   });

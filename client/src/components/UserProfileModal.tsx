@@ -51,15 +51,11 @@ export default function UserProfileModal({ userId, open, onOpenChange }: UserPro
     staleTime: 0,
     refetchOnMount: "always",
     queryFn: async () => {
-      console.log("[FRIEND-STATUS-FE] Fetching status for userId:", userId);
       const response = await fetch(`/api/friend-requests/status/${userId}`, {
         credentials: "include",
       });
-      console.log("[FRIEND-STATUS-FE] Response ok:", response.ok);
       if (!response.ok) return { status: "none" };
-      const result = await response.json();
-      console.log("[FRIEND-STATUS-FE] Result:", result);
-      return result;
+      return response.json();
     },
   });
 
