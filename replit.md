@@ -19,6 +19,7 @@ Preferred communication style: Simple, everyday language.
   - ✅ Thread creation checks for existing thread between users via `participantId`
   - ✅ Existing threads are reused instead of creating duplicates
   - ✅ Both `userId` (creator) and `participantId` (recipient) stored in thread
+  - ✅ GET /api/message-threads now shows correct name based on viewer (creator sees recipient, recipient sees creator)
 
 - **Fixed Add Friend button functionality**:
   - ✅ Friend request endpoint properly creates notifications
@@ -28,6 +29,7 @@ Preferred communication style: Simple, everyday language.
   - ✅ Thread updates track `lastMessageSenderId` when messages sent
   - ✅ Inbox displays "SenderName: message" format
   - ✅ Optimized with batch user lookup to avoid N+1 queries
+  - ✅ Batch fetches all user info (creators, participants, senders) for efficiency
 
 ### December 7, 2025 (Mention System Implementation - COMPLETE ✅)
 - **Fixed mention dropdown to only trigger on "@" symbol**:
