@@ -10,6 +10,25 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### December 14, 2025 (DM System & Inbox Improvements - COMPLETE ✅)
+- **Fixed chat text alignment**:
+  - ✅ All messages now consistently left-aligned
+
+- **Fixed direct messages linking**:
+  - ✅ Messages now visible to both sender and recipient
+  - ✅ Thread creation checks for existing thread between users via `participantId`
+  - ✅ Existing threads are reused instead of creating duplicates
+  - ✅ Both `userId` (creator) and `participantId` (recipient) stored in thread
+
+- **Fixed Add Friend button functionality**:
+  - ✅ Friend request endpoint properly creates notifications
+  - ✅ Notification includes sender ID for proper attribution
+
+- **Fixed inbox preview to show sender and message**:
+  - ✅ Thread updates track `lastMessageSenderId` when messages sent
+  - ✅ Inbox displays "SenderName: message" format
+  - ✅ Optimized with batch user lookup to avoid N+1 queries
+
 ### December 7, 2025 (Mention System Implementation - COMPLETE ✅)
 - **Fixed mention dropdown to only trigger on "@" symbol**:
   - ✅ Removed PopoverTrigger that was auto-opening dropdown
