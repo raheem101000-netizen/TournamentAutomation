@@ -199,6 +199,7 @@ export interface IStorage {
   getThreadMessages(threadId: string): Promise<ThreadMessage[]>;
   getAllNotifications(): Promise<Notification[]>;
   createNotification(data: InsertNotification): Promise<Notification>;
+  deleteFriendRequestNotifications(userId: string, senderId: string): Promise<void>;
   findExistingThread(userId: string, participantId: string): Promise<MessageThread | undefined>;
 
   // Poster template operations
@@ -714,6 +715,16 @@ export class DatabaseStorage implements IStorage {
   async createNotification(data: InsertNotification): Promise<Notification> {
     const [notification] = await db.insert(notifications).values(data).returning();
     return notification;
+  }
+
+  async deleteFriendRequestNotifications(userId: string, senderId: string): Promise<void> {
+    await db.delete(notifications).where(
+      and(
+        eq(notifications.userId, userId),
+        eq(notifications.senderId, senderId),
+        eq(notifications.type, "friend_request")
+      )
+    );
   }
 
   async findExistingThread(userId: string, participantId: string): Promise<MessageThread | undefined> {

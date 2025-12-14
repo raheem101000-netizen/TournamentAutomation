@@ -3283,6 +3283,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Friend request not found" });
       }
 
+      // Delete friend request notifications from this sender
+      await storage.deleteFriendRequestNotifications(req.session.userId, request.senderId);
+
       res.json({ success: true, friendRequest: request });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -3315,6 +3318,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "accepted",
         respondedAt: new Date(),
       });
+
+      // Delete friend request notifications from this sender
+      await storage.deleteFriendRequestNotifications(req.session.userId, senderId);
 
       res.json({ success: true, friendRequest: updated });
     } catch (error: any) {
