@@ -26,6 +26,7 @@ interface Chat {
   avatar?: string;
   groupImage?: string;
   lastMessage: string;
+  lastMessageSenderName?: string;
   timestamp: string;
   unread: number;
   members: number;
@@ -38,6 +39,8 @@ interface MessageThread {
   participantAvatar?: string;
   lastMessage: string;
   lastMessageTime: string;
+  lastMessageSenderId?: string;
+  lastMessageSenderName?: string;
   unreadCount: number;
   matchId?: string; // If present, this is a match chat
 }
@@ -116,6 +119,7 @@ function threadToChat(thread: MessageThread): Chat {
     isGroup: true,
     groupImage: thread.participantAvatar || "💬",
     lastMessage: thread.lastMessage,
+    lastMessageSenderName: thread.lastMessageSenderName,
     timestamp: formatTime(thread.lastMessageTime),
     unread: thread.unreadCount,
     members: 0,
@@ -264,6 +268,7 @@ export default function PreviewMessages() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          participantId: previewProfileData.id,
           participantName: previewProfileData.displayName || previewProfileData.username,
           participantAvatar: previewProfileData.avatarUrl,
         }),
@@ -1097,7 +1102,7 @@ export default function PreviewMessages() {
                         </span>
                       </div>
                       <p className={`text-sm truncate ${chat.unread > 0 ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
-                        {chat.lastMessage}
+                        {chat.lastMessageSenderName ? `${chat.lastMessageSenderName}: ${chat.lastMessage}` : chat.lastMessage}
                       </p>
                     </div>
                   </div>
@@ -1152,7 +1157,7 @@ export default function PreviewMessages() {
                         </span>
                       </div>
                       <p className={`text-sm truncate ${chat.unread > 0 ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
-                        {chat.lastMessage}
+                        {chat.lastMessageSenderName ? `${chat.lastMessageSenderName}: ${chat.lastMessage}` : chat.lastMessage}
                       </p>
                     </div>
                   </div>

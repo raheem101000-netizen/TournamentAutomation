@@ -2489,7 +2489,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       // Get both direct message threads AND match threads for user's teams
       const threads = await storage.getMessageThreadsForParticipant(req.session.userId);
-      res.json(threads);
+      
+      // Batch fetch all unique sender IDs to avoid N+1 queries
+      const senderIds = [...new Set(threads.map(t => t.lastMessageSenderId).filter(Boolean))] as string[];
+      const senderMap = new Map<string, { displayName?: string | null; username?: string | null }>();
+      
+      if (senderIds.length > 0) {
+        const senders = await Promise.all(senderIds.map(id => storage.getUser(id)));
+        senders.forEach((sender, idx) => {
+          if (sender) {
+            senderMap.set(senderIds[idx], { displayName: sender.displayName, username: sender.username });
+          }
+        });
+      }
+      
+      // Enrich threads with sender name using cached map
+      const enrichedThreads = threads.map(thread => {
+        let lastMessageSenderName = null;
+        if (thread.lastMessageSenderId) {
+          const sender = senderMap.get(thread.lastMessageSenderId);
+          lastMessageSenderName = sender?.displayName || sender?.username || null;
+        }
+        return {
+          ...thread,
+          lastMessageSenderName,
+        };
+      });
+      
+      res.json(enrichedThreads);
     } catch (error: any) {
       console.error("Error fetching message threads:", error);
       res.status(500).json({ error: error.message });
@@ -2502,16 +2529,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Unauthorized" });
       }
       
+      const { participantId, participantName, participantAvatar, lastMessage } = req.body;
+      
+      // Check if a thread already exists between these two users
+      if (participantId) {
+        const existingThread = await storage.findExistingThread(req.session.userId, participantId);
+        if (existingThread) {
+          // Enrich with sender name before returning
+          let lastMessageSenderName = null;
+          if (existingThread.lastMessageSenderId) {
+            const sender = await storage.getUser(existingThread.lastMessageSenderId);
+            lastMessageSenderName = sender?.displayName || sender?.username || null;
+          }
+          return res.status(200).json({ ...existingThread, lastMessageSenderName });
+        }
+      }
+      
       const validatedData = insertMessageThreadSchema.parse({
         userId: req.session.userId,
-        participantName: req.body.participantName,
-        participantAvatar: req.body.participantAvatar || null,
-        lastMessage: req.body.lastMessage || "",
+        participantId: participantId || null,
+        participantName: participantName,
+        participantAvatar: participantAvatar || null,
+        lastMessage: lastMessage || "",
         unreadCount: 0,
       });
       
       const thread = await storage.createMessageThread(validatedData);
-      res.status(201).json(thread);
+      res.status(201).json({ ...thread, lastMessageSenderName: null });
     } catch (error: any) {
       console.error("Error creating message thread:", error);
       res.status(400).json({ error: error.message });
@@ -2550,6 +2594,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       const message = await storage.createThreadMessage(validatedData);
+      
+      // Update thread's lastMessage and lastMessageSenderId
+      await storage.updateMessageThread(req.params.id, {
+        lastMessage: req.body.message,
+        lastMessageSenderId: req.session.userId,
+        lastMessageTime: new Date(),
+      });
+      
       res.status(201).json(message);
     } catch (error: any) {
       console.error("Error creating thread message:", error);
