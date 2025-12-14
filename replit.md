@@ -10,6 +10,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### December 14, 2025 (Friend Request System - COMPLETE ✅)
+- **Implemented complete friend request system**:
+  - ✅ Created `friend_requests` table with status tracking (pending/accepted/declined)
+  - ✅ Added storage methods for CRUD operations on friend requests
+  - ✅ Added API endpoints: send request, get status, accept, decline, get pending
+  - ✅ Updated UserProfileModal to show correct button state based on friend status
+  - ✅ Shows "Add Friend" when no request exists
+  - ✅ Shows "Request Sent" when pending request from current user
+  - ✅ Shows "Accept/Decline" when pending request to current user
+  - ✅ Shows "Friends" when accepted
+
 ### December 14, 2025 (DM System & Inbox Improvements - COMPLETE ✅)
 - **Fixed chat text alignment**:
   - ✅ All messages now consistently left-aligned
