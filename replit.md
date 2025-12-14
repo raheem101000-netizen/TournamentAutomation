@@ -14,12 +14,15 @@ Preferred communication style: Simple, everyday language.
 - **Implemented complete friend request system**:
   - ✅ Created `friend_requests` table with status tracking (pending/accepted/declined)
   - ✅ Added storage methods for CRUD operations on friend requests
-  - ✅ Added API endpoints: send request, get status, accept, decline, get pending
+  - ✅ Added API endpoints: send request, get status, accept, decline, get pending, get friends list
   - ✅ Updated UserProfileModal to show correct button state based on friend status
   - ✅ Shows "Add Friend" when no request exists
   - ✅ Shows "Request Sent" when pending request from current user
   - ✅ Shows "Accept/Decline" when pending request to current user
   - ✅ Shows "Friends" when accepted
+  - ✅ Added Friends section to profile page with avatars grid
+  - ✅ Click on friend opens their profile modal
+  - ✅ Friend count in profile shows actual count from API
 
 ### December 14, 2025 (DM System & Inbox Improvements - COMPLETE ✅)
 - **Fixed chat text alignment**:

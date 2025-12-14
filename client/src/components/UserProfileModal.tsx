@@ -48,6 +48,8 @@ export default function UserProfileModal({ userId, open, onOpenChange }: UserPro
   const { data: friendRequestStatus, refetch: refetchFriendStatus } = useQuery<FriendRequestStatus>({
     queryKey: ["/api/friend-requests/status", userId],
     enabled: !!userId && open && !!currentUser && currentUser.id !== userId,
+    staleTime: 0,
+    refetchOnMount: "always",
     queryFn: async () => {
       const response = await fetch(`/api/friend-requests/status/${userId}`, {
         credentials: "include",

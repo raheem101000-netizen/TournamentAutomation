@@ -3374,5 +3374,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all friends for current user
+  app.get("/api/friends", async (req, res) => {
+    try {
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const currentUserId = req.session.userId;
+      
+      // Get all accepted friend requests where user is sender or recipient
+      const { eq, and, or } = await import("drizzle-orm");
+      const { friendRequests } = await import("@shared/schema");
+      const { db } = await import("./db");
+      
+      const acceptedRequests = await db.select().from(friendRequests)
+        .where(
+          and(
+            eq(friendRequests.status, "accepted"),
+            or(
+              eq(friendRequests.senderId, currentUserId),
+              eq(friendRequests.recipientId, currentUserId)
+            )
+          )
+        );
+      
+      // Get friend user info
+      const friends = await Promise.all(
+        acceptedRequests.map(async (request) => {
+          const friendId = request.senderId === currentUserId ? request.recipientId : request.senderId;
+          const friend = await storage.getUser(friendId);
+          return friend;
+        })
+      );
+      
+      res.json(friends.filter(Boolean));
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }

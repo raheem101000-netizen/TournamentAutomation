@@ -16,6 +16,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import type { User } from "@shared/schema";
 import { getAchievementIcon, getAchievementColor } from "@/lib/achievement-utils";
+import UserProfileModal from "@/components/UserProfileModal";
 
 const mockUser = {
   username: "ProGamer2024",
@@ -133,6 +134,7 @@ export default function PreviewAccount() {
   const [viewingUser, setViewingUser] = useState<string | null>(null);
   const [selectedAchievement, setSelectedAchievement] = useState<any | null>(null);
   const [serverNotFound, setServerNotFound] = useState(false);
+  const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
 
   const { user: authUser } = useAuth();
 
@@ -165,6 +167,17 @@ export default function PreviewAccount() {
 
   // Use mock achievements when viewing a visitor profile, real achievements for own profile
   const userAchievements = !isOwnProfile ? mockAchievements : dbAchievements;
+
+  // Fetch friends list (only for own profile)
+  const { data: friends = [] } = useQuery<any[]>({
+    queryKey: ["/api/friends"],
+    enabled: isOwnProfile && !!authUser,
+    queryFn: async () => {
+      const res = await fetch("/api/friends", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
@@ -237,7 +250,7 @@ export default function PreviewAccount() {
                     
                     <div className="flex items-center justify-center gap-2 text-muted-foreground">
                       <Users className="w-4 h-4" />
-                      <span className="text-sm">{currentUser.friendCount ?? 0} friends</span>
+                      <span className="text-sm">{isOwnProfile ? friends.length : (currentUser.friendCount ?? 0)} friends</span>
                     </div>
 
                     <p className="text-sm text-muted-foreground px-4">
@@ -271,6 +284,37 @@ export default function PreviewAccount() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Friends Section - only show on own profile */}
+        {isOwnProfile && friends.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Friends</h3>
+              <span className="text-sm text-muted-foreground">{friends.length}</span>
+            </div>
+            <div className="grid grid-cols-4 gap-3">
+              {friends.slice(0, 8).map((friend: any) => (
+                <div
+                  key={friend.id}
+                  className="flex flex-col items-center text-center cursor-pointer hover-elevate p-2 rounded-lg"
+                  onClick={() => setSelectedFriendId(friend.id)}
+                  data-testid={`friend-${friend.id}`}
+                >
+                  <Avatar className="w-12 h-12 mb-1">
+                    <AvatarImage src={friend.avatarUrl} />
+                    <AvatarFallback>{friend.username?.[0]?.toUpperCase() || "?"}</AvatarFallback>
+                  </Avatar>
+                  <p className="text-xs font-medium truncate w-full">{friend.displayName || friend.username}</p>
+                </div>
+              ))}
+            </div>
+            {friends.length > 8 && (
+              <Button variant="ghost" size="sm" className="w-full" data-testid="button-view-all-friends">
+                View all {friends.length} friends
+              </Button>
+            )}
+          </div>
+        )}
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -582,6 +626,12 @@ export default function PreviewAccount() {
         </DialogContent>
       </Dialog>
 
+      {/* Friend Profile Modal */}
+      <UserProfileModal
+        userId={selectedFriendId}
+        open={!!selectedFriendId}
+        onOpenChange={(open) => !open && setSelectedFriendId(null)}
+      />
     </div>
   );
 }
