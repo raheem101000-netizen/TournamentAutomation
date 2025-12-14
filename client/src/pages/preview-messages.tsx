@@ -154,6 +154,7 @@ export default function PreviewMessages() {
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [isFriendRequestSent, setIsFriendRequestSent] = useState(false);
+  const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
@@ -751,12 +752,17 @@ export default function PreviewMessages() {
                                 </span>
                               )}
                               {msg.imageUrl && (
-                                <img 
-                                  src={msg.imageUrl} 
-                                  alt="Shared image" 
-                                  className="max-w-full h-auto max-h-60 object-contain rounded-md"
-                                  data-testid={`img-message-${msg.id}`}
-                                />
+                                <button
+                                  onClick={() => setEnlargedImageUrl(msg.imageUrl)}
+                                  className="p-0 border-0 bg-transparent cursor-pointer hover-elevate rounded-md overflow-hidden block"
+                                  data-testid={`button-img-message-${msg.id}`}
+                                >
+                                  <img 
+                                    src={msg.imageUrl} 
+                                    alt="Shared image" 
+                                    className="max-w-full h-auto max-h-60 object-contain rounded-md"
+                                  />
+                                </button>
                               )}
                               {msg.message && (
                                 <p className="text-sm text-foreground">{msg.message}</p>
@@ -944,6 +950,27 @@ export default function PreviewMessages() {
               <div className="flex justify-center py-12">
                 <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
               </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Enlarged Image Dialog */}
+        <Dialog open={!!enlargedImageUrl} onOpenChange={(open) => !open && setEnlargedImageUrl(null)}>
+          <DialogContent className="max-w-4xl w-full max-h-[90vh] p-0 border-0 bg-black/90 flex items-center justify-center">
+            <button
+              onClick={() => setEnlargedImageUrl(null)}
+              className="absolute top-4 right-4 z-50 p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+              data-testid="button-close-enlarged-image"
+            >
+              <X className="w-6 h-6 text-white" />
+            </button>
+            {enlargedImageUrl && (
+              <img 
+                src={enlargedImageUrl} 
+                alt="Enlarged image" 
+                className="max-w-full max-h-[90vh] object-contain"
+                data-testid="img-enlarged"
+              />
             )}
           </DialogContent>
         </Dialog>
