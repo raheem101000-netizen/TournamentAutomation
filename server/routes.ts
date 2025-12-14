@@ -1614,9 +1614,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/mobile-preview/notifications", async (_req, res) => {
+  app.get("/api/mobile-preview/notifications", async (req, res) => {
     try {
       const notifications = await storage.getAllNotifications();
+      // Filter notifications for current user if logged in
+      if (req.session?.userId) {
+        const userNotifications = notifications.filter(n => n.userId === req.session.userId);
+        return res.json(userNotifications);
+      }
       res.json(notifications);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

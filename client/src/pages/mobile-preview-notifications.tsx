@@ -1,9 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
-import { Bell, Trophy, UserPlus, Info } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Bell, Trophy, UserPlus, Info, UserCheck, X } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import type { Notification } from "@shared/schema";
 import { formatDistanceToNow } from "date-fns";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
+import { useState } from "react";
 
 const getNotificationIcon = (type: string) => {
   switch (type) {
@@ -19,9 +24,96 @@ const getNotificationIcon = (type: string) => {
 };
 
 export default function MobilePreviewNotifications() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
+  const [handledIds, setHandledIds] = useState<Set<string>>(new Set());
+
   const { data: notifications, isLoading } = useQuery<Notification[]>({
     queryKey: ["/api/mobile-preview/notifications"],
   });
+
+  const handleAcceptFriendRequest = async (notification: Notification) => {
+    if (!notification.senderId || !user) return;
+    
+    setProcessingIds(prev => new Set(prev).add(notification.id));
+    
+    try {
+      // First get the friend request between users
+      const statusRes = await fetch(`/api/friend-requests/status/${notification.senderId}`, {
+        credentials: "include",
+      });
+      const statusData = await statusRes.json();
+      
+      if (statusData.friendRequest?.id) {
+        const acceptRes = await fetch(`/api/friend-requests/${statusData.friendRequest.id}/accept`, {
+          method: "POST",
+          credentials: "include",
+        });
+        
+        if (acceptRes.ok) {
+          setHandledIds(prev => new Set(prev).add(notification.id));
+          toast({
+            title: "Friend added!",
+            description: "You are now friends",
+          });
+          queryClient.invalidateQueries({ queryKey: ["/api/mobile-preview/notifications"] });
+        }
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to accept friend request",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingIds(prev => {
+        const next = new Set(prev);
+        next.delete(notification.id);
+        return next;
+      });
+    }
+  };
+
+  const handleDeclineFriendRequest = async (notification: Notification) => {
+    if (!notification.senderId || !user) return;
+    
+    setProcessingIds(prev => new Set(prev).add(notification.id));
+    
+    try {
+      const statusRes = await fetch(`/api/friend-requests/status/${notification.senderId}`, {
+        credentials: "include",
+      });
+      const statusData = await statusRes.json();
+      
+      if (statusData.friendRequest?.id) {
+        const declineRes = await fetch(`/api/friend-requests/${statusData.friendRequest.id}/decline`, {
+          method: "POST",
+          credentials: "include",
+        });
+        
+        if (declineRes.ok) {
+          setHandledIds(prev => new Set(prev).add(notification.id));
+          toast({
+            title: "Request declined",
+          });
+          queryClient.invalidateQueries({ queryKey: ["/api/mobile-preview/notifications"] });
+        }
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to decline friend request",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingIds(prev => {
+        const next = new Set(prev);
+        next.delete(notification.id);
+        return next;
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -42,7 +134,7 @@ export default function MobilePreviewNotifications() {
         {notifications?.map((notification) => (
           <Card 
             key={notification.id}
-            className={`hover-elevate cursor-pointer ${
+            className={`${
               !notification.isRead ? 'bg-accent/50' : ''
             }`}
             data-testid={`notification-${notification.id}`}
@@ -75,6 +167,38 @@ export default function MobilePreviewNotifications() {
                   <p className="text-sm text-muted-foreground" data-testid={`notification-message-${notification.id}`}>
                     {notification.message}
                   </p>
+                  
+                  {notification.type === 'friend_request' && !handledIds.has(notification.id) && (
+                    <div className="flex gap-2 mt-3">
+                      <Button
+                        size="sm"
+                        onClick={() => handleAcceptFriendRequest(notification)}
+                        disabled={processingIds.has(notification.id)}
+                        data-testid={`button-accept-${notification.id}`}
+                      >
+                        {processingIds.has(notification.id) ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                        ) : (
+                          <UserCheck className="h-4 w-4 mr-1" />
+                        )}
+                        Accept
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDeclineFriendRequest(notification)}
+                        disabled={processingIds.has(notification.id)}
+                        data-testid={`button-decline-${notification.id}`}
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Decline
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {notification.type === 'friend_request' && handledIds.has(notification.id) && (
+                    <p className="text-sm text-muted-foreground mt-2">Handled</p>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -82,7 +206,7 @@ export default function MobilePreviewNotifications() {
         ))}
       </div>
 
-      {!notifications || notifications.length === 0 && (
+      {(!notifications || notifications.length === 0) && (
         <div className="text-center py-12" data-testid="no-notifications-message">
           <p className="text-muted-foreground">No notifications yet</p>
         </div>
