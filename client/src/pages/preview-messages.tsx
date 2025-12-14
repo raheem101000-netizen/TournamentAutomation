@@ -956,19 +956,19 @@ export default function PreviewMessages() {
 
         {/* Enlarged Image Dialog */}
         <Dialog open={!!enlargedImageUrl} onOpenChange={(open) => !open && setEnlargedImageUrl(null)}>
-          <DialogContent className="max-w-4xl w-full max-h-[90vh] p-0 border-0 bg-black/90 flex items-center justify-center">
+          <DialogContent className="max-w-fit w-auto max-h-[90vh] p-2 border bg-background flex items-center justify-center">
             <button
               onClick={() => setEnlargedImageUrl(null)}
-              className="absolute top-4 right-4 z-50 p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+              className="absolute top-2 right-2 z-50 p-1.5 rounded-full bg-muted hover:bg-muted/80 transition-colors"
               data-testid="button-close-enlarged-image"
             >
-              <X className="w-6 h-6 text-white" />
+              <X className="w-5 h-5" />
             </button>
             {enlargedImageUrl && (
               <img 
                 src={enlargedImageUrl} 
                 alt="Enlarged image" 
-                className="max-w-full max-h-[90vh] object-contain"
+                className="max-w-full max-h-[85vh] object-contain rounded-md"
                 data-testid="img-enlarged"
               />
             )}
