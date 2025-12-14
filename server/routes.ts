@@ -2487,32 +2487,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.session.userId) {
         return res.status(401).json({ error: "Unauthorized" });
       }
+      const currentUserId = req.session.userId;
+      
       // Get both direct message threads AND match threads for user's teams
-      const threads = await storage.getMessageThreadsForParticipant(req.session.userId);
+      const threads = await storage.getMessageThreadsForParticipant(currentUserId);
       
-      // Batch fetch all unique sender IDs to avoid N+1 queries
-      const senderIds = [...new Set(threads.map(t => t.lastMessageSenderId).filter(Boolean))] as string[];
-      const senderMap = new Map<string, { displayName?: string | null; username?: string | null }>();
+      // Batch fetch all unique user IDs (senders, creators, participants) to avoid N+1 queries
+      const allUserIds = new Set<string>();
+      threads.forEach(t => {
+        if (t.lastMessageSenderId) allUserIds.add(t.lastMessageSenderId);
+        if (t.userId) allUserIds.add(t.userId);
+        if (t.participantId) allUserIds.add(t.participantId);
+      });
       
-      if (senderIds.length > 0) {
-        const senders = await Promise.all(senderIds.map(id => storage.getUser(id)));
-        senders.forEach((sender, idx) => {
-          if (sender) {
-            senderMap.set(senderIds[idx], { displayName: sender.displayName, username: sender.username });
+      const userMap = new Map<string, { displayName?: string | null; username?: string | null; avatarUrl?: string | null }>();
+      
+      if (allUserIds.size > 0) {
+        const users = await Promise.all(Array.from(allUserIds).map(id => storage.getUser(id)));
+        const idsArray = Array.from(allUserIds);
+        users.forEach((user, idx) => {
+          if (user) {
+            userMap.set(idsArray[idx], { 
+              displayName: user.displayName, 
+              username: user.username,
+              avatarUrl: user.avatarUrl 
+            });
           }
         });
       }
       
-      // Enrich threads with sender name using cached map
+      // Enrich threads with correct display info based on viewer
       const enrichedThreads = threads.map(thread => {
         let lastMessageSenderName = null;
         if (thread.lastMessageSenderId) {
-          const sender = senderMap.get(thread.lastMessageSenderId);
+          const sender = userMap.get(thread.lastMessageSenderId);
           lastMessageSenderName = sender?.displayName || sender?.username || null;
         }
+        
+        // Determine the "other person" to display based on who is viewing
+        // If current user is the creator (userId), show participant info
+        // If current user is the participant, show creator info
+        let displayName = thread.participantName;
+        let displayAvatar = thread.participantAvatar;
+        
+        if (thread.userId && thread.participantId) {
+          if (currentUserId === thread.participantId) {
+            // Current user is the recipient, show the creator's info
+            const creator = userMap.get(thread.userId);
+            if (creator) {
+              displayName = creator.displayName || creator.username || thread.participantName;
+              displayAvatar = creator.avatarUrl || thread.participantAvatar;
+            }
+          }
+          // If current user is the creator, participantName/Avatar is already correct
+        }
+        
         return {
           ...thread,
           lastMessageSenderName,
+          participantName: displayName,
+          participantAvatar: displayAvatar,
         };
       });
       
